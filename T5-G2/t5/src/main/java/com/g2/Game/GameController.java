@@ -132,17 +132,35 @@ public class GameController {
     /*
      *  Sfrutto T4 per avere i risultati dei robot
      */
-    private int GetRobotScore(String testClass, String robot_type, String difficulty) {
+    private JSONObject GetRobotCoverage(String testClass, String robot_type, String difficulty) {
         try {
+            logger.info(robot_type);
+
             String response_T4 = (String) serviceManager.handleRequest("T4", "GetRisultati",
                     testClass, robot_type, difficulty);
 
             JSONObject jsonObject = new JSONObject(response_T4);
+            JSONObject robotCoverage = new JSONObject();
+
+            JSONObject coverageDetails = new JSONObject();
+            coverageDetails.put("line", new JSONObject()
+                    .put("covered", jsonObject.get("jacocoLineCovered"))
+                    .put("missed", jsonObject.get("jacocoLineMissed")));
+            coverageDetails.put("branch", new JSONObject()
+                    .put("covered", jsonObject.get("jacocoBranchCovered"))
+                    .put("missed", jsonObject.get("jacocoBranchMissed")));
+            coverageDetails.put("instruction", new JSONObject()
+                    .put("covered", jsonObject.get("jacocoInstructionCovered"))
+                    .put("missed", jsonObject.get("jacocoInstructionMissed")));
+            // Aggiungi l'oggetto di copertura al risultato finale
+            robotCoverage.put("robotCoverage", coverageDetails);
+
+            logger.info(jsonObject.toString());
             //anche se scritto al plurale scores è un solo punteggio, cioè quello del robot
-            return jsonObject.getInt("scores");
+            return robotCoverage;
         } catch (Exception e) {
             logger.error("[GAMECONTROLLER] GetRobotScore:", e);
-            return 0;
+            return null;
         }
     }
 
@@ -295,11 +313,11 @@ public class GameController {
             // Calcolo dati utente
             Map<String, String> userData = GetUserData(testingClassName, testingClassCode, gameLogic.getClasseUT(), underTestClassName);
             // Calcolo punteggio robot
-            int robotScore = GetRobotScore(gameLogic.getClasseUT(), gameLogic.getType_robot(), gameLogic.getDifficulty());
-            logger.info("[GAMECONTROLLER] /run: RobotScore {}", robotScore);
+            JSONObject robotCoverage = GetRobotCoverage(gameLogic.getClasseUT(), gameLogic.getType_robot(), gameLogic.getDifficulty());
+            logger.info("[GAMECONTROLLER] /run: RobotScore {}", robotCoverage);
 
             // Gestione copertura di linea e punteggio utente
-            return gestisciPartita(userData, gameLogic, isGameEnd, robotScore, playerId);
+            return gestisciPartita(userData, gameLogic, isGameEnd, robotCoverage, playerId);
         } catch (Exception e) {
             logger.error("[GAMECONTROLLER] /run: errore", e);
             return createErrorResponse("[/RUN] " + e.getMessage(), "2");
@@ -312,7 +330,7 @@ public class GameController {
         return createErrorResponse("[/RUN] partita eliminata", "5");
     }
 
-    private ResponseEntity<String> gestisciPartita(Map<String, String> userData, GameLogic gameLogic, Boolean isGameEnd, int robotScore, String playerId) {
+    private ResponseEntity<String> gestisciPartita(Map<String, String> userData, GameLogic gameLogic, Boolean isGameEnd, JSONObject robotCoverage, String playerId) {
         if (userData.get("coverage") != null && !userData.get("coverage").isEmpty()) {
             // Calcolo copertura e punteggio utente
             // il primo è covered e il secondo è missed
@@ -326,13 +344,21 @@ public class GameController {
             int userScore = gameLogic.GetScore(lineCov);
             logger.info("[GAMECONTROLLER] /run: user_score {}", userScore);
 
+            int covered = robotCoverage.getJSONObject("robotCoverage").getJSONObject("line").getInt("covered");
+            int missed = robotCoverage.getJSONObject("robotCoverage").getJSONObject("line").getInt("missed");
+            int robotLineCov = 100 * covered / (missed + covered);
+            logger.info("[GAMECONTROLLER] /run: RobotLineCov {}", robotLineCov);
+
+            int robotScore = gameLogic.GetScore(robotLineCov);
+            logger.info("[GAMECONTROLLER] /run: robot_score {}", robotScore);
+
             // Salvo i dati del turno
             gameLogic.playTurn(userScore, robotScore);
 
             // Controllo fine partita
             if (isGameEnd || gameLogic.isGameEnd()) {
                 //gameLogic.EndRound(playerId);
-                //gameLogic.EndGame(playerId, userScore, userScore > robotScore);
+                //gameLogic.EndGame(playerId, userScore, userScore > robotCoverage);
                 activeGames.remove(playerId);
                 logger.info("[GAMECONTROLLER] /run: risposta inviata con GameEnd true");
 
@@ -344,22 +370,23 @@ public class GameController {
                 List<AchievementProgress> newAchievements = achievementService.updateProgressByPlayer(userId.intValue());
                 achievementService.updateNotificationsForAchievements(email,newAchievements);
 
-                return createResponseRun(userData, robotScore, userScore, true, lineCoverage, branchCoverage, instructionCoverage);
+                return createResponseRun(userData, robotCoverage, userScore, robotScore, true, lineCoverage, branchCoverage, instructionCoverage);
             } else {
                 logger.info("[GAMECONTROLLER] /run: risposta inviata con GameEnd false");
-                return createResponseRun(userData, robotScore, userScore, false, lineCoverage, branchCoverage, instructionCoverage);
+                return createResponseRun(userData, robotCoverage, userScore, robotScore, false, lineCoverage, branchCoverage, instructionCoverage);
             }
         } else {
             // Errori di compilazione
             logger.info("[GAMECONTROLLER] /run: risposta inviata errori di compilazione");
-            return createResponseRun(userData, 0, 0, false, null, null, null);
+            return createResponseRun(userData, robotCoverage, 0, 0, false, null, null, null);
         }
     }
 
     //metodo di supporto per creare la risposta
     private ResponseEntity<String> createResponseRun(
-            Map<String, String> userData, int robotScore,
-            int userScore, boolean gameOver,
+            Map<String, String> userData, JSONObject robotCoverage,
+            int userScore, int robotScore,
+            boolean gameOver,
             int[] lineCoverageValues,
             int[] branchCoverageValues,
             int[] instructionCoverageValues) {
@@ -393,7 +420,9 @@ public class GameController {
                 .put("covered", instructionCoverageValues[0])
                 .put("missed", instructionCoverageValues[1]));
         // Aggiungi l'oggetto di copertura al risultato finale
-        result.put("coverageDetails", coverageDetails);
+        result.put("userJacocoCoverage", coverageDetails);
+        // Aggiungo l'oggetto contenente la coverage JaCoCo del robot
+        result.put("robotJacocoCoverage", robotCoverage.get("robotCoverage"));
 
         return ResponseEntity
                 .status(HttpStatus.OK) // Codice di stato HTTP 200

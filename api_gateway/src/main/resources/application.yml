@@ -48,12 +48,16 @@ zuul:
       url: http://t6-g12-app-1:80/run
     loadingresult-service:
       sensitiveHeaders:
-      path: /api/VolumeT8/FolderTreeEvo/**
-      url:  http://prototipo20-t8_generazione-1:3080/api/VolumeT8/FolderTreeEvo
+      path: /api/VolumeT8/FolderTree/**
+      url:  http://prototipo20-t8_generazione-1:3080/api/VolumeT8/FolderTree
     compile-and-codecoverage-service:
       sensitiveHeaders:
       path: /api/compile-and-codecoverage/**
       url: http://remoteccc-app-1:1234/compile-and-codecoverage
+    getEvoSuiteCoverageForRobot-service:
+      sensitiveHeaders:
+      path: /api/coverage/**
+      url: http://prototipo20-t8_generazione-1:3080/api/coverage
 eureka:
   client:
     enabled: false

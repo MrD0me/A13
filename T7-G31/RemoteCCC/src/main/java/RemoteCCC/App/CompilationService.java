@@ -16,10 +16,7 @@
  */
 package RemoteCCC.App;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
@@ -30,13 +27,18 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
+import RemoteCCC.App.util.FileUtil;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.multipart.MultipartFile;
 
 //@Service
 public class CompilationService {
@@ -81,13 +83,61 @@ public class CompilationService {
         logger.info("[CompilationService] Servizi creato con successo");
     }
 
+    public CompilationService(String mvn_path) {
+
+        this.config = new Config();
+        this.underTestClassName = null;
+        this.underTestClassCode = null;
+        this.outputMaven = null;
+        this.testingClassName = null;
+        this.testingClassCode = null;
+        this.mvn_path = mvn_path;
+        logger.info("[CompilationService] Servizi creato con successo");
+    }
+
+    public void compileAndTestEvoSuiteTests(MultipartFile evoSuiteCode) throws IOException, InterruptedException {
+        try {
+            createDirectoryIfNotExists(config.getPathCompiler());
+            logger.info("[Compilation Service] directory creata con successo: {}", config.getPathCompiler());
+
+            evoSuiteCode.transferTo(new File(String.format("%s/%s", config.getPathCompiler(), Objects.requireNonNull(evoSuiteCode.getOriginalFilename()))));
+            FileUtil.unzip(String.format("%s/%s", config.getPathCompiler(), Objects.requireNonNull(evoSuiteCode.getOriginalFilename())), new File(String.format("%s", config.getPathCompiler())));
+
+            copyPomFileForEvoSuiteTest();
+            logger.info("[CompilationService] Avvio Maven");
+            if (compileExecuteCoverageWithMaven("clean", "test", "jacoco:restore-instrumented-classes", "jacoco:report")) {
+                this.Coverage = readFileToString(config.getCoverageFolderPath());
+                this.Errors = false;
+                logger.info("[Compilation Service] Compilazione Terminata senza errori.");
+            } else {
+                this.Coverage = null;
+                this.Errors = true;
+                logger.info("[Compilation Service] Compilazione Terminata con errori");
+                logger.info("[Compilation Service] Errori: {}", outputMaven);
+            }
+
+            FileUtil.deleteDirectoryRecursively(Paths.get(config.getPathCompiler()));
+        } catch (FileConcurrencyException e) {
+            logger.error("[Compilation Service] [LOCK ERROR] ", e);
+        } catch (IOException e) {
+            logger.error("[Compilation Service] [I/O ERROR] ", e);
+        } catch (IllegalArgumentException e) {
+            logger.error("[Compilation Service] [ARGS ERROR] ", e);
+        } catch (RuntimeException e) {
+            logger.error("[Compilation Service] [RUNTIME ERROR] ", e);
+        } catch (Exception e) {
+            logger.error("[Compilation Service] [GENERIC ERROR] ", e);
+        }
+    }
+
+
     public void compileAndTest() throws IOException, InterruptedException {
         try {
             createDirectoriesAndCopyPom();
             saveCodeToFile(this.testingClassName, this.testingClassCode, config.getTestingClassPath());
             saveCodeToFile(this.underTestClassName, this.underTestClassCode, config.getUnderTestClassPath());
             logger.info("[CompilationService] Avvio Maven");
-            if (compileExecuteCoverageWithMaven()) {
+            if (compileExecuteCoverageWithMaven("clean", "compile", "test")) {
                 this.Coverage = readFileToString(config.getCoverageFolderPath());
                 this.Errors = false;
                 logger.info("[Compilation Service] Compilazione Terminata senza errori.");
@@ -187,6 +237,46 @@ public class CompilationService {
         }
     }
 
+    private void copyPomFileForEvoSuiteTest() throws IOException {
+        File pomFile = new File(config.getUsrPath() + config.getsep() + "EvoSuite" + config.getsep() + "pom.xml");
+        File destPomFile = new File(config.getPathCompiler() + config.getsep() + "pom.xml");
+
+        // Controlla se il file pom.xml esiste prima di tentare di copiarlo
+        if (!pomFile.exists()) {
+            throw new IOException("[Compilation Service] Il file pom.xml non esiste: " + pomFile.getAbsolutePath());
+        }
+        /*
+         *   Questa classe implementa un tipo di lock che distingue tra operazioni di lettura e scrittura,
+         *   consentendo a più thread di leggere simultaneamente,
+         *   ma limitando l'accesso esclusivo per le operazioni di scrittura.
+         */
+        final ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+        final ReentrantReadWriteLock.ReadLock readLock = readWriteLock.readLock();
+        /*
+         *    Col filechannel rende l'operazione atomica
+         */
+        FileChannel sourceChannel = FileChannel.open(pomFile.toPath(), StandardOpenOption.READ);
+        FileChannel destChannel   = FileChannel.open(destPomFile.toPath(), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+        readLock.lock();
+        try {
+            long size = sourceChannel.size();
+            long position = 0;
+            while (position < size) {
+                position += sourceChannel.transferTo(position, size - position, destChannel);
+            }
+        } catch (OverlappingFileLockException e) {
+            throw new FileConcurrencyException("[copyPomFile] FileLock concorrente sul file sorgente: " + e.getMessage(), e);
+        } catch (FileLockInterruptionException e) {
+            throw new FileConcurrencyException("[copyPomFile] L'acquisizione del lock è stata interrotta: " + e.getMessage(), e);
+        } catch (NonWritableChannelException e) {
+            throw new FileConcurrencyException("[copyPomFile] Canale di scrittura non valido per acquisire il lock: " + e.getMessage(), e);
+        } catch (ClosedChannelException e) {
+            throw new FileConcurrencyException("[copyPomFile] Il canale è stato chiuso prima di acquisire il lock: " + e.getMessage(), e);
+        }finally {
+            readLock.unlock();
+        }
+    }
+
     private void saveCodeToFile(String nameclass, String code, String path) throws IOException {
         // Controlla che il nome della classe e il percorso siano validi
         if (nameclass == null || nameclass.isEmpty()) {
@@ -215,9 +305,16 @@ public class CompilationService {
         }
     }
 
-    private boolean compileExecuteCoverageWithMaven() throws RuntimeException{
+    private boolean compileExecuteCoverageWithMaven(String ...arguments) throws RuntimeException{
         logger.error(mvn_path);
-        ProcessBuilder processBuilder = new ProcessBuilder(mvn_path, "clean", "compile", "test");
+
+        String[] command = new String[arguments.length + 1];
+        command[0] = mvn_path;
+        System.arraycopy(arguments, 0, command, 1, arguments.length);
+
+        // Configurazione del processo
+
+        ProcessBuilder processBuilder = new ProcessBuilder(command);
         processBuilder.directory(new File(config.getPathCompiler()));
         StringBuilder output = new StringBuilder();
         StringBuilder errorOutput = new StringBuilder();
@@ -299,6 +396,37 @@ public class CompilationService {
     private String readFileToString(String path) throws IOException {
         byte[] bytes = Files.readAllBytes(Paths.get(path));
         return new String(bytes);
+    }
+
+    private void unzip(String fileZip, File destDir) throws IOException {
+        byte[] buffer = new byte[1024];
+        ZipInputStream zis = new ZipInputStream(new FileInputStream(fileZip));
+        ZipEntry zipEntry = zis.getNextEntry();
+        while (zipEntry != null) {
+            File newFile = new File(destDir, zipEntry.getName());
+            if (zipEntry.isDirectory()) {
+                if (!newFile.isDirectory() && !newFile.mkdirs()) {
+                    throw new IOException("Failed to create directory " + newFile);
+                }
+            } else {
+                // Aggiustamento per archivi creati con Windows
+                File parent = newFile.getParentFile();
+                if (!parent.isDirectory() && !parent.mkdirs()) {
+                    throw new IOException("Failed to create directory " + parent);
+                }
+
+                // Scrittura del contenuto del file
+                FileOutputStream fos = new FileOutputStream(newFile);
+                int len;
+                while ((len = zis.read(buffer)) > 0) {
+                    fos.write(buffer, 0, len);
+                }
+                fos.close();
+            }
+            zipEntry = zis.getNextEntry();
+        }
+        zis.closeEntry();
+        zis.close();
     }
 
     //mi serve per distingure le eccezioni sulla concorrenza 

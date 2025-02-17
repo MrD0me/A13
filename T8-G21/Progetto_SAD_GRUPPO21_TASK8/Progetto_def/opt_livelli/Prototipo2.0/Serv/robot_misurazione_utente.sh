@@ -91,4 +91,4 @@ echo "Saving staistics to $PERCORSO_TEST/GameData.csv\n\n"
 cp -f evosuite-report/statistics.csv $PERCORSO_TEST/GameData.csv
 
 cd $PERCORSO_TEST
-#rm -r evosuite-working-dir
+rm -r evosuite-working-dir

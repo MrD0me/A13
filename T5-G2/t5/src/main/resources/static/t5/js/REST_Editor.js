@@ -114,7 +114,11 @@ async function handleGameAction(isGameEnd) {
 function handleResponse(response, formData, isGameEnd, loadingKey, buttonKey) {
     const { robotScore, userScore, outCompile, 
             coverage, gameId, roundId,
-            coverageDetails} = response;
+            userJacocoCoverage, robotJacocoCoverage } = response;
+
+    console.log(response);
+    console.log(robotJacocoCoverage);
+
     // Aggiorna i dati del modulo con gameId e roundId
     formData.append("gameId", gameId);
     formData.append("roundId", roundId);
@@ -126,20 +130,25 @@ function handleResponse(response, formData, isGameEnd, loadingKey, buttonKey) {
         return;
     }
     // Se la copertura è disponibile, la processa
-    processCoverage(coverage, formData, robotScore, userScore, isGameEnd, loadingKey, buttonKey, coverageDetails);
+    processCoverage(coverage, formData, robotScore, userScore, isGameEnd, loadingKey, buttonKey, userJacocoCoverage, robotJacocoCoverage);
 }
 
 // Processa la copertura del codice e aggiorna i dati di gioco
-async function processCoverage(coverage, formData, robotScore, userScore, isGameEnd, loadingKey, buttonKey, coverageDetails) {
+async function processCoverage(coverage, formData, robotScore, userScore, isGameEnd, loadingKey, buttonKey, userJacocoCoverage, robotJacocoCoverage) {
     highlightCodeCoverage($.parseXML(coverage), editor_robot); // Evidenzia la copertura del codice nell'editor
     orderTurno++; // Incrementa l'ordine del turno
-    const csvContent = await fetchCoverageReport(formData); // Recupera il report di coverage
+
+    const userEvoSuiteCoverageCsv = await fetchCoverageReport(formData); // Recupera il report di coverage
+    const robotEvoSuiteCoverageCsv = await fetchRobotEvoSuiteCoverageReport(formData); // Recupera il report di coverage
+
     setStatus("loading"); // Aggiorna lo stato a "loading"
-    const valori_csv = extractThirdColumn(csvContent); // Estrae i valori dalla terza colonna del CSV
-    updateStorico(orderTurno, userScore, valori_csv[0]); // Aggiorna lo storico del gioco
+    const robotEvoSuiteCoverage = extractThirdColumn(robotEvoSuiteCoverageCsv); // Estrae i valori dalla terza colonna del CSV
+    const userEvoSuiteCoverage = extractThirdColumn(userEvoSuiteCoverageCsv); // Estrae i valori dalla terza colonna del CSV
+
+    updateStorico(orderTurno, userScore, userEvoSuiteCoverage[0]); // Aggiorna lo storico del gioco
     setStatus(isGameEnd ? "game_end" : "turn_end"); // Imposta lo stato di fine gioco o fine turno
     toggleLoading(false, loadingKey, buttonKey); // Nasconde l'indicatore di caricamento
-    displayUserPoints(isGameEnd, valori_csv, robotScore, userScore, coverageDetails); // Mostra i punti dell'utente
+    displayUserPoints(isGameEnd, userEvoSuiteCoverage, robotEvoSuiteCoverage, userJacocoCoverage, robotJacocoCoverage, userScore, robotScore); // Mostra i punti dell'utente
     if (isGameEnd) { // Se il gioco è finito
         handleEndGame(userScore); // Gestisce la fine del gioco
     } else {
@@ -148,9 +157,9 @@ async function processCoverage(coverage, formData, robotScore, userScore, isGame
 }
 
 // Mostra i punti dell'utente nella console
-function displayUserPoints(isGameEnd, valori_csv, robotScore, userScore, coverageDetails) {
+function displayUserPoints(isGameEnd, valori_csv, robotEvoSuiteCoverage, coverageDetails, robotJacocoCoverage, userScore, robotScore) {
     const displayUserPoints = isGameEnd 
-        ? getConsoleTextRun(valori_csv, coverageDetails, robotScore, userScore) // Testo per la fine del gioco
+        ? getConsoleTextRun(valori_csv, robotEvoSuiteCoverage, coverageDetails, robotJacocoCoverage, userScore, robotScore) // Testo per la fine del gioco
         : getConsoleTextCoverage(valori_csv, userScore, coverageDetails); // Testo per la copertura
 
     console_robot.setValue(displayUserPoints); // Aggiorna la console del robot con i punti
@@ -166,7 +175,15 @@ function handleCompileError(loadingKey, buttonKey) {
 // Recupera il report di coverage da T8
 async function fetchCoverageReport(formData) {
     const url = createApiUrl(formData, orderTurno); // Crea l'URL dell'API
+    console.log("url T8 fetch: ", url);
     return await ajaxRequest(url, "POST", formData.get("testingClassCode"), false, "text"); // Esegue la richiesta AJAX
+}
+
+// Recupera il report di coverage per il robot da T8
+async function fetchRobotEvoSuiteCoverageReport(formData) {
+    const url = `/api/coverage/robot/${formData.get("className")}/${formData.get("difficulty")}`
+    console.log("url T8 fetch: ", url);
+    return await ajaxRequest(url, "GET", null, false, "text"); // Esegue la richiesta AJAX
 }
 
 // Gestisce la fine del gioco, mostra un messaggio e pulisce i dati

@@ -26,7 +26,7 @@ function createApiUrl(formData, orderTurno) {
 	const underTestClassName = formData.get("underTestClassName");
 	const playerId = formData.get("playerId");
 	// Costruisce il percorso per la classe
-	const classePath = `VolumeT8/FolderTreeEvo/${className}/${className}SourceCode/${underTestClassName}`;
+	const classePath = `VolumeT8/FolderTree/ClassUT/${className}/src/main/java/${underTestClassName}`;
 	// Ottiene il percorso del test generato
 	const testPath = generaPercorsoTest(orderTurno, formData);
 	// Costruisce l'URL dell'API
@@ -53,7 +53,7 @@ function generaPercorsoTest(orderTurno, formData) {
 				  )}`
 				: "";
 
-		return `/VolumeT8/FolderTreeEvo/StudentLogin/Player${playerId}/${modalita}${scalataPart}/${classeLocal}/Game${gameId}/Round${roundId}/Turn${orderTurno}/TestReport`;
+		return `/VolumeT8/FolderTree/StudentLogin/Player${playerId}/${modalita}${scalataPart}/${classeLocal}/Game${gameId}/Round${roundId}/Turn${orderTurno}/TestReport`;
 	} else {
 		console.error("Errore: modalità non trovata");
 		window.location.href = "/main";
@@ -147,11 +147,11 @@ Il tuo punteggio EvoSuite: ${valori_csv[7]*100}% CBranch
 	return consoleText;
 }
 
-function getConsoleTextRun(valori_csv, coverageDetails, punteggioRobot, gameScore) {
+function getConsoleTextRun(valori_csv, robotEvoSuiteCoverage, coverageDetails, robotJacocoCoverage, gameScore, robotScore) {
 	let lineCoveragePercentage = (coverageDetails.line.covered / (coverageDetails.line.covered + coverageDetails.line.missed)) * 100;
 	let BranchCoveragePercentage = (coverageDetails.branch.covered / (coverageDetails.branch.covered + coverageDetails.branch.missed)) * 100;
 	let instructionCoveragePercentage = (coverageDetails.instruction.covered / (coverageDetails.instruction.covered + coverageDetails.instruction.missed)) * 100;
-	var consoleText2 = (valori_csv[0]*100) >= punteggioRobot ? you_win : you_lose;
+	var consoleText2 = (valori_csv[0]*100) >= robotScore ? you_win : you_lose;
 	consoleText =
 `===================================================================== \n` +
 		consoleText2 +
@@ -159,35 +159,52 @@ function getConsoleTextRun(valori_csv, coverageDetails, punteggioRobot, gameScor
 `============================== Results ===============================
 Il tuo punteggio:${gameScore}pt
 ----------------------------------------------------------------------
-La coverage del robot:${punteggioRobot}% LOC
+Il punteggio del robot:${robotScore}pt
 ============================== JaCoCo ===============================
 Line Coverage COV%:  ${lineCoveragePercentage}% LOC
 covered: ${coverageDetails.line.covered}  
 missed: ${coverageDetails.line.missed}
+
+robot covered: ${robotJacocoCoverage.line.covered}
+robot missed: ${robotJacocoCoverage.line.missed}
 ----------------------------------------------------------------------
 Branch Coverage COV%:  ${BranchCoveragePercentage}% LOC
 covered: ${coverageDetails.branch.covered} 
 missed: ${coverageDetails.branch.missed}
+
+robot covered: ${robotJacocoCoverage.branch.covered}
+robot missed: ${robotJacocoCoverage.branch.missed}
 ----------------------------------------------------------------------
 Instruction Coverage COV%:  ${instructionCoveragePercentage}% LOC
 covered: ${coverageDetails.instruction.covered} 
 missed: ${coverageDetails.instruction.missed}
+
+robot covered: ${robotJacocoCoverage.instruction.covered}
+robot missed: ${robotJacocoCoverage.instruction.missed}
 ============================== EvoSuite ===============================
 la tua Coverage:  ${valori_csv[0]*100}% LOC
+la Coverage del robot:  ${robotEvoSuiteCoverage[0]*100}% LOC
 ----------------------------------------------------------------------
 Il tuo punteggio EvoSuite: ${valori_csv[1]*100}% Branch
+Il punteggio EvoSuite del robot: ${robotEvoSuiteCoverage[1]*100}% Branch
 ----------------------------------------------------------------------
 Il tuo punteggio EvoSuite: ${valori_csv[2]*100}% Exception
+Il punteggio EvoSuite del robot: ${robotEvoSuiteCoverage[2]*100}% Exception
 ----------------------------------------------------------------------
 Il tuo punteggio EvoSuite: ${valori_csv[3]*100}% WeakMutation
+Il punteggio EvoSuite del robot: ${robotEvoSuiteCoverage[3]*100}% WeakMutation
 ----------------------------------------------------------------------
 Il tuo punteggio EvoSuite: ${valori_csv[4]*100}% Output
+Il punteggio EvoSuite del robot: ${robotEvoSuiteCoverage[4]*100}% Output
 ----------------------------------------------------------------------
 Il tuo punteggio EvoSuite: ${valori_csv[5]*100}% Method
+Il punteggio EvoSuite del robot: ${robotEvoSuiteCoverage[5]*100}% Method
 ----------------------------------------------------------------------
 Il tuo punteggio EvoSuite: ${valori_csv[6]*100}% MethodNoException
+Il punteggio EvoSuite del robot: ${robotEvoSuiteCoverage[6]*100}% MethodNoException
 ----------------------------------------------------------------------
 Il tuo punteggio EvoSuite: ${valori_csv[7]*100}% CBranch
+Il punteggio EvoSuite del robot: ${robotEvoSuiteCoverage[7]*100}% CBranch
 ======================================================================`;
 
 	// Restituisce il testo generato

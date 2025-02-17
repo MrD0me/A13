@@ -2,19 +2,17 @@ package model
 
 import (
 	"database/sql"
-
 	"time"
 )
 
-
 type PlayerHasCategoryAchievement struct {
-    PlayerID            int64      `gorm:"primaryKey;autoIncrement:false"`
-    Category            string     `gorm:"primaryKey;autoIncrement:false"`
-    Progress            float64    `gorm:"default:0"`                      // Current progress
+	PlayerID int64   `gorm:"primaryKey;autoIncrement:false"`
+	Category string  `gorm:"primaryKey;autoIncrement:false"`
+	Progress float64 `gorm:"default:0"` // Current progress
 }
 
 func (PlayerHasCategoryAchievement) TableName() string {
-    return "player_has_category_achievement"
+	return "player_has_category_achievement"
 }
 
 type ScalataGame struct {
@@ -36,21 +34,21 @@ func (ScalataGame) TableName() string {
 }
 
 type Game struct {
-	ID            int64          `gorm:"primaryKey;autoIncrement"`
-	Name          string         `gorm:"default:null"`
-	Username      string         `gorm:"default:null"`
-	CurrentRound  int            `gorm:"default:1"`
-	Description   string         `gorm:"default:null"`
-	Difficulty    string         `gorm:"default:null"`
-	Score         float64        `gorm:"default:0"`
-	IsWinner      bool           `gorm:"default:false"`
-	CreatedAt     time.Time      `gorm:"autoCreateTime"`
-	UpdatedAt     time.Time      `gorm:"autoUpdateTime"`
-	StartedAt     *time.Time     `gorm:"default:null"`
-	ClosedAt      *time.Time     `gorm:"default:null"`
-	Rounds        []Round        `gorm:"foreignKey:GameID;constraint:OnDelete:CASCADE;"`
-	Players       []Player       `gorm:"many2many:player_games;foreignKey:ID;joinForeignKey:GameID;References:AccountID;joinReferences:PlayerID"`
-	ScalataGameID int64          `gorm:"default:null"`
+	ID            int64      `gorm:"primaryKey;autoIncrement"`
+	Name          string     `gorm:"default:null"`
+	Username      string     `gorm:"default:null"`
+	CurrentRound  int        `gorm:"default:1"`
+	Description   string     `gorm:"default:null"`
+	Difficulty    string     `gorm:"default:null"`
+	Score         float64    `gorm:"default:0"`
+	IsWinner      bool       `gorm:"default:false"`
+	CreatedAt     time.Time  `gorm:"autoCreateTime"`
+	UpdatedAt     time.Time  `gorm:"autoUpdateTime"`
+	StartedAt     *time.Time `gorm:"default:null"`
+	ClosedAt      *time.Time `gorm:"default:null"`
+	Rounds        []Round    `gorm:"foreignKey:GameID;constraint:OnDelete:CASCADE;"`
+	Players       []Player   `gorm:"many2many:player_games;foreignKey:ID;joinForeignKey:GameID;References:AccountID;joinReferences:PlayerID"`
+	ScalataGameID int64      `gorm:"default:null"`
 }
 
 func (Game) TableName() string {
@@ -129,13 +127,25 @@ func (Metadata) TableName() string {
 }
 
 type Robot struct {
-	ID          int64     `gorm:"primaryKey;autoIncrement"`
-	CreatedAt   time.Time `gorm:"autoCreateTime"`
-	UpdatedAt   time.Time `gorm:"autoUpdateTime"`
-	TestClassId string    `gorm:"not null;index:idx_robotquery"`
-	Scores      string    `gorm:"default:null"`
-	Difficulty  string    `gorm:"not null;index:idx_robotquery"`
-	Type        int8      `gorm:"not null;index:idx_robotquery"`
+	ID                        int64     `gorm:"primaryKey;autoIncrement"`
+	CreatedAt                 time.Time `gorm:"autoCreateTime"`
+	UpdatedAt                 time.Time `gorm:"autoUpdateTime"`
+	TestClassId               string    `gorm:"not null;index:idx_robotquery"`
+	Difficulty                string    `gorm:"not null;index:idx_robotquery"`
+	Type                      int8      `gorm:"not null;index:idx_robotquery"`
+	JacocoLineCovered         int       `gorm:"default:0"`
+	JacocoBranchCovered       int       `gorm:"default:0"`
+	JacocoInstructionCovered  int       `gorm:"default:0"`
+	JacocoLineMissed          int       `gorm:"default:0"`
+	JacocoBranchMissed        int       `gorm:"default:0"`
+	JacocoInstructionMissed   int       `gorm:"default:0"`
+	EvoSuiteBranch            int       `gorm:"default:0"`
+	EvoSuiteException         int       `gorm:"default:0"`
+	EvoSuiteWeakMutation      int       `gorm:"default:0"`
+	EvoSuiteOutput            int       `gorm:"default:0"`
+	EvoSuiteMethod            int       `gorm:"default:0"`
+	EvoSuiteMethodNoException int       `gorm:"default:0"`
+	EvoSuiteCBranch           int       `gorm:"default:0"`
 }
 
 func (Robot) TableName() string {

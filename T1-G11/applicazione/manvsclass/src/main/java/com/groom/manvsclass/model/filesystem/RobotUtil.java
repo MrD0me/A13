@@ -1,22 +1,18 @@
 package com.groom.manvsclass.model.filesystem;
 
-import java.io.FileReader;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.FileOutputStream;
-import java.io.FileInputStream;
-import java.util.Objects;
+import java.io.*;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 
 import com.groom.manvsclass.model.ServiceURL;
+import org.apache.http.entity.mime.HttpMultipartMode;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -25,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
+
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -36,7 +33,11 @@ import org.jsoup.nodes.Element;
 import org.jsoup.parser.Parser;
 
 public class RobotUtil {
-
+	public static final String VOLUME_T8_BASE_PATH = "/VolumeT8/FolderTree/ClassUT/";
+	public static final String VOLUME_T9_BASE_PATH = "/VolumeT9/FolderTree/ClassUT/";
+	public static final String BASE_SRC_PATH = "src/main/java";
+	public static final String BASE_TEST_PATH = "src/test/java";
+	public static final String BASE_COVERAGE_PATH = "coverage";
 
 	//---------------------------------FUNZIONE UNZIP
 	public static File newFile(File destinationDir, ZipEntry zipEntry) throws IOException {
@@ -51,6 +52,7 @@ public class RobotUtil {
 	
 		return destFile;
 	}
+
 	public static void unzip(String fileZip, File destDir) throws IOException {
 
 		byte[] buffer = new byte[1024];
@@ -83,62 +85,98 @@ public class RobotUtil {
 		zis.close();
 	}
 	//--------------------------------------------------
+
+	public static int[] getJacocoCoverageByCoverageType(String filePath, String coverageType) {
+		try {
+			Document doc = Jsoup.parse(new File(filePath), "UTF-8", "", Parser.xmlParser());
+			// Selezione dell'elemento counter in base al tipo di copertura
+			Element counter = doc.selectFirst("report > counter[type=" + coverageType + "]");
+
+			if (counter == null) {
+				throw new IllegalArgumentException("Elemento 'counter' di tipo '" + coverageType + "' non trovato nel documento XML.");
+			}
+
+			int covered = Integer.parseInt(counter.attr("covered"));
+			int missed = Integer.parseInt(counter.attr("missed"));
+
+			// Restituisce i due valori come array: [covered, missed]
+			return new int[]{covered, missed};
+		} catch (NumberFormatException e) {
+			throw new IllegalArgumentException("Gli attributi 'covered' e 'missed' devono essere numeri interi validi.", e);
+		} catch (Exception e) {
+			throw new RuntimeException("Errore durante l'elaborazione del documento XML.", e);
+		}
+	}
+
 	/**
 	 * @param path Il percorso del file XML contenente le informazioni di copertura.
 	 * @return La percentuale di copertura delle linee.
 	 */
-	public static int LineCoverage(String path) {
-		Element line = null;
-		String linecoverage = null;
+	public static int[] getEmmaCoverageByCoverageType(String path, String coverageType) {
 		try {
-			// creo un nuovo file che conterrà i valori della coverage
-
 			File cov = new File(path);
-
 			Document doc = Jsoup.parse(cov, null, "", Parser.xmlParser());
-			// Assume che l'elemento "coverage" sia il quarto elemento "coverage" nel
-			// documento XML
-			line = doc.getElementsByTag("coverage").get(3);
-			linecoverage = String.valueOf(line).substring(32, 35);
-			// Estrai la percentuale di copertura dalle stringhe ottenute
-			linecoverage = linecoverage.split("%", 0)[0];
 
+			// Seleziona solo il primo elemento che corrisponde al tipo di coverage richiesto
+			Element stat = doc.selectFirst("coverage[type=\"" + coverageType + "\"]");
+
+			if (stat == null) {
+				throw new IllegalArgumentException("Nessuna riga trovata per il tipo di coverage: " + coverageType);
+			}
+
+			String value = stat.attr("value");
+			Pattern pattern = Pattern.compile("\\((\\d+)/(\\d+)\\)");
+			Matcher matcher = pattern.matcher(value);
+
+			if (!matcher.find()) {
+				throw new IllegalArgumentException("Formato valore non valido: " + value);
+			}
+
+			int covered = Integer.parseInt(matcher.group(1));
+			int total = Integer.parseInt(matcher.group(2)) - Integer.parseInt(matcher.group(1));
+
+			return new int[]{covered, total};
 		} catch (IOException e) {
-			e.printStackTrace();
+			throw new RuntimeException("Errore nella lettura del file XML.", e);
+		} catch (NumberFormatException e) {
+			throw new IllegalArgumentException("Gli attributi 'covered' e 'total' devono essere numeri interi validi.", e);
+		} catch (Exception e) {
+			throw new RuntimeException("Errore durante l'elaborazione del documento XML.", e);
 		}
-
-		return Integer.valueOf(linecoverage);
 	}
 
-	/**
-	 * Calcola la copertura delle linee da un file CSV generato da un tool
-	 * specifico.
-	 *
-	 * @param path Il percorso del file CSV contenente le informazioni di copertura.
-	 * @return La percentuale di copertura delle linee.
-	 */
-	public static int LineCoverageE(String path) {
-		Float elemento = 0.0f;
+	public static int[] getEvoSuiteCoverageStatistics(String filePath) {
+		List<Integer> values = new ArrayList<>();
+		String line;
+		String delimiter = ",";
 
-		try (BufferedReader br = new BufferedReader(new FileReader(path))) {
-			// Leggi la prima riga (la riga 1 è la seconda riga nel conteggio base 1)
-			String firstLine = br.readLine();
+		try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+			boolean firstLine = true; // salto la prima riga, che contiene i nomi delle colonne
 
-			// Leggi la seconda riga
-			String secondLine = br.readLine();
+			while ((line = br.readLine()) != null) {
+				if (firstLine) {
+					firstLine = false;
+					continue;
+				}
 
-			if (secondLine != null) {
-				// Dividi la seconda riga in elementi separati da virgole
-				String[] elements = secondLine.split(",");
+				String[] columns = line.split(delimiter);
 
-				// Prendo il valore di copertura per linea
-				elemento = Float.parseFloat(elements[2]);
+				// Verifico che esistano almeno 3 colonne, la percentuale di coverage si trova sulla terza
+				if (columns.length >= 3) {
+					try {
+						double value = Double.parseDouble(columns[2].trim()) * 100;
+						values.add((int) value);
+					} catch (NumberFormatException e) {
+						System.err.println("Errore nella conversione a intero: " + e);
+					}
+				}
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 
-		return Math.round(elemento * 100);
+		// Converto la lista in array di interi
+		return values.stream().mapToInt(i -> i).toArray();
 	}
 
 	public static void caricaFile(String fileName, Path directory, MultipartFile file) throws IOException{
@@ -208,55 +246,66 @@ public class RobotUtil {
 		}
 	}
 
-	public static void saveT4(int score, int livello, String className, String robotName) throws IOException{
-		// Configurazione di un client HTTP
-			HttpClient httpClient = HttpClientBuilder.create().build();
+	public static void uploadRobotCoverageInT4(int[] evoSuiteStatistics, int[][] jacocoStatistics, int livello, String className, String robotName) throws IOException{
+		HttpClient httpClient = HttpClientBuilder.create().build();
 
-			// Creazione di un oggetto HttpPost con l'URL "http://t4-g18-app-1:3000/robots"
-			// HttpPost httpPost = new HttpPost("http://t4-g18-app-1:3000/robots");
-			HttpPost httpPost = new HttpPost("http://" + ServiceURL.T4.getServiceURL() + "/robots");
+		HttpPost httpPost = new HttpPost("http://" + ServiceURL.T4.getServiceURL() + "/robots");
 
-			// Creazione di un array JSON per contenere le informazioni sui robot generati
-			JSONArray arr = new JSONArray();
-			
-			// Creazione di un oggetto JSON per rappresentare un singolo robot generato
-			JSONObject rob = new JSONObject();
+		// Creazione di un array JSON per contenere le informazioni sui robot generati
+		JSONArray arr = new JSONArray();
 
-			// l'array JSON viene utilizzato per raggruppare gli oggetti JSON che
-			// rappresentano le informazioni sui robot generati.
-			// L'array arr contiene una serie di oggetti rob, ognuno dei quali rappresenta
+		// Creazione di un oggetto JSON per rappresentare un singolo robot generato
+		JSONObject rob = new JSONObject();
+
+		// l'array JSON viene utilizzato per raggruppare gli oggetti JSON che
+		// rappresentano le informazioni sui robot generati.
+		// L'array arr contiene una serie di oggetti rob, ognuno dei quali rappresenta
 
 
-			// Aggiunge al robot l'informazione relativa al punteggio convertito in stringa
-			rob.put("scores", String.valueOf(score));
+		// Aggiunge al robot l'informazione relativa al punteggio convertito in stringa
+		rob.put("jacocoLineCovered", jacocoStatistics[0][0]);
+		rob.put("jacocoLineMissed", jacocoStatistics[0][1]);
+		rob.put("jacocoBranchCovered", jacocoStatistics[1][0]);
+		rob.put("jacocoBranchMissed", jacocoStatistics[1][1]);
+		rob.put("jacocoInstructionCovered", jacocoStatistics[2][0]);
+		rob.put("jacocoInstructionMissed", jacocoStatistics[2][1]);
 
-			// aggiunge al robot l'informazione relativa a quale robot è stato utilizzato,
-			rob.put("type", robotName);
+		rob.put("evoSuiteBranch", evoSuiteStatistics[0]);
+		rob.put("evoSuiteException", evoSuiteStatistics[1]);
+		rob.put("evoSuiteWeakMutation", evoSuiteStatistics[2]);
+		rob.put("evoSuiteOutput", evoSuiteStatistics[3]);
+		rob.put("evoSuiteMethod", evoSuiteStatistics[4]);
+		rob.put("evoSuiteMethodNoException", evoSuiteStatistics[5]);
+		rob.put("evoSuiteCBranch", evoSuiteStatistics[6]);
+		// aggiunge al robot l'informazione relativa a quale robot è stato utilizzato,
+		rob.put("type", robotName);
 
-			// aggiunge al robot l'informazione riguardante il livello di difficoltà
-			// converitto in stringa
-			rob.put("difficulty", String.valueOf(livello));
+		// aggiunge al robot l'informazione riguardante il livello di difficoltà
+		// converitto in stringa
+		rob.put("difficulty", String.valueOf(livello));
 
-			// aggiunge al roboto l'informazione relativa all'id della classe di test
-			rob.put("testClassId", className);
+		// aggiunge al roboto l'informazione relativa all'id della classe di test
+		rob.put("testClassId", className);
 
-			// Aggiunge l'oggetto robot all'array JSON
-			arr.put(rob);
+		// Aggiunge l'oggetto robot all'array JSON
+		arr.put(rob);
 
-			// Crea un oggetto JSON principale contenente l'array di robot
-			JSONObject obj = new JSONObject();
+		// Crea un oggetto JSON principale contenente l'array di robot
+		JSONObject obj = new JSONObject();
 
-			// inserimento dell'array di robot all'interno dell'oggetto
-			obj.put("robots", arr);
+		// inserimento dell'array di robot all'interno dell'oggetto
+		obj.put("robots", arr);
 
-			// Crea un'entità JSON utilizzando il contenuto dell'oggetto JSON principale.
-			StringEntity jsonEntity = new StringEntity(obj.toString(), ContentType.APPLICATION_JSON);
+		// Crea un'entità JSON utilizzando il contenuto dell'oggetto JSON principale.
+		StringEntity jsonEntity = new StringEntity(obj.toString(), ContentType.APPLICATION_JSON);
 
-			// Configura la richiesta POST con l'entità JSON creata
-			httpPost.setEntity(jsonEntity);
+		System.out.println(EntityUtils.toString(jsonEntity));
 
-			// esegue la richiesta ed ottiene la risposta
-			HttpResponse response = httpClient.execute(httpPost);
+		// Configura la richiesta POST con l'entità JSON creata
+		httpPost.setEntity(jsonEntity);
+
+		// esegue la richiesta ed ottiene la risposta
+		HttpResponse response = httpClient.execute(httpPost);
 	}
 
 	/**
@@ -270,7 +319,7 @@ public class RobotUtil {
     public static void generateAndSaveRobots(String fileName, String className, MultipartFile classFile) throws IOException {
 
         // RANDOOP - T9			    
-		Path directory = Paths.get("/VolumeT9/app/FolderTree/" + className + "/" + className + "SourceCode");
+		Path directory = Paths.get("/VolumeT9/FolderTree/ClassUT/" + className + "/src/main/java");
 		caricaFile(fileName, directory, classFile);
 		
 		//Randoop T9
@@ -284,9 +333,9 @@ public class RobotUtil {
         processBuilder.command("java", "-jar", "Task9-G19-0.0.1-SNAPSHOT.jar");
 
 		// La directory di lavoro per il processo esterno viene impostata su
-		// "/VolumeT9/app/" utilizzando
+		// "/VolumeT9/" utilizzando
 		// questo metodo garantisce che il processo lavori nella directory desiderata
-        processBuilder.directory(new File("/VolumeT9/app/"));
+        processBuilder.directory(new File("/VolumeT9/"));
 		
 		// linea di debugg--potremmo anche commentarla
 		System.out.println("Prova");
@@ -297,233 +346,473 @@ public class RobotUtil {
 		//Legge l'output del processo appena creato
 		outputProcess(process);
 
-		// Crea un oggetto File che rappresenta il percorso della directory contenente i
-		// risultati
-		// della generazione di robot da Randoop. Il percorso è costruito in base all'ID
-		// della classe di test 'className'.
-		File resultsDir = new File("/VolumeT9/app/FolderTree/" + className + "/RobotTest/RandoopTest");
+		File robotCoverageDirBasePath = new File(String.format("%s/%s/%s", VOLUME_T9_BASE_PATH, className, BASE_COVERAGE_PATH));
+		String robotName = "randoop";
+		for (File levelFolder : Objects.requireNonNull(robotCoverageDirBasePath.listFiles())) {
+			String emmaCoveragePath = String.format("%s/%s", levelFolder, "coveragetot.xml");
 
-		// Inizializza la variabile 'liv' a 0, rappresentante il massimo livello di
-		// robot prodotti da Randoop.
-		// Questo valore sarà aggiornato successivamente durante l'analisi dei
-		// risultati.
-		int liv = 0; //livelli di robot prodotti da randoop
-		String randoopName = "randoop";
-        File results [] = resultsDir.listFiles();
+			int[] evoSuiteStatistics = getEvoSuiteCoverageStatistics(String.format("%s/%s", levelFolder, "statistics.csv"));
+			int[][] emmaStatistics = {
+					getEmmaCoverageByCoverageType(emmaCoveragePath, "line, %"),
+					getEmmaCoverageByCoverageType(emmaCoveragePath, "method, %"),
+					getEmmaCoverageByCoverageType(emmaCoveragePath, "block, %")
+			};
 
-		// Itera attraverso tutti i file nella directory dei risultati della generazione
-		// di robot da Randoop.
-        for(File result : results) {
+			int level = Integer.parseInt(levelFolder.toString().substring(levelFolder.toString().length() - 7, levelFolder.toString().length() - 5));
 
-			// Calcola la copertura delle linee per ciascun file XML di copertura estraendo
-			// il valore dal file XML 'coveragetot.xml' nella directory corrispondente.
-			int score = LineCoverage(result.getAbsolutePath() + "/coveragetot.xml");
-
-			System.out.println(result.toString().substring(result.toString().length() - 7, result.toString().length() - 5));
-
-			// Estrae il livello numerico dall'ultimo tratto del nome della directory,
-			// basandosi sulla convenzione specifica naming. Nella convenzione attuale:
-			// Directory = 0xlivello -> livello = 0x
-			int livello = Integer.parseInt(result.toString().substring(result.toString().length() - 7, result.toString().length() - 5));
-
-			System.out.println("La copertura del livello " + String.valueOf(livello) + " è: " + String.valueOf(score));
-
-			saveT4(score, livello, className, randoopName);
-
-			// Se il livello del robot generato è superiore al livello massimo attuale,
-			// aggiorna il livello massimo.
-			if(livello > liv)
-				liv = livello;
+			uploadRobotCoverageInT4(evoSuiteStatistics, emmaStatistics, level, className, robotName);
 
 		}
+
 
 		// Il seguente codice è l'adattamento ad evosuite del codice appena visto, i
 		// passaggi sono gli stessi
         // EVOSUITE - T8
 		// TODO: RICHIEDE AGGIUSTAMENTI IN T8
-		Path directoryE = Paths.get("/VolumeT8/FolderTreeEvo/" + className + "/" + className + "SourceCode");
+		Path directoryE = Paths.get("/VolumeT8/FolderTree/ClassUT/" + className + "/src/main/java");
 
 		caricaFile(fileName, directoryE, classFile);
 
 		ProcessBuilder processBuilderE = new ProcessBuilder();
 
-        processBuilderE.command("bash", "robot_generazione.sh", className, "\"\"", "/VolumeT9/app/FolderTree/" + className + "/" + className + "SourceCode", String.valueOf(liv));
+        processBuilderE.command("bash", "robot_generazione.sh", className, "\"\"", "/VolumeT9/FolderTree/ClassUT/" + className + "/src/main/java", String.valueOf("1"));
         processBuilderE.directory(new File("/VolumeT8/Prototipo2.0/"));
 
 		Process processE = processBuilderE.start();
 
 		outputProcess(processE);
-		String evosuiteName = "evosuite";
-		File resultsDirE = new File("/VolumeT8/FolderTreeEvo/" + className + "/RobotTest/EvoSuiteTest");
 
-        File resultsE [] = resultsDirE.listFiles();
-        for(File result : resultsE) {
-			int score = LineCoverageE(result.getAbsolutePath() + "/TestReport/statistics.csv");
+		robotCoverageDirBasePath = new File(String.format("%s/%s/%s", VOLUME_T8_BASE_PATH, className, BASE_COVERAGE_PATH));
+		robotName = "evosuite";
+		for (File levelFolder : Objects.requireNonNull(robotCoverageDirBasePath.listFiles())) {
+			String jacocoCoveragePath = String.format("%s/%s", levelFolder, "coveragetot.xml");
 
-			System.out.println(result.toString().substring(result.toString().length() - 7, result.toString().length() - 5));
-			int livello = Integer.parseInt(result.toString().substring(result.toString().length() - 7, result.toString().length() - 5));
+			int[] evoSuiteStatistics = getEvoSuiteCoverageStatistics(String.format("%s/%s", levelFolder, "statistics.csv"));
+			int[][] jacocoStatistics = {
+					getJacocoCoverageByCoverageType(jacocoCoveragePath, "LINE"),
+					getJacocoCoverageByCoverageType(jacocoCoveragePath, "BRANCH"),
+					getJacocoCoverageByCoverageType(jacocoCoveragePath, "INSTRUCTION")
+			};
 
-			System.out.println("La copertura del livello " + String.valueOf(livello) + " è: " + String.valueOf(score));
+			int level = Integer.parseInt(levelFolder.toString().substring(levelFolder.toString().length() - 7, levelFolder.toString().length() - 5));
 
-			saveT4(score, livello, className, evosuiteName);
+			uploadRobotCoverageInT4(evoSuiteStatistics, jacocoStatistics, level, className, robotName);
 
 		}
 
     }
 
-	public static void saveRobots(String fileNameClass, String fileNameTestRandoop, String fileNameTestEvoSuit , String className, MultipartFile classFile, MultipartFile testFileRandoop, MultipartFile testFileEvoSuit)
-			throws IOException {
+	private static void writeStringToFile(String content, File file) throws IOException {
+		try (FileWriter writer = new FileWriter(file)) {
+			writer.write(content);
+		}
+	}
 
-		/*CARICAMENTO CLASSE NEI VOLUMI T8 E T9*/
-		/*
-		Path directory = Paths.get("/VolumeT9/app/FolderTree/" + className + "/" + className + "SourceCode");
-		Path directoryEvo = Paths.get("/VolumeT8/FolderTreeEvo/" + className + "/" + className + "SourceCode");
-		 */
+	public static void deleteDirectoryRecursively(Path dirPath) throws IOException {
+		if (Files.isDirectory(dirPath)) {
+			Files.walkFileTree(dirPath, new SimpleFileVisitor<Path>() {
+				@Override
+				public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+					Files.delete(file);
+					return FileVisitResult.CONTINUE;
+				}
 
-		// Carico i sorgenti della classe UT (under test) in T8 e T9
-		Path directoryT9 = Paths.get("/VolumeT9/FolderTree/ClassUT/" + className + "/" + className + "SourceCode");
-		Path directoryT8 = Paths.get("/VolumeT8/FolderTree/ClassUT/" + className + "/" + className + "SourceCode");
-		caricaFile(fileNameClass, directoryT9, classFile);
-		caricaFile(fileNameClass, directoryT8, classFile);
+				@Override
+				public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+					if (exc != null) {
+						throw exc; // Solleva l'eccezione se la directory non può essere cancellata
+					}
+					Files.delete(dir);
+					return FileVisitResult.CONTINUE;
+				}
+			});
+		}
+	}
 
-		// Carico le classi di test generate dai Robot
-		String robotPathRandoop = "/VolumeT9/FolderTree/ClassUT/" + className + "/RobotTest/RandoopTest";
-		String robotPathEvoSuit = "/VolumeT8/FolderTree/ClassUT/" + className + "/RobotTest/EvoSuiteTest";
+	public static void copyDirectoryRecursively(Path sourcePath, Path destinationPath) throws IOException {
+		if (!Files.exists(sourcePath) || !Files.isDirectory(sourcePath)) {
+			throw new IllegalArgumentException("Il percorso sorgente non esiste o non è una directory.");
+		}
 
-		Path directoryTestT9 = Paths.get(robotPathRandoop);
-		Path directoryTestT8 = Paths.get(robotPathEvoSuit);
-		caricaFile(fileNameTestRandoop, directoryTestT9, testFileRandoop);
-		caricaFile(fileNameTestEvoSuit, directoryTestT8, testFileEvoSuit);
+		Files.walkFileTree(sourcePath, new SimpleFileVisitor<Path>() {
+			@Override
+			public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+				Path targetDir = destinationPath.resolve(sourcePath.relativize(dir));
+				Files.createDirectories(targetDir);
+				return FileVisitResult.CONTINUE;
+			}
 
-		// Estraggo gli zip
-		Path zipRandoop, zipEvosuit;
+			@Override
+			public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+				Path targetFile = destinationPath.resolve(sourcePath.relativize(file));
+				Files.copy(file, targetFile, StandardCopyOption.REPLACE_EXISTING);
+				return FileVisitResult.CONTINUE;
+			}
+		});
+	}
+
+	private static void uploadEvoSuiteInVolume(Path tmpPath, Path testPath, Path coveragePath) throws IOException {
+		Path zipFile;
 		try {
-			zipRandoop = Objects.requireNonNull((new File(robotPathRandoop)).listFiles())[0].toPath();
-			zipEvosuit = Objects.requireNonNull((new File(robotPathEvoSuit)).listFiles())[0].toPath();
+			zipFile = Objects.requireNonNull((new File(String.valueOf(tmpPath))).listFiles())[0].toPath();
 		} catch (NullPointerException e) {
 			return;
 		}
 
-		File destRandoop = new File(robotPathRandoop);
-		RobotUtil.unzip(String.valueOf(zipRandoop), destRandoop);
+		RobotUtil.unzip(String.valueOf(zipFile), tmpPath.toFile());
+		Files.delete(zipFile);
 
-		File destEvoSuit = new File(robotPathEvoSuit);
-		RobotUtil.unzip(String.valueOf(zipEvosuit), destEvoSuit);
+		for (File levelFolder : Objects.requireNonNull(tmpPath.toFile().listFiles())) {
+			String level = levelFolder.getName();
+			for (File src : Objects.requireNonNull(new File(String.format("%s/%s", levelFolder.getPath(), "TestSourceCode/evosuite-tests")).listFiles())) {
+				Files.createDirectories(Paths.get(String.format("%s/%s", testPath, level)));
+				Files.copy(src.toPath(), Paths.get(String.format("%s/%s/%s", testPath, level, src.getName())));
+			}
 
-		// Elimino gli zip dei test
-		Files.delete(zipRandoop);
-		Files.delete(zipEvosuit);
+			for (File src : Objects.requireNonNull(new File(String.format("%s/%s", levelFolder.getPath(), "TestReport")).listFiles())) {
+				Files.createDirectories(Paths.get(String.format("%s/%s", coveragePath, level)));
+				Files.copy(src.toPath(), Paths.get(String.format("%s/%s/%s", coveragePath, level, src.getName())));
+			}
+		}
+	}
 
-
-		// Carico in EvoSuit gli zip dei test generati da Randoop e viceversa
-		String robotPathRandoop_InEvosuit = "/VolumeT8/FolderTree/ClassUT/" + className + "/RobotTest/RandoopTest";
-		String robotPathEvoSuit_InRandoop = "/VolumeT9/FolderTree/ClassUT/" + className + "/RobotTest/EvoSuiteTest";
-		caricaFile(fileNameTestRandoop, Paths.get(robotPathRandoop_InEvosuit), testFileRandoop);
-		caricaFile(fileNameTestEvoSuit, Paths.get(robotPathEvoSuit_InRandoop), testFileEvoSuit);
-
-		Path zipRandoop_InEvoSuit, zipEvoSuit_InRandoop;
+	private static void uploadRandoopInVolume(Path tmpPath, Path testPath, Path coveragePath, boolean ignoreCoverageFile) throws IOException {
+		Path zipFile;
 		try {
-			zipRandoop_InEvoSuit = Objects.requireNonNull((new File(robotPathRandoop_InEvosuit)).listFiles())[0].toPath();
-			zipEvoSuit_InRandoop = Objects.requireNonNull((new File(robotPathEvoSuit_InRandoop)).listFiles())[0].toPath();
+			zipFile = Objects.requireNonNull((new File(String.valueOf(tmpPath))).listFiles())[0].toPath();
 		} catch (NullPointerException e) {
 			return;
 		}
 
-		RobotUtil.unzip(String.valueOf(zipRandoop_InEvoSuit), new File(robotPathRandoop_InEvosuit));
-		RobotUtil.unzip(String.valueOf(zipEvoSuit_InRandoop), new File(robotPathEvoSuit_InRandoop));
-		Files.delete(zipRandoop_InEvoSuit);
-		Files.delete(zipEvoSuit_InRandoop);
+		RobotUtil.unzip(String.valueOf(zipFile), tmpPath.toFile());
+		Files.delete(zipFile);
 
+		for (File levelFolder : Objects.requireNonNull(tmpPath.toFile().listFiles())) {
+			String level = levelFolder.getName();
+			for (File src : Objects.requireNonNull(new File(levelFolder.getPath()).listFiles())) {
+				if (src.getName().endsWith(".java")) {
+					Files.createDirectories(Paths.get(String.format("%s/%s", testPath, level)));
+					Files.copy(src.toPath(), Paths.get(String.format("%s/%s/%s", testPath, level, src.getName())));
+				} else if (!ignoreCoverageFile && src.getName().endsWith(".xml")) {
+					Files.createDirectories(Paths.get(String.format("%s/%s", coveragePath, level)));
+					Files.copy(src.toPath(), Paths.get(String.format("%s/%s/%s", coveragePath, level, src.getName())));
+				}
+			}
+		}
+	}
 
+	public static void generateMissingEvoSuiteCoverage(String className, Path tmpSrcPath, Path tmpTestPath, Path tmpCoveragePath, Path tmpPath, Path coveragePath) {
 		try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
-			HttpPost httpPostT8 = new HttpPost("http://" + ServiceURL.T8.getServiceURL() + "/coverage/randoop/");
+			HttpPost httpPostT8 = new HttpPost("http://" + ServiceURL.T8.getServiceURL() + "/coverage/randoop");
 
 			// Creazione del body JSON
 			JSONObject reqBody = new JSONObject();
-			reqBody.put("evosuit_working_dir", "/VolumeT8/FolderTree/ClassUT/" + className);
-			reqBody.put("sourceClassPath", directoryT9.toString());
-			reqBody.put("sourcePackageName", className + "SourceCode");
+			reqBody.put("evoSuitWorkingDir", "/VolumeT8/FolderTree/ClassUT/" + className);
+			reqBody.put("sourceClassPath", tmpSrcPath);
 			reqBody.put("sourceClassName", className);
-			reqBody.put("testFilesFolder", robotPathRandoop_InEvosuit + "/01Level");
-			reqBody.put("saveDirPath", "/VolumeT8/FolderTree/ClassUT/" + className + "/RobotTest/RandoopTest");
+			reqBody.put("testClassPath", tmpTestPath);
+			reqBody.put("saveDirPath", tmpCoveragePath);
 
 			// Imposta il body della richiesta
 			StringEntity entity = new StringEntity(reqBody.toString(), ContentType.APPLICATION_JSON);
-			System.out.println(reqBody.toString());
+			System.out.println(reqBody);
 			httpPostT8.setEntity(entity);
 
 			// Esegue la richiesta HTTP
 			try (CloseableHttpResponse response = httpClient.execute(httpPostT8)) {
-				String responseBody = EntityUtils.toString(response.getEntity());
-				System.out.println("Response Code: " + response.getStatusLine().getStatusCode());
+				JSONObject responseBody = new JSONObject(EntityUtils.toString(response.getEntity()));
 				System.out.println("Response Body: " + responseBody);
+
+				for (File levelFolder : Objects.requireNonNull(tmpPath.toFile().listFiles())) {
+					String level = levelFolder.getName();
+					writeStringToFile(responseBody.get(level).toString(), new File(String.format("%s/%s/%s", coveragePath, level, "statistics.csv")));
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static void generateMissingJacocoCoverage(Path tmpPath, Path srcPath, Path testPath, Path coveragePath) throws IOException {
+		for (File levelFolder : Objects.requireNonNull(testPath.toFile().listFiles())) {
+			Files.createDirectories(Paths.get(String.format("%s/%s", tmpPath, Paths.get(BASE_SRC_PATH))));
+			copyDirectoryRecursively(srcPath, Paths.get(String.format("%s/%s", tmpPath, Paths.get(BASE_SRC_PATH))));
+
+			Files.createDirectories(Paths.get(String.format("%s/%s", tmpPath, Paths.get(BASE_TEST_PATH))));
+			copyDirectoryRecursively(levelFolder.toPath(), Paths.get(String.format("%s/%s", tmpPath, Paths.get(BASE_TEST_PATH))));
+
+			File zip = null;
+			String level = levelFolder.getName();
+			try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+				ZipUtils.zipDirectory(String.format("%s/src", tmpPath), "/VolumeT8/FolderTree/ClassUT/src.zip");
+				zip = new File("/VolumeT8/FolderTree/ClassUT/src.zip");
+
+				if (!zip.exists()) {
+					System.err.println("Errore: Il file ZIP non è stato creato correttamente.");
+					return;
+				}
+
+				HttpPost httpPost = new HttpPost("http://" + ServiceURL.T7.getServiceURL() + "/coverage/evosuite");
+
+				MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+				builder.setMode(HttpMultipartMode.STRICT); // Assicura compatibilità
+				builder.addBinaryBody("evoSuiteCode", zip);
+
+				HttpEntity multipart = builder.build();
+				httpPost.setEntity(multipart);
+				httpPost.setHeader("Accept", "application/json");
+
+				try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
+					JSONObject responseBody = new JSONObject(EntityUtils.toString(response.getEntity()));
+					System.out.println("Response Body: " + responseBody);
+
+					writeStringToFile(responseBody.getString("coverage"), new File(String.format("%s/%s/%s", coveragePath, level, "coveragetot.xml")));
+				}
+
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+			Files.delete(zip.toPath());
+		}
+	}
+
+	public static void saveRobots(String fileNameClass, String fileNameTestRandoop, String fileNameTestEvoSuit , String className, MultipartFile classFile, MultipartFile testFileRandoop, MultipartFile testFileEvoSuit)
+			throws IOException {
+
+		/*CARICAMENTO CLASSE NEI VOLUMI T8 E T9*/
+		Path srcCodeT8 = Paths.get(String.format("%s/%s/%s", VOLUME_T8_BASE_PATH, className, BASE_SRC_PATH));
+		Path testCodeT8 = Paths.get(String.format("%s/%s/%s", VOLUME_T8_BASE_PATH, className, BASE_TEST_PATH));
+		Path coverageT8 = Paths.get(String.format("%s/%s/%s", VOLUME_T8_BASE_PATH, className, BASE_COVERAGE_PATH));
+
+		Path srcCodeT9 = Paths.get(String.format("%s/%s/%s", VOLUME_T9_BASE_PATH, className, BASE_SRC_PATH));
+		Path testCodeT9 = Paths.get(String.format("%s/%s/%s", VOLUME_T9_BASE_PATH, className, BASE_TEST_PATH));
+		Path coverageT9 = Paths.get(String.format("%s/%s/%s", VOLUME_T9_BASE_PATH, className, BASE_COVERAGE_PATH));
+
+		Path tmpFolder = Paths.get(String.format("%s/%s/tmp", VOLUME_T8_BASE_PATH, className));
+
+		caricaFile(fileNameClass, srcCodeT8, classFile);
+		caricaFile(fileNameClass, srcCodeT9, classFile);
+		caricaFile(fileNameTestEvoSuit, tmpFolder, testFileEvoSuit);
+
+		uploadEvoSuiteInVolume(tmpFolder, testCodeT8, coverageT8);
+		deleteDirectoryRecursively(tmpFolder);
+		/*
+		Path zipFile;
+		try {
+			zipFile = Objects.requireNonNull((new File(String.valueOf(tmpFolder))).listFiles())[0].toPath();
+		} catch (NullPointerException e) {
+			return;
+		}
+
+		RobotUtil.unzip(String.valueOf(zipFile), tmpFolder.toFile());
+		Files.delete(zipFile);
+
+		for (File levelFolder : Objects.requireNonNull(tmpFolder.toFile().listFiles())) {
+			String level = levelFolder.getName();
+			for (File src : Objects.requireNonNull(new File(String.format("%s/%s", levelFolder.getPath(), "TestSourceCode/evosuite-tests")).listFiles())) {
+				Files.createDirectories(Paths.get(String.format("%s/%s", testCodeT8, level)));
+				Files.copy(src.toPath(), Paths.get(String.format("%s/%s/%s", testCodeT8, level, src.getName())));
+			}
+
+			for (File src : Objects.requireNonNull(new File(String.format("%s/%s", levelFolder.getPath(), "TestReport")).listFiles())) {
+				Files.createDirectories(Paths.get(String.format("%s/%s/%s/%s", basePathT8, className, coveragePath, level)));
+				Files.copy(src.toPath(), Paths.get(String.format("%s/%s/%s/%s/%s", basePathT8, className, coveragePath, level, src.getName())));
+			}
+		}
+
+		deleteDirectoryRecursively(tmpFolder);
+
+		 */
+
+
+		tmpFolder = Paths.get(String.format("%s/%s/tmp", VOLUME_T9_BASE_PATH, className));
+		caricaFile(fileNameTestRandoop, tmpFolder, testFileRandoop);
+
+		uploadRandoopInVolume(tmpFolder, testCodeT9, coverageT9, false);
+		deleteDirectoryRecursively(tmpFolder);
+
+		/*
+		try {
+			zipFile = Objects.requireNonNull((new File(String.valueOf(tmpFolder))).listFiles())[0].toPath();
+		} catch (NullPointerException e) {
+			return;
+		}
+
+		RobotUtil.unzip(String.valueOf(zipFile), tmpFolder.toFile());
+		Files.delete(zipFile);
+
+		for (File levelFolder : Objects.requireNonNull(tmpFolder.toFile().listFiles())) {
+			String level = levelFolder.getName();
+			for (File src : Objects.requireNonNull(new File(levelFolder.getPath()).listFiles())) {
+				if (src.getName().endsWith(".java")) {
+					Files.createDirectories(Paths.get(String.format("%s/%s", testCodeT9, level)));
+					Files.copy(src.toPath(), Paths.get(String.format("%s/%s/%s", testCodeT9, level, src.getName())));
+				} else if (src.getName().endsWith(".xml")) {
+					Files.createDirectories(Paths.get(String.format("%s/%s/%s/%s", basePathT9, className, coveragePath, level)));
+					Files.copy(src.toPath(), Paths.get(String.format("%s/%s/%s/%s/%s", basePathT9, className, coveragePath, level, src.getName())));
+				}
+			}
+		}
+
+		deleteDirectoryRecursively(tmpFolder);
+
+		 */
+
+		tmpFolder = Paths.get(String.format("%s/%s/tmp", VOLUME_T8_BASE_PATH, className));
+		Path srcCodeT8_RandoopTmp = Paths.get(String.format("%s/%s/%s", VOLUME_T8_BASE_PATH, className + "_RandoopTmp", BASE_SRC_PATH));
+		Path testCodeT8_RandoopTmp = Paths.get(String.format("%s/%s/%s", VOLUME_T8_BASE_PATH, className + "_RandoopTmp", BASE_TEST_PATH));
+		Path coverageT8_RandoopTmp = Paths.get(String.format("%s/%s/%s", VOLUME_T8_BASE_PATH, className + "_RandoopTmp", BASE_COVERAGE_PATH));
+		caricaFile(fileNameClass, srcCodeT8_RandoopTmp, classFile);
+		caricaFile(fileNameTestRandoop, tmpFolder, testFileRandoop);
+
+		uploadRandoopInVolume(tmpFolder, testCodeT8_RandoopTmp, coverageT8_RandoopTmp, true);
+		/*
+		try {
+			zipFile = Objects.requireNonNull((new File(String.valueOf(tmpFolder))).listFiles())[0].toPath();
+		} catch (NullPointerException e) {
+			return;
+		}
+
+		RobotUtil.unzip(String.valueOf(zipFile), tmpFolder.toFile());
+		Files.delete(zipFile);
+
+		for (File levelFolder : Objects.requireNonNull(tmpFolder.toFile().listFiles())) {
+			System.out.println(tmpFolder);
+			System.out.println(levelFolder.getName());
+			String level = levelFolder.getName();
+			for (File src : Objects.requireNonNull(new File(levelFolder.getPath()).listFiles())) {
+				if (src.getName().endsWith(".java")) {
+					Files.createDirectories(Paths.get(String.format("%s/%s", testCodeT8_RandoopTmp, level)));
+					Files.copy(src.toPath(), Paths.get(String.format("%s/%s/%s", testCodeT8_RandoopTmp, level, src.getName())));
+				} else if (src.getName().endsWith(".xml")) {
+					Files.createDirectories(Paths.get(String.format("%s/%s", coverageT8_RandoopTmp, level)));
+					Files.copy(src.toPath(), Paths.get(String.format("%s/%s/%s", coverageT8_RandoopTmp, level, src.getName())));
+				}
+			}
+		}
+
+		 */
+
+		generateMissingEvoSuiteCoverage(className, srcCodeT8_RandoopTmp, testCodeT8_RandoopTmp, coverageT8_RandoopTmp, tmpFolder, coverageT9);
+
+		/*
+		try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+			HttpPost httpPostT8 = new HttpPost("http://" + ServiceURL.T8.getServiceURL() + "/coverage/randoop");
+
+			// Creazione del body JSON
+			JSONObject reqBody = new JSONObject();
+			reqBody.put("evoSuitWorkingDir", "/VolumeT8/FolderTree/ClassUT/" + className);
+			reqBody.put("sourceClassPath", srcCodeT8_RandoopTmp);
+			reqBody.put("sourceClassName", className);
+			reqBody.put("testClassPath", testCodeT8_RandoopTmp);
+			reqBody.put("saveDirPath", Paths.get(String.format("%s/%s/%s", testCodeT8_RandoopTmp, className, coveragePath)));
+
+			// Imposta il body della richiesta
+			StringEntity entity = new StringEntity(reqBody.toString(), ContentType.APPLICATION_JSON);
+			System.out.println(reqBody);
+			httpPostT8.setEntity(entity);
+
+			// Esegue la richiesta HTTP
+			try (CloseableHttpResponse response = httpClient.execute(httpPostT8)) {
+				JSONObject responseBody = new JSONObject(EntityUtils.toString(response.getEntity()));
+				System.out.println("Response Body: " + responseBody);
+
+				for (File levelFolder : Objects.requireNonNull(tmpFolder.toFile().listFiles())) {
+					String level = levelFolder.getName();
+					writeStringToFile(responseBody.get(level).toString(), new File(String.format("%s/%s/%s/%s/%s", basePathT9, className, coveragePath, level, "statistics.csv")));
+				}
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 
+		 */
 
+		deleteDirectoryRecursively(tmpFolder);
+		deleteDirectoryRecursively(Paths.get(String.format("%s/%s", VOLUME_T8_BASE_PATH, className + "_RandoopTmp")));
+
+		generateMissingJacocoCoverage(tmpFolder, srcCodeT8, testCodeT8, coverageT8);
+		/*
+		for (File levelFolder : Objects.requireNonNull(testCodeT8.toFile().listFiles())) {
+			Files.createDirectories(Paths.get(String.format("%s/%s", tmpFolder, srcPath)));
+			copyDirectoryRecursively(srcCodeT8, Paths.get(String.format("%s/%s", tmpFolder, srcPath)));
+
+			Files.createDirectories(Paths.get(String.format("%s/%s", tmpFolder, testPath)));
+			copyDirectoryRecursively(levelFolder.toPath(), Paths.get(String.format("%s/%s", tmpFolder, testPath)));
+
+			File zip = null;
+			try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+				ZipUtils.zipDirectory(String.format("%s/src", tmpFolder), "/VolumeT8/FolderTree/ClassUT/src.zip");
+				zip = new File("/VolumeT8/FolderTree/ClassUT/src.zip");
+
+				if (!zip.exists()) {
+					System.err.println("Errore: Il file ZIP non è stato creato correttamente.");
+					return;
+				}
+
+				HttpPost httpPost = new HttpPost("http://" + ServiceURL.T7.getServiceURL() + "/coverage/evosuit");
+
+				MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+				builder.setMode(HttpMultipartMode.STRICT); // Assicura compatibilità
+				builder.addBinaryBody("evoSuiteCode", zip);
+
+				HttpEntity multipart = builder.build();
+				httpPost.setEntity(multipart);
+				httpPost.setHeader("Accept", "application/json");
+
+				try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
+					JSONObject responseBody = new JSONObject(EntityUtils.toString(response.getEntity()));
+					System.out.println("Response Body: " + responseBody);
+
+					writeStringToFile(responseBody.getString("coverage"), new File(String.format("%s/%s/%s/%s/%s", basePathT8, className, coveragePath, "01Level", "coveragetot.xml")));
+				}
+
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+			Files.delete(zip.toPath());
+		}
+
+		 */
+		deleteDirectoryRecursively(tmpFolder);
 
 		/* SALVATAGGIO RISULTATI NEL TASK T4 */
 
-		// Crea un oggetto File che rappresenta il percorso della directory contenente i
-		// risultati
-		// della generazione di robot da Randoop. Il percorso è costruito in base all'ID
-		// della classe di test 'className'.
-		File resultsDir = new File("/VolumeT9/app/FolderTree/" + className + "/RobotTest/RandoopTest");
+		File robotCoverageDirBasePath = new File(String.format("%s/%s/%s", VOLUME_T8_BASE_PATH, className, BASE_COVERAGE_PATH));
+		String robotName = "evosuite";
+		for (File levelFolder : Objects.requireNonNull(robotCoverageDirBasePath.listFiles())) {
+			String jacocoCoveragePath = String.format("%s/%s", levelFolder, "coveragetot.xml");
 
-		// Inizializza la variabile 'liv' a 0, rappresentante il massimo livello di
-		// robot prodotti da Randoop.
-		// Questo valore sarà aggiornato successivamente durante l'analisi dei
-		// risultati.
-		int liv = 0; // livelli di robot prodotti da randoop
-		String randoopName = "randoop";
-		File results[] = resultsDir.listFiles();
+			int[] evoSuiteStatistics = getEvoSuiteCoverageStatistics(String.format("%s/%s", levelFolder, "statistics.csv"));
+			int[][] jacocoStatistics = {
+				getJacocoCoverageByCoverageType(jacocoCoveragePath, "LINE"),
+				getJacocoCoverageByCoverageType(jacocoCoveragePath, "BRANCH"),
+				getJacocoCoverageByCoverageType(jacocoCoveragePath, "INSTRUCTION")
+			};
 
-		// Itera attraverso tutti i file nella directory dei risultati della generazione
-		// di robot da Randoop.
+			int level = Integer.parseInt(levelFolder.toString().substring(levelFolder.toString().length() - 7, levelFolder.toString().length() - 5));
 
-		for (File result : results) {
-
-			// Calcola la copertura delle linee per ciascun file XML di copertura estraendo
-			// il valore dal file XML 'coveragetot.xml' nella directory corrispondente.
-			int score = LineCoverage(result.getAbsolutePath() + "/coveragetot.xml");
-			// Stampa le informazioni sulla copertura del livello
-			System.out.println(
-					result.toString().substring(result.toString().length() - 7, result.toString().length() - 5));
-
-			// Estrae il livello numerico dall'ultimo tratto del nome della directory,
-			// basandosi sulla convenzione specifica naming. Nella convenzione attuale:
-			// Directory = 0xlivello -> livello = 0x
-			int livello = Integer.parseInt(
-					result.toString().substring(result.toString().length() - 7, result.toString().length() - 5));
-
-			System.out.println("La copertura del livello " + String.valueOf(livello) + " è: " + String.valueOf(score));
-
-			saveT4(score, livello, className, randoopName);
-
-			// Se il livello del robot generato è superiore al livello massimo attuale,
-			// aggiorna il livello massimo.
-			if (livello > liv)
-				liv = livello;
+			uploadRobotCoverageInT4(evoSuiteStatistics, jacocoStatistics, level, className, robotName);
 
 		}
 
-		/*TODO: AGGIUSTAMENTI T8 PER EVOSUITE */
-		// Il seguente codice è l'adattamento ad evosuite del codice appena visto, i
-		// passaggi sono gli stessi
-		File resultsDirEvo = new File("/VolumeT8/FolderTreeEvo/" + className + "/RobotTest/EvoSuiteTest");
-		String evosuiteName = "evosuite";
-        File resultsEvo [] = resultsDirEvo.listFiles();
-        for(File result : resultsEvo) {
-			int score = LineCoverageE(result.getAbsolutePath() + "/TestReport/statistics.csv");
+		robotCoverageDirBasePath = new File(String.format("%s/%s/%s", VOLUME_T9_BASE_PATH, className, BASE_COVERAGE_PATH));
+		robotName = "randoop";
+		for (File levelFolder : Objects.requireNonNull(robotCoverageDirBasePath.listFiles())) {
+			String emmaCoveragePath = String.format("%s/%s", levelFolder, "coveragetot.xml");
 
-			System.out.println(result.toString().substring(result.toString().length() - 7, result.toString().length() - 5));
-			int livello = Integer.parseInt(result.toString().substring(result.toString().length() - 7, result.toString().length() - 5));
+			int[] evoSuiteStatistics = getEvoSuiteCoverageStatistics(String.format("%s/%s", levelFolder, "statistics.csv"));
+			int[][] emmaStatistics = {
+					getEmmaCoverageByCoverageType(emmaCoveragePath, "line, %"),
+					getEmmaCoverageByCoverageType(emmaCoveragePath, "method, %"),
+					getEmmaCoverageByCoverageType(emmaCoveragePath, "block, %")
+			};
 
-			System.out.println("La copertura del livello " + String.valueOf(livello) + " è: " + String.valueOf(score));
+			int level = Integer.parseInt(levelFolder.toString().substring(levelFolder.toString().length() - 7, levelFolder.toString().length() - 5));
 
-			saveT4(score, livello, className, evosuiteName);
+			uploadRobotCoverageInT4(evoSuiteStatistics, emmaStatistics, level, className, robotName);
 
 		}
 	}

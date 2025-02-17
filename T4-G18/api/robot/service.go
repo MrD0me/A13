@@ -2,6 +2,7 @@ package robot
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 
 	"github.com/alarmfox/game-repository/api"
@@ -23,12 +24,26 @@ func NewRobotStorage(db *gorm.DB) *RobotStorage {
 func (rs *RobotStorage) CreateBulk(r *CreateRequest) (int, error) {
 	robots := make([]model.Robot, len(r.Robots))
 
+	log.Println(r)
+
 	for i, robot := range r.Robots {
 		robots[i] = model.Robot{
-			TestClassId: robot.TestClassId,
-			Scores:      robot.Scores,
-			Difficulty:  robot.Difficulty,
-			Type:        robot.Type.AsInt8(),
+			TestClassId:               robot.TestClassId,
+			Difficulty:                robot.Difficulty,
+			Type:                      robot.Type.AsInt8(),
+			JacocoLineCovered:         robot.JacocoLineCovered,
+			JacocoBranchCovered:       robot.JacocoBranchCovered,
+			JacocoInstructionCovered:  robot.JacocoInstructionCovered,
+			JacocoLineMissed:          robot.JacocoLineMissed,
+			JacocoBranchMissed:        robot.JacocoBranchMissed,
+			JacocoInstructionMissed:   robot.JacocoInstructionMissed,
+			EvoSuiteBranch:            robot.EvoSuiteBranch,
+			EvoSuiteException:         robot.EvoSuiteException,
+			EvoSuiteWeakMutation:      robot.EvoSuiteWeakMutation,
+			EvoSuiteOutput:            robot.EvoSuiteOutput,
+			EvoSuiteMethod:            robot.EvoSuiteMethod,
+			EvoSuiteMethodNoException: robot.EvoSuiteMethodNoException,
+			EvoSuiteCBranch:           robot.EvoSuiteCBranch,
 		}
 	}
 
@@ -39,38 +54,57 @@ func (rs *RobotStorage) CreateBulk(r *CreateRequest) (int, error) {
 		CreateInBatches(&robots, 100).
 		Error
 
+	// Recupero tutti i dati dalla tabella robots e stampo i risultati
+	var robotsFromDB []model.Robot
+	err = rs.db.Find(&robotsFromDB).Error
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Println("Dati dalla tabella robots:")
+	for _, r := range robotsFromDB {
+		log.Printf("ID: %d, TestClassId: %s, Difficulty: %s, Type: %d\n",
+			r.ID, r.TestClassId, r.Difficulty, r.Type)
+	}
+
 	return len(robots), api.MakeServiceError(err)
 }
 
 func (gs *RobotStorage) FindByFilter(testClassId string, difficulty string, t RobotType) (Robot, error) {
+
+	log.Println("robotType: ", t)
+	log.Println("difficulty: ", difficulty)
+	log.Println("robotType: ", t.AsInt8())
+
 	var (
 		robot model.Robot
 		ids   []int64
 	)
 
 	err := gs.db.Transaction(func(tx *gorm.DB) error {
-		err := tx.
-			Model(&model.Robot{}).
-			Select("id").
+		query := tx.Model(&model.Robot{}).
 			Where(&model.Robot{
 				TestClassId: testClassId,
 				Difficulty:  difficulty,
+				Type:        t.AsInt8(),
 			}).
-			Where("type = ? ", t.AsInt8()).
-			Find(&ids).
-			Error
+			Where("type = ?", t.AsInt8())
 
-		if err != nil {
+		// Recupera solo gli ID
+		if err := query.Select("id").Find(&ids).Error; err != nil {
 			return err
 		}
+
 		if len(ids) == 0 {
 			return gorm.ErrRecordNotFound
 		}
 		var id int64
 		switch t {
 		case evosuite:
+			log.Println("ids: ", ids)
 			id = ids[0]
 		case randoop:
+			log.Println("ids: ", ids)
 			pos := rand.Intn(len(ids))
 			id = ids[pos]
 		default:
@@ -78,7 +112,6 @@ func (gs *RobotStorage) FindByFilter(testClassId string, difficulty string, t Ro
 		}
 
 		return tx.First(&robot, id).Error
-
 	})
 
 	return *fromModel(&robot), api.MakeServiceError(err)

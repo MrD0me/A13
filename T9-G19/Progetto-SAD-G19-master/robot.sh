@@ -33,7 +33,7 @@ $java1_8_path -version
 RANDOOP_PATH="."
 
 # Radice del treefolder
-radice="FolderTree/$name/RobotTest/RandoopTest/"
+radice="FolderTree/ClassUT/$name/src/test/java/"
 
 # Percorso della cartella di destinazione
 outputdir="$radice$name-$iter-dati_di_copertura"

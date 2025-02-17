@@ -30,7 +30,7 @@ REM percorso di RANDOOP
 set RANDOOP_PATH=.
 
 REM radice del treefolder
-set radice=FolderTree\%name%\RobotTest\RandoopTest\
+set radice=FolderTree\ClassUT\%name%\src\test\java\
 
 REM percorso della cartella di destinazione
 set outputdir=%radice%%name%-%iter%-dati_di_copertura

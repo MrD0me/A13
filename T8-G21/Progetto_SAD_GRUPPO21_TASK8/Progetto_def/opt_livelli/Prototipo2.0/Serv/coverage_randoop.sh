@@ -13,19 +13,16 @@ PERCORSO="$(cd "$(dirname "$0")" && pwd)"
 #e.g. arg1=sourcecode class path=PERCORSO_PACKAGE =/VolumeT8/FolderTreeEvo/Calcolatrice/CalcolatriceSourceCode
 PERCORSO_PACKAGE=$1
 
-#e.g. arg2=name of the directory containing the class under test=CalcolatriceSourceCode
-NOME_PACKAGE=$2
-
 #e.g. arg3=name of the class under test=Calcolatrice
-NOME_CLASSE=$3
+NOME_CLASSE=$2
 
 #e.g. arg4=path of the directory where the test class is located=PERCORSO_TEST=/VolumeT8/FolderTreeEvo/Calcolatrice/StudentLogin/Player1/Game92/Round92/Turn2/TestReport
-PERCORSO_TEST=$4
+PERCORSO_TEST=$3
 
-WORKING_DIR=$5
+WORKING_DIR=$4
 
 #e.g. arg5=path of the csv file where the coverage data will be saved=PERCORSO_CSV=/app
-PERCORSO_CSV=$6
+PERCORSO_CSV=$5
 
 #e.g. EVOSUITE_WORKING_DI=/VolumeT8/FolderTreeEvo/Calcolatrice/StudentLogin/Player1/Game92/Round92/Turn2/TestReport/evosuite-working-dir
 EVOSUITE_WORKING_DIR=$WORKING_DIR/evosuite-working-dir
@@ -33,7 +30,6 @@ EVOSUITE_WORKING_DIR=$WORKING_DIR/evosuite-working-dir
 echo "Configuring the environment...\n\n"
 echo "percorso :$PERCORSO \n"
 echo "percorso pachage :$PERCORSO_PACKAGE \n"
-echo "nome package :$NOME_PACKAGE \n"
 echo "nome classe :$NOME_CLASSE \n"
 echo "percorso test :$PERCORSO_TEST \n"
 echo "percorso csv :$PERCORSO_CSV\n"
@@ -70,13 +66,19 @@ export CLASSPATH=target/classes:evosuite-standalone-runtime-1.0.6.jar:target/tes
 
 sleep 2
 
-# $EVOSUITE -measureCoverage -class $NOME_CLASSE -Djunit=RegressionTest -projectCP $EVOSUITE_WORKING_DIR/target/classes:$EVOSUITE_WORKING_DIR/target/test-classes -Dcriterion=LINE
-
+$EVOSUITE -measureCoverage -class $NOME_CLASSE -Djunit=RegressionTest -projectCP $EVOSUITE_WORKING_DIR/target/classes:$EVOSUITE_WORKING_DIR/target/test-classes -Dcriterion=LINE > /dev/null 2>&1
+$EVOSUITE -measureCoverage -class $NOME_CLASSE -Djunit=RegressionTest -projectCP $EVOSUITE_WORKING_DIR/target/classes:$EVOSUITE_WORKING_DIR/target/test-classes -Dcriterion=BRANCH > /dev/null 2>&1
+$EVOSUITE -measureCoverage -class $NOME_CLASSE -Djunit=RegressionTest -projectCP $EVOSUITE_WORKING_DIR/target/classes:$EVOSUITE_WORKING_DIR/target/test-classes -Dcriterion=EXCEPTION > /dev/null 2>&1
+$EVOSUITE -measureCoverage -class $NOME_CLASSE -Djunit=RegressionTest -projectCP $EVOSUITE_WORKING_DIR/target/classes:$EVOSUITE_WORKING_DIR/target/test-classes -Dcriterion=WEAKMUTATION > /dev/null 2>&1
+$EVOSUITE -measureCoverage -class $NOME_CLASSE -Djunit=RegressionTest -projectCP $EVOSUITE_WORKING_DIR/target/classes:$EVOSUITE_WORKING_DIR/target/test-classes -Dcriterion=OUTPUT > /dev/null 2>&1
+$EVOSUITE -measureCoverage -class $NOME_CLASSE -Djunit=RegressionTest -projectCP $EVOSUITE_WORKING_DIR/target/classes:$EVOSUITE_WORKING_DIR/target/test-classes -Dcriterion=METHOD > /dev/null 2>&1
+$EVOSUITE -measureCoverage -class $NOME_CLASSE -Djunit=RegressionTest -projectCP $EVOSUITE_WORKING_DIR/target/classes:$EVOSUITE_WORKING_DIR/target/test-classes -Dcriterion=METHODNOEXCEPTION > /dev/null 2>&1
+$EVOSUITE -measureCoverage -class $NOME_CLASSE -Djunit=RegressionTest -projectCP $EVOSUITE_WORKING_DIR/target/classes:$EVOSUITE_WORKING_DIR/target/test-classes -Dcriterion=CBRANCH > /dev/null 2>&1
 
 sleep 2
 
 echo "Saving staistics to $PERCORSO_TEST/GameData.csv\n\n"
-cp -f evosuite-report/statistics.csv $PERCORSO_TEST/GameData.csv
+cp -f evosuite-report/statistics.csv $PERCORSO_TEST/statistics.csv
 
-cd $PERCORSO_TEST
-#rm -r evosuite-working-dir
+cd $WORKING_DIR
+rm -r evosuite-working-dir

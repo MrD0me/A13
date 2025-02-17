@@ -94,6 +94,12 @@
             <artifactId>httpclient</artifactId>
         </dependency>
 		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpmime</artifactId>
+			<version>4.5.13</version>
+		</dependency>
+
+		<dependency>
     		<groupId>org.mongodb</groupId>
    			<artifactId>mongo-java-driver</artifactId>
     		<version>3.8.2</version> <!-- Aggiorna alla versione più recente -->

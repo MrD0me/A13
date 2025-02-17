@@ -329,13 +329,12 @@ public class AdminService {
 
     public ResponseEntity<String> eliminaFile(String fileName, String jwt) {
         if (jwtService.isJwtValid(jwt)) {
-            String folderPath = "Files-Upload/" + fileName;
-            File directoryRandoop = new File("/VolumeT9/app/FolderTree/" + fileName);
-            File directoryEvo = new File("/VolumeT8/FolderTreeEvo/" + fileName);
-            File folderToDelete = new File(folderPath);
-            if (folderToDelete.exists() && folderToDelete.isDirectory()) {
+            File directoryRandoop = new File(String.format("%s/%s", RobotUtil.VOLUME_T9_BASE_PATH, fileName));
+            File directoryEvo = new File(String.format("%s/%s", RobotUtil.VOLUME_T8_BASE_PATH, fileName));
+            File srcFolderT1 = new File(String.format("%s/%s", "Files-Upload", fileName));
+            if (srcFolderT1.exists() && srcFolderT1.isDirectory()) {
                 try {
-                    FileUploadUtil.deleteDirectory(folderToDelete);
+                    FileUploadUtil.deleteDirectory(srcFolderT1);
                     FileUploadUtil.deleteDirectory(directoryRandoop);
                     FileUploadUtil.deleteDirectory(directoryEvo);
                     return new ResponseEntity<>("Cartella eliminata con successo (/deleteFile/{fileName})", HttpStatus.OK);
@@ -713,7 +712,7 @@ public class AdminService {
 
     public ResponseEntity<?> downloadClasse(@PathVariable("name") String name) throws Exception {
 
-        System.out.println("/downloadFile/{name} (HomeController) - name: "+ name);
+        System.out.println("/downloadFile/{name} (HomeController) - name: " + name);
 		System.out.println("test");
 		try{
 			List<ClassUT> classe= srepo.findByText(name);

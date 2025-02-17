@@ -66,7 +66,7 @@ public class RandoopSubject implements ISubject {
 
         Files.copy(source, destination,  StandardCopyOption.REPLACE_EXISTING);
 
-        File director = new File("./FolderTree/" + class_file.getName().subSequence(0,class_file.getName().length()-5) + "/RobotTest/RandoopTest/");
+        File director = new File("./FolderTree/" + class_file.getName().subSequence(0,class_file.getName().length()-5) + "/src/test/java/");
 
         director.mkdir();
 
@@ -87,22 +87,22 @@ public class RandoopSubject implements ISubject {
                 System.out.println("new level-->"+" coverage: "+cov);
                 File directory_level;
                 if(livello >= 10) {
-                    directory_level = new File("./FolderTree/" + class_file.getName().subSequence(0,class_file.getName().length()-5) + "/RobotTest/RandoopTest/" + livello +"Level");
+                    directory_level = new File("./FolderTree/" + class_file.getName().subSequence(0,class_file.getName().length()-5) + "/src/test/java/" + livello +"Level");
                 } else {
-                    directory_level = new File("./FolderTree/" + class_file.getName().subSequence(0,class_file.getName().length()-5) + "/RobotTest/RandoopTest/" + "0"+livello +"Level");
+                    directory_level = new File("./FolderTree/" + class_file.getName().subSequence(0,class_file.getName().length()-5) + "/src/test/java/" + "0"+livello +"Level");
 
                 }
                 directory_level.mkdir();
 
 
                 for(int i=0; i<=iter; i++) {
-                    File sourceFile = new File("./FolderTree/"+class_file.getName().subSequence(0,class_file.getName().length()-5) + "/RobotTest/RandoopTest/"+class_file.getName().subSequence(0,class_file.getName().length()-5)+"-"+i+"-dati_di_copertura/"+class_file.getName().subSequence(0,class_file.getName().length()-5)+"_Test");
+                    File sourceFile = new File("./FolderTree/"+class_file.getName().subSequence(0,class_file.getName().length()-5) + "/src/test/java/"+class_file.getName().subSequence(0,class_file.getName().length()-5)+"-"+i+"-dati_di_copertura/"+class_file.getName().subSequence(0,class_file.getName().length()-5)+"_Test");
 
                     File[] files = sourceFile.listFiles();
 
                     if (files != null) {
                         try {
-                            Path origine = (new File("./FolderTree/"+class_file.getName().subSequence(0,class_file.getName().length()-5) + "/RobotTest/RandoopTest/"+class_file.getName().subSequence(0,class_file.getName().length()-5)+"-"+i+"-dati_di_copertura/coveragetot.xml")).toPath();
+                            Path origine = (new File("./FolderTree/"+class_file.getName().subSequence(0,class_file.getName().length()-5) + "/src/test/java/"+class_file.getName().subSequence(0,class_file.getName().length()-5)+"-"+i+"-dati_di_copertura/coveragetot.xml")).toPath();
                             Path destinazione = new File(directory_level.getPath(), "coveragetot.xml").toPath();
                             Files.copy(origine, destinazione, StandardCopyOption.REPLACE_EXISTING);
                             System.out.println("File copiato: " + destinazione.toString());

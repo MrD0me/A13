@@ -11,14 +11,27 @@ import (
 )
 
 type Robot struct {
-	ID          int64     `json:"id"`
-	TestClassId string    `json:"testClassId"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
-	Difficulty  string    `json:"difficulty"`
-	Type        RobotType `json:"type"`
-	Scores      string    `json:"scores"`
+	ID                        int64     `json:"id"`
+	TestClassId               string    `json:"testClassId"`
+	CreatedAt                 time.Time `json:"createdAt"`
+	UpdatedAt                 time.Time `json:"updatedAt"`
+	Difficulty                string    `json:"difficulty"`
+	Type                      RobotType `json:"type"`
+	JacocoLineCovered         int       `json:"jacocoLineCovered"`
+	JacocoBranchCovered       int       `json:"jacocoBranchCovered"`
+	JacocoInstructionCovered  int       `json:"jacocoInstructionCovered"`
+	JacocoLineMissed          int       `json:"jacocoLineMissed"`
+	JacocoBranchMissed        int       `json:"jacocoBranchMissed"`
+	JacocoInstructionMissed   int       `json:"jacocoInstructionMissed"`
+	EvoSuiteBranch            int       `json:"evoSuiteBranch"`
+	EvoSuiteException         int       `json:"evoSuiteException"`
+	EvoSuiteWeakMutation      int       `json:"evoSuiteWeakMutation"`
+	EvoSuiteOutput            int       `json:"evoSuiteOutput"`
+	EvoSuiteMethod            int       `json:"evoSuiteMethod"`
+	EvoSuiteMethodNoException int       `json:"evoSuiteMethodNoException"`
+	EvoSuiteCBranch           int       `json:"evoSuiteCBranch"`
 }
+
 type RobotType int8
 
 const (
@@ -62,10 +75,8 @@ func (rb *RobotType) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
-
 	*rb = v
 	return nil
-
 }
 
 func (rb RobotType) AsInt8() int8 {
@@ -73,10 +84,22 @@ func (rb RobotType) AsInt8() int8 {
 }
 
 type CreateSingleRequest struct {
-	TestClassId string    `json:"testClassId"`
-	Scores      string    `json:"scores"`
-	Difficulty  string    `json:"difficulty"`
-	Type        RobotType `json:"type"`
+	TestClassId               string    `json:"testClassId"`
+	Difficulty                string    `json:"difficulty"`
+	Type                      RobotType `json:"type"`
+	JacocoLineCovered         int       `json:"jacocoLineCovered"`
+	JacocoBranchCovered       int       `json:"jacocoBranchCovered"`
+	JacocoInstructionCovered  int       `json:"jacocoInstructionCovered"`
+	JacocoLineMissed          int       `json:"jacocoLineMissed"`
+	JacocoBranchMissed        int       `json:"jacocoBranchMissed"`
+	JacocoInstructionMissed   int       `json:"jacocoInstructionMissed"`
+	EvoSuiteBranch            int       `json:"evoSuiteBranch"`
+	EvoSuiteException         int       `json:"evoSuiteException"`
+	EvoSuiteWeakMutation      int       `json:"evoSuiteWeakMutation"`
+	EvoSuiteOutput            int       `json:"evoSuiteOutput"`
+	EvoSuiteMethod            int       `json:"evoSuiteMethod"`
+	EvoSuiteMethodNoException int       `json:"evoSuiteMethodNoException"`
+	EvoSuiteCBranch           int       `json:"evoSuiteCBranch"`
 }
 
 func (r CreateSingleRequest) Validate() error {
@@ -117,12 +140,24 @@ func (CustomString) Validate() error {
 
 func fromModel(r *model.Robot) *Robot {
 	return &Robot{
-		ID:          r.ID,
-		CreatedAt:   r.CreatedAt,
-		UpdatedAt:   r.UpdatedAt,
-		TestClassId: r.TestClassId,
-		Difficulty:  r.Difficulty,
-		Type:        RobotType(r.Type),
-		Scores:      r.Scores,
+		ID:                        r.ID,
+		CreatedAt:                 r.CreatedAt,
+		UpdatedAt:                 r.UpdatedAt,
+		TestClassId:               r.TestClassId,
+		Difficulty:                r.Difficulty,
+		Type:                      RobotType(r.Type),
+		JacocoLineCovered:         r.JacocoLineCovered,
+		JacocoBranchCovered:       r.JacocoBranchCovered,
+		JacocoInstructionCovered:  r.JacocoInstructionCovered,
+		JacocoLineMissed:          r.JacocoLineMissed,
+		JacocoBranchMissed:        r.JacocoBranchMissed,
+		JacocoInstructionMissed:   r.JacocoInstructionMissed,
+		EvoSuiteBranch:            r.EvoSuiteBranch,
+		EvoSuiteException:         r.EvoSuiteException,
+		EvoSuiteWeakMutation:      r.EvoSuiteWeakMutation,
+		EvoSuiteOutput:            r.EvoSuiteOutput,
+		EvoSuiteMethod:            r.EvoSuiteMethod,
+		EvoSuiteMethodNoException: r.EvoSuiteMethodNoException,
+		EvoSuiteCBranch:           r.EvoSuiteCBranch,
 	}
 }

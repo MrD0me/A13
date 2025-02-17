@@ -28,10 +28,10 @@ public class Main {
                 System.out.println("Directory --> " + listOfFiles[i].getName());
 
                 //VERIFICO CHE NON CI SIANO GIA' LIVELLI
-                File level_folder = new File("./FolderTree/"+listOfFiles[i].getName()+"/RobotTest/RandoopTest/01Level");
+                File level_folder = new File("./FolderTree/ClassUT/"+listOfFiles[i].getName()+"/src/test/java/01Level");
                 if(level_folder.exists() == false) {
                 	System.out.println("Generazione test per la classe --> " + listOfFiles[i].getName());
-                    File class_file = new File("./FolderTree/"+listOfFiles[i].getName()+"/"+listOfFiles[i].getName()+"SourceCode/"+listOfFiles[i].getName()+".java");
+                    File class_file = new File("./FolderTree/ClassUT/"+listOfFiles[i].getName()+"/src/main/java/"+listOfFiles[i].getName()+".java");
                     
                     randoopSubject.file_testing(class_file);
                 }

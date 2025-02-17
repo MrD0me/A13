@@ -27,10 +27,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @CrossOrigin
 @RestController
@@ -70,6 +68,35 @@ public class AppController {
             result.put("error", compilationService.Errors);
             return ResponseEntity.status(HttpStatus.OK).header("Content-Type", "application/json").body(result.toString()); // Imposta l'intestazione Content-Type
         } catch (IOException | InterruptedException | JSONException e) {
+            logger.error("[Compile-and-codecoverage]", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.toString());
+        }
+    }
+
+    /**
+     * REST endpoint for handling POST requests with JSON body containing two
+     * Java files.
+     *
+     * @param evoSuiteCode JSON request con i due file.
+     * @return A JSON response con il risultato della console e il file di
+     * coverage
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    @PostMapping(value = "/coverage/evosuite", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> evoSuitRobotCoverage(@RequestParam(name = "evoSuiteCode") MultipartFile evoSuiteCode) throws IOException, InterruptedException {
+        try {
+            System.out.println(evoSuiteCode.getOriginalFilename());
+
+            CompilationService compilationService = new CompilationService(mvn_path);
+            compilationService.compileAndTestEvoSuiteTests(evoSuiteCode);
+            JSONObject result = new JSONObject();
+            result.put("outCompile", compilationService.outputMaven);
+            result.put("coverage", compilationService.Coverage);
+            result.put("error", compilationService.Errors);
+
+            return ResponseEntity.status(HttpStatus.OK).header("Content-Type", "application/json").body(result.toString()); // Imposta l'intestazione Content-Type
+        } catch (JSONException e) {
             logger.error("[Compile-and-codecoverage]", e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.toString());
         }

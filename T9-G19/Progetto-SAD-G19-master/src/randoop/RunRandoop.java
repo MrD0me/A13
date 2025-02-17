@@ -31,10 +31,10 @@ public class RunRandoop {
         
 		try {
 
-			zip_ritorno = ("./FolderTree/"+name+"/RobotTest/RandoopTest/"+name+"-"+iter+"-dati_di_copertura/"+name+"_Test.zip");
-			cartella_ritorno = ("./FolderTree/"+name+"/RobotTest/RandoopTest/"+name+"-"+iter+"-dati_di_copertura/"+name+"_Test");
+			zip_ritorno = ("./FolderTree/"+name+"/src/test/java/"+name+"-"+iter+"-dati_di_copertura/"+name+"_Test.zip");
+			cartella_ritorno = ("./FolderTree/"+name+"/src/test/java/"+name+"-"+iter+"-dati_di_copertura/"+name+"_Test");
 			
-			xml_ritorno = ("./FolderTree/"+name+"/RobotTest/RandoopTest/"+name+"-"+iter+"-dati_di_copertura/coveragetot.xml");
+			xml_ritorno = ("./FolderTree/"+name+"/src/test/java/"+name+"-"+iter+"-dati_di_copertura/coveragetot.xml");
 			
 			File f = new File(zip_ritorno);
 
