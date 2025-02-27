@@ -656,18 +656,18 @@ public class RobotService {
 				Path testCodeT8_EvoSuiteTmp = Paths.get(String.format("%s/%s/%s", volumeBasePath, classUTName + "_EvoSuiteCoverage", BASE_TEST_PATH));
 
 				splitPackageNames = saveTestFilesInVolume(fromTestPath, testCodeT8_EvoSuiteTmp, classUTName, robotType);
-				String[] srcPackageName_RandoopTmp = splitPackageNames[0];
-				String[] testPackageName_RandoopTmp = splitPackageNames[1];
-				saveSrcFileInVolume(classUTFile, srcCode_EvoSuiteTmp, srcPackageName_RandoopTmp, classUTFileName);
+				String[] srcPackageName_EvoSuiteTmp = splitPackageNames[0];
+				String[] testPackageName_EvoSuiteTmp = splitPackageNames[1];
+				saveSrcFileInVolume(classUTFile, srcCode_EvoSuiteTmp, srcPackageName_EvoSuiteTmp, classUTFileName);
 
 				String srcPackagePath = "";
-				if (srcPackageName_RandoopTmp != null) {
-					srcPackagePath = String.join(".", srcPackageName_RandoopTmp) + ".";
+				if (srcPackageName_EvoSuiteTmp != null) {
+					srcPackagePath = String.join(".", srcPackageName_EvoSuiteTmp) + ".";
 				}
 
 				String testPackagePath = "";
-				if (testPackageName_RandoopTmp != null) {
-					testPackagePath = String.join(".", testPackageName_RandoopTmp) + ".";
+				if (testPackageName_EvoSuiteTmp != null) {
+					testPackagePath = String.join(".", testPackageName_EvoSuiteTmp) + ".";
 				}
 
 				Path evoSuiteWorkingPath = Paths.get(String.format("%s/%s", volumeBasePath, classUTName + "_EvoSuiteCoverage"));
