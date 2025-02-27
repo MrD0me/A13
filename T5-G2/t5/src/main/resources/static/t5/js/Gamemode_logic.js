@@ -210,3 +210,89 @@ document
 document
 	.getElementById("select_diff")
 	.addEventListener("change", updateButtonState);
+
+
+// Filtro i robot disponibili in base alla classeUT scelta
+document.addEventListener("DOMContentLoaded", function () {
+	const selectClass = document.getElementById("select_class");
+	const selectRobot = document.getElementById("select_robot");
+	const selectDifficulty = document.getElementById("select_diff");
+
+	selectClass.addEventListener("change", function () {
+		const selectedClass = selectClass.value;
+
+		selectRobot.disabled = true;
+		selectDifficulty.disabled = true;
+
+		// Rimuovo i robot disponibili associati alla precedente classeUT scelta
+		Array.from(selectRobot.options)
+			.slice(1) // Mantengo la prima opzione ("Seleziona un'opzione")
+			.forEach(option => option.remove());
+
+		// Rimuovo le difficoltà disponibili associate alla precedente classeUT scelta e al precedente robot scelto
+		Array.from(selectDifficulty.options)
+			.slice(1) // Mantengo la prima opzione ("Seleziona un'opzione")
+			.forEach(option => option.remove());
+
+		selectRobot.innerHTML = document.getElementById("select_robot").children[0].outerHTML;
+		selectRobot.disabled = true;
+
+		if (selectedClass) {
+			const filteredRobots = availableRobots
+				.filter(robot => robot.testClassId === selectedClass)
+				.reduce((unique, robot) => {
+					if (!unique.includes(robot.robotType)) {
+						unique.push(robot.robotType);
+					}
+					return unique;
+				}, []);
+
+			filteredRobots.forEach(robot => {
+				const option = document.createElement("option");
+				option.value = robot;
+				option.textContent = robot;
+				selectRobot.appendChild(option);
+			});
+
+			selectRobot.disabled = filteredRobots.length === 0;
+		}
+	});
+});
+
+// Filtro le difficoltà disponibili in base alla classeUT e al robot scelti
+document.addEventListener("DOMContentLoaded", function () {
+	const selectClass = document.getElementById("select_class");
+	const selectRobot = document.getElementById("select_robot");
+	const selectDifficulty = document.getElementById("select_diff");
+
+	selectRobot.addEventListener("change", function () {
+		const selectedClass = selectClass.value;
+		const selectedRobot = selectRobot.value;
+
+		selectDifficulty.disabled = true;
+
+		// Rimuovo le difficoltà disponibili associate alla precedente classeUT scelta e al precedente robot scelto
+		Array.from(selectDifficulty.options)
+			.slice(1) // Mantengo la prima opzione ("Seleziona un'opzione")
+			.forEach(option => option.remove());
+
+		selectDifficulty.innerHTML = document.getElementById("select_robot").children[0].outerHTML;
+		selectDifficulty.disabled = true;
+
+		if (selectedClass && selectedRobot) {
+			const filteredDifficulties = availableRobots
+				.filter(robot => robot.testClassId === selectedClass && robot.robotType === selectedRobot)
+				.map(robot => robot.difficulty);
+
+			const difficultyOptions = document.getElementById("difficulty_options").children;
+
+			for (let option of difficultyOptions) {
+				if (filteredDifficulties.includes(parseInt(option.value))) {
+					selectDifficulty.appendChild(option.cloneNode(true));
+				}
+			}
+
+			selectDifficulty.disabled = filteredDifficulties.length === 0;
+		}
+	});
+});

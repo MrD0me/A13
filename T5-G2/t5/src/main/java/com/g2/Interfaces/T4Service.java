@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.g2.Model.AvailableRobot;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.core.ParameterizedTypeReference;
@@ -47,7 +48,7 @@ public class T4Service extends BaseService {
 
 
         registerAction("getAvailableRobots", new ServiceActionDefinition(
-                params -> {List<AvailableRobot> a = getAvailableRobots(); logger.info("blabbo");logger.info(a.toString()); return a;}
+                params -> getAvailableRobots()
         ));
 
         registerAction("getGames", new ServiceActionDefinition(
@@ -107,10 +108,8 @@ public class T4Service extends BaseService {
     // usa /robots/all per ottenere tutti i robot disponibili
     private List<AvailableRobot> getAvailableRobots() {
         final String endpoint = "/robots/all";
-
-        List<AvailableRobot> a = callRestGET(endpoint, null, new ParameterizedTypeReference<List<AvailableRobot>>() {
+        return callRestGET(endpoint, null, new ParameterizedTypeReference<List<AvailableRobot>>() {
         });
-        return a;
     }
 
     // usa /games per ottenere una lista di giochi

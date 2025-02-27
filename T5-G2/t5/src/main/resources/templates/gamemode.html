@@ -56,7 +56,7 @@
 
 										<!-- Selezione Difficoltà -->
 										<div class="form-group mb-3" id="difficulty_selector">
-											<label for="select_difficulty" th:text="#{difficoltà}"></label>
+											<label for="difficulty_options" th:text="#{difficoltà}"></label>
 											<select class="form-control" id="select_diff" disabled>
 												<option value="" th:text="#{opzioni}"></option>
 											</select>
@@ -150,6 +150,10 @@
 			<option value="3" th:text="#{d_difficile}"></option>
 		</div>
 
+		<script th:inline="javascript">
+			// Contiene i robot disponibili in T4 data la classe scelta
+			let availableRobots = /*[[${available_robots}]]*/ [];
+		</script>
 		<script
 			th:src="@{/t5/js/Gamemode_logic.js}"
 			th:inline="javascript"
@@ -158,130 +162,8 @@
 		<script
 		th:src="@{/t5/js/Util_Editor.js}"
 		th:inline="javascript"
-	>
-	</script>
-
-	<script th:inline="javascript">
-		var availableRobots = /*[[${available_robots}]]*/ [];
-
-		document.addEventListener("DOMContentLoaded", function () {
-			const selectClass = document.getElementById("select_class");
-			const selectRobot = document.getElementById("select_robot");
-			const selectDifficulty = document.getElementById("select_diff");
-			const submitButton = document.getElementById("link_editor");
-
-			selectClass.addEventListener("change", function () {
-				const selectedClass = selectClass.value;
-
-				selectRobot.disabled = true;
-				selectDifficulty.disabled = true;
-				submitButton.classList.toggle("disabled", true);
-
-				Array.from(selectRobot.options)
-						.slice(1) // Mantengo la prima opzione ("Seleziona un'opzione")
-						.forEach(option => option.remove());
-
-				Array.from(selectDifficulty.options)
-						.slice(1) // Mantengo la prima opzione ("Seleziona un'opzione")
-						.forEach(option => option.remove());
-
-				selectRobot.innerHTML = document.getElementById("select_robot").children[0].outerHTML;
-				selectRobot.disabled = true;
-
-				if (selectedClass) {
-					const filteredRobots = availableRobots
-							.filter(robot => robot.testClassId === selectedClass)
-							.reduce((unique, robot) => {
-								if (!unique.includes(robot.robotType)) {
-									unique.push(robot.robotType);
-								}
-								return unique;
-							}, []);
-
-					filteredRobots.forEach(robot => {
-						const option = document.createElement("option");
-						option.value = robot;
-						option.textContent = robot;
-						selectRobot.appendChild(option);
-					});
-
-					console.log("availableRobots: ", filteredRobots);
-					selectRobot.disabled = filteredRobots.length === 0;
-				}
-
-				if (GetMode() === "Allenamento")
-					submitButton.classList.toggle("disabled", false);
-			});
-		});
-
-		document.addEventListener("DOMContentLoaded", function () {
-			const selectClass = document.getElementById("select_class");
-			const selectRobot = document.getElementById("select_robot");
-			const selectDifficulty = document.getElementById("select_diff");
-			const submitButton = document.getElementById("link_editor");
-
-			selectRobot.addEventListener("change", function () {
-				const selectedClass = selectClass.value;
-				const selectedRobot = selectRobot.value;
-
-				selectDifficulty.disabled = true;
-				submitButton.classList.toggle("disabled", true);
-
-				Array.from(selectDifficulty.options)
-						.slice(1) // Mantengo la prima opzione ("Seleziona un'opzione)
-						.forEach(option => option.remove());
-
-				selectDifficulty.innerHTML = document.getElementById("select_robot").children[0].outerHTML;
-				selectDifficulty.disabled = true;
-
-				if (selectedClass && selectedRobot) {
-					const filteredDifficulties = availableRobots
-							.filter(robot => robot.testClassId === selectedClass && robot.robotType === selectedRobot)
-							.map(robot => robot.difficulty);
-
-					const difficultyOptions = document.getElementById("difficulty_options").children;
-
-					for (let option of difficultyOptions) {
-						if (filteredDifficulties.includes(parseInt(option.value))) {
-							selectDifficulty.appendChild(option.cloneNode(true));
-						}
-					}
-
-					selectDifficulty.disabled = filteredDifficulties.length === 0;
-				}
-			});
-		});
-
-		document.addEventListener("DOMContentLoaded", function () {
-			const selectClass = document.getElementById("select_class");
-			const selectRobot = document.getElementById("select_robot");
-			const selectDifficulty = document.getElementById("select_diff");
-			const submitButton = document.getElementById("link_editor");
-
-			selectDifficulty.addEventListener("change", function () {
-				const selectedClass = selectClass.value;
-				const selectedRobot = selectRobot.value;
-				const selectedDifficulty = selectDifficulty.value;
-
-				submitButton.classList.toggle("disabled", true);
-
-				console.log(selectedClass, selectedRobot, selectedDifficulty);
-
-				if (selectedClass && selectedRobot && selectedDifficulty) {
-					submitButton.classList.toggle("disabled", false);
-				}
-			});
-		});
-
-		function GetMode() {
-			const mode = getParameterByName("mode");
-			if (mode) {
-				const sanitizedMode = mode.replace(/[^a-zA-Z0-9\s]/g, " ");
-				return sanitizedMode;
-			}
-			return null;
-		}
-	</script>
+		>
+		</script>
 
 	</body>
 </html>
