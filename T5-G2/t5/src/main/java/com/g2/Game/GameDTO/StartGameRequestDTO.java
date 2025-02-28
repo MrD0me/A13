@@ -3,11 +3,12 @@ package com.g2.Game.GameDTO;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 public class StartGameRequestDTO {
 
     @JsonProperty("playerId")
-    @NotBlank(message = "playerId is required")
+    @NotNull(message = "playerId is required")
     private String playerId;
 
     @JsonProperty("typeRobot")

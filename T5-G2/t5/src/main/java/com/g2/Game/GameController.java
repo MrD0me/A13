@@ -72,28 +72,29 @@ public class GameController {
      *     nuova    -> eliminare il vecchio game (nuovo /RemoveGame) 
      *                 e poi chiamare /StartGame con nuovi parametri 
      */
-    /*
+ /*
      *  Chiamata che controllo se la partita quindi esisteva già o meno
      *  se non esiste instanzia un nuovo gioco 
      */
     @PostMapping("/StartGame")
     public ResponseEntity<StartGameResponseDTO> startGame(@Valid @RequestBody StartGameRequestDTO request) {
         try {
+            logger.info("[StartGame] Richiesta ricevuta: " + request);
             // Mappare il DTO nel modello di dominio
             GameLogic game = gameServiceManager.CreateGameLogic(
-                                            request.getPlayerId(),
-                                            request.getMode(),
-                                            request.getUnderTestClassName(),
-                                            request.getTypeRobot(),
-                                            request.getDifficulty());
-
+                                request.getPlayerId(),
+                                request.getMode(),
+                                request.getUnderTestClassName(),
+                                request.getTypeRobot(),
+                                request.getDifficulty()
+                            );
             // Mappatura del modello di dominio nel DTO di risposta
             StartGameResponseDTO response = new StartGameResponseDTO(game.getGameID(), "created");
             return ResponseEntity.ok(response);
         } catch (GameAlreadyExistsException e) {
             logger.error("[GAMECONTROLLER][StartGame] " + e.getMessage());
-            StartGameResponseDTO response = new StartGameResponseDTO(-1, "GameAlreadyExistsException");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new StartGameResponseDTO(-1, "GameAlreadyExistsException"));
         } catch (Exception e) {
             logger.error("[GAMECONTROLLER][StartGame] Unexpected error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -110,8 +111,8 @@ public class GameController {
         /*
          * Ottengo gli errori per ogni binding di un json e popolo la mappa così posso poi inviarla 
          */
-        ex.getBindingResult().getFieldErrors().forEach(error ->
-            errors.put(error.getField(), error.getDefaultMessage())
+        ex.getBindingResult().getFieldErrors().forEach(error
+                -> errors.put(error.getField(), error.getDefaultMessage())
         );
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);

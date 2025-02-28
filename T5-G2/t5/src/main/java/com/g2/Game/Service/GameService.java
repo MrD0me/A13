@@ -116,7 +116,6 @@ public class GameService {
          *  Lo score è definito dalle performance del file XML del test 
          */
         CompileResult RobotCompileResult = GetRobotCoverage(currentGame.getClasseUT(), currentGame.getType_robot(), currentGame.getDifficulty());
-        
         int userScore = currentGame.GetScore(UsercompileResult);
         int robotScore = currentGame.GetScore(RobotCompileResult);
         /*
