@@ -22,7 +22,6 @@ import com.g2.Service.AchievementService;
 
 @Service
 public class GameService {
-
     private final ServiceManager serviceManager;
     private final GameRegistry gameRegistry;
     private final AchievementService achievementService;
@@ -42,20 +41,6 @@ public class GameService {
         this.gameRegistry = gameRegistry;
         this.achievementService = achievementService;
     }
-
-    /*
-    *  Sfrutto T4 per avere i risultati dei robot
-    */
-    private CompileResult GetRobotCoverage(String testClass, String robot_type, String difficulty) {
-        try {
-            logger.info("Richiesta Coverage robot per testClass={}, robotType={}, difficulty={}.", testClass, robot_type, difficulty);
-            return new CompileResult(serviceManager, testClass, robot_type, difficulty);            
-        } catch (Exception e) {
-            logger.error("[GAMECONTROLLER] GetRobotCoverage:", e);
-            return null;
-        }
-    }
-
 
     public GameLogic CreateGame(String playerId, String mode,
             String underTestClassName,
@@ -110,27 +95,63 @@ public class GameService {
         return new CompileResult(Classname, testingClassCode, this.serviceManager);
     }
 
-    public GameResponseDTO handleGameLogic(CompileResult UsercompileResult, GameLogic currentGame, Boolean isGameEnd) {
+    /*
+    *  Sfrutto T4 per avere i risultati dei robot
+     */
+    public CompileResult GetRobotCoverage(GameLogic currentGame) {
+        try {
+            logger.info("Richiesta Coverage robot per testClass={}, robotType={}, difficulty={}.",
+                    currentGame.getClasseUT(),
+                    currentGame.getType_robot(),
+                    currentGame.getDifficulty()
+            );
+            return new CompileResult(serviceManager,
+                    currentGame.getClasseUT(),
+                    currentGame.getType_robot(),
+                    currentGame.getDifficulty()
+            );
+        } catch (Exception e) {
+            logger.error("[GAMECONTROLLER] GetRobotCoverage:", e);
+            return null;
+        }
+    }
+
+    public boolean handleGameLogic(int userScore, int robotScore, GameLogic currentGame, Boolean isGameEnd) {
         logger.info("handleGameLogic: Avvio logica di gioco per playerId={}.", currentGame.getPlayerID());
-        /*
-         *  Lo score è definito dalle performance del file XML del test 
-         */
-        CompileResult RobotCompileResult = GetRobotCoverage(currentGame.getClasseUT(), currentGame.getType_robot(), currentGame.getDifficulty());
-        int userScore = currentGame.GetScore(UsercompileResult);
-        int robotScore = currentGame.GetScore(RobotCompileResult);
-        /*
-         *  Avanzo nel gioco 
-         */
         currentGame.NextTurn(userScore, robotScore);
-        Boolean gameFinished = isGameEnd || currentGame.isGameEnd();
+        boolean gameFinished = isGameEnd || currentGame.isGameEnd();
         logger.info("handleGameLogic: Stato partita (gameFinished={}) per playerId={}.", gameFinished, currentGame.getPlayerID());
+        return gameFinished;
+    }
+
+    public GameResponseDTO handleGameResponse(
+            boolean gameFinished,
+            GameLogic currentGame,
+            CompileResult UsercompileResult,
+            CompileResult RobotcompileResult,
+            int userScore,
+            int robotScore
+    ) {
+        /*
+         * Se la partita è finita devo notifica, controllare i trofei e salvare in T4
+         */
         if (gameFinished) {
             logger.info("handleGameLogic: Partita terminata per playerId={}. Avvio aggiornamento progressi e notifiche.", currentGame.getPlayerID());
             updateProgressAndNotifications(currentGame.getPlayerID());
             EndGame(currentGame, userScore);
         }
-        logger.info("handleGameLogic: Risposta creata per playerId={}.", currentGame.getPlayerID());
-        return createResponseRun(UsercompileResult, gameFinished, robotScore, userScore, currentGame.isWinner());
+        /*
+        *   Preparo il DTO di Risposta 
+        */
+        logger.info("createResponseRun: Creazione risposta per la partita (gameFinished={}, userScore={}, robotScore={}).", gameFinished, userScore, robotScore);
+        return new GameResponseDTO(
+                UsercompileResult,
+                RobotcompileResult,
+                gameFinished,
+                robotScore,
+                userScore,
+                currentGame.isWinner()
+        );
     }
 
     public void EndGame(GameLogic currentGame, int userscore) {
@@ -140,20 +161,6 @@ public class GameService {
         currentGame.EndRound();
         currentGame.EndGame(userscore);
         destroyGame(currentGame.getPlayerID());
-    }
-
-    /*
-     * Wrapper che crea il DTO 
-     */
-    public GameResponseDTO createResponseRun(CompileResult compileResult,
-            Boolean gameFinished,
-            int robotScore,
-            int UserScore,
-            Boolean isWinner) {
-
-        logger.info("createResponseRun: Creazione risposta per la partita (gameFinished={}, userScore={}, robotScore={}).", gameFinished, UserScore, robotScore);
-        GameResponseDTO response = new GameResponseDTO(compileResult, gameFinished, robotScore, UserScore, isWinner);
-        return response;
     }
 
     //Gestione Trofei e notifiche

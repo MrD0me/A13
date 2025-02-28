@@ -4,18 +4,25 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.g2.Interfaces.ServiceManager;
 
 public class CompileResult {
-
     /*
      * Campi 
      */
+    @JsonProperty("compileOutput")
     private final String compileOutput;
+    @JsonProperty("XML_coverage")
     private final String XML_coverage;
-
+    /*
+     * Dettagli della coverage JaCoCo
+     */
+    @JsonProperty("line")
     private CoverageResult LineCoverage = null;
+    @JsonProperty("branch")
     private CoverageResult BranchCoverage = null;
+    @JsonProperty("instruction")
     private CoverageResult InstructionCoverage = null;
     /*
      * Servizi usati 

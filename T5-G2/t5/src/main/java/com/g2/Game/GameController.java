@@ -19,7 +19,6 @@ package com.g2.Game;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -72,7 +71,7 @@ public class GameController {
      *     nuova    -> eliminare il vecchio game (nuovo /RemoveGame) 
      *                 e poi chiamare /StartGame con nuovi parametri 
      */
- /*
+    /*
      *  Chiamata che controllo se la partita quindi esisteva già o meno
      *  se non esiste instanzia un nuovo gioco 
      */
@@ -114,10 +113,8 @@ public class GameController {
         ex.getBindingResult().getFieldErrors().forEach(error
                 -> errors.put(error.getField(), error.getDefaultMessage())
         );
-
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
     }
-
 
     /*
      *  Chiamata principale del game engine, l'utente ogni volta può comunicare la sua richiesta di
@@ -141,23 +138,4 @@ public class GameController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
     }
-
-    // Metodo per creare una risposta di errore
-    /*
-     * ERROR CODE che mando al client
-     *  0 - modalità non esiste
-     *  1 -  l'utente ha cambiato le impostazioni della partita
-     *  2 -  esiste già la partita
-     *  3 -  è avvenuta un eccezione
-     *  4 -  non esiste la partita
-     *  5 -  partita eliminata
-     */
-    @SuppressWarnings("unused")
-    private ResponseEntity<String> createErrorResponse(String errorMessage, String errorCode) {
-        JSONObject error = new JSONObject();
-        error.put("error", errorMessage);
-        error.put("errorCode", errorCode);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error.toString());
-    }
-
 }
