@@ -7,8 +7,6 @@ import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
-import java.util.Set;
-
 @Component
 public class RedisCleanupService implements DisposableBean {
 
@@ -31,7 +29,7 @@ public class RedisCleanupService implements DisposableBean {
             }
             connection = jedisConnectionFactory.getConnection();
             connection.serverCommands().flushDb();
-            System.out.println("✅ Tutte le sessioni sono state rimosse da Redis");
+            System.out.println("Tutte le sessioni sono state rimosse da Redis");
         } catch (Exception e) {
             System.err.println("Errore di pulizia sessioni: " + e.getMessage());
         } finally {

@@ -21,7 +21,7 @@ public class Sessione implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @JsonProperty("id_sess")
-    private final String idSessione;
+    private String idSessione;
 
     @JsonProperty("id_user")
     private final String userId;
@@ -40,19 +40,6 @@ public class Sessione implements Serializable {
     @JsonProperty("modalita")
     private Map<String, ModalitaWrapper> modalita;
 
-    /*
-     * Prefisso key della sessione 
-     */
-    private static final String KEY_PREFIX = "User_session";
-
-    /**
-     * Crea la chiave della sessione usando playerId e un timestamp. Il formato
-     * della chiave sarà: "prefix:playerId:timestamp".
-     */
-    private String buildCompositeKey() {
-        return KEY_PREFIX + ":" + this.userId + ":" + this.createdAt;
-    }
-
     /**
      * Costruttore per inizializzare una sessione.
      *
@@ -65,19 +52,6 @@ public class Sessione implements Serializable {
         this.createdAt = Instant.now();
         this.updatedAt = this.createdAt;
         this.modalita = new HashMap<>();
-    }
-
-    /**
-     * Costruttore per inizializzare una sessione, key autogenerata
-     *
-     * @param userId Identificativo dell'utente proprietario della sessione
-     */
-    public Sessione(String userId) {
-        this.userId = Objects.requireNonNull(userId, "userId non può essere null");
-        this.createdAt = Instant.now();
-        this.updatedAt = this.createdAt;
-        this.modalita = new HashMap<>();
-        this.idSessione = buildCompositeKey();
     }
 
     // Getters
@@ -145,6 +119,10 @@ public class Sessione implements Serializable {
         return this.modalita.containsKey(key);
     }
 
+    public GameLogic getGame(String mode){
+        return this.modalita.get(mode).gameobject;
+    }
+
 
     @Override
     public String toString() {
@@ -155,6 +133,10 @@ public class Sessione implements Serializable {
                 + ", updatedAt=" + updatedAt
                 + ", modalita=" + modalita
                 + '}';
+    }
+
+    public void setIdSessione(String idSessione) {
+        this.idSessione = idSessione;
     }
 
     /**

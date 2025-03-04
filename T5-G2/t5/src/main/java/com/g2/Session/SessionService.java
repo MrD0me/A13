@@ -16,6 +16,8 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import com.g2.Game.GameModes.GameLogic;
+import com.g2.Session.Exceptions.GameModeAlreadyExist;
+import com.g2.Session.Exceptions.GameModeDontExist;
 import com.g2.Session.Exceptions.SessionDontExist;
 
 import redis.clients.jedis.exceptions.JedisConnectionException;
@@ -26,7 +28,13 @@ public class SessionService {
     // TTL di default per tutte le operazioni relative alla sessione (in secondi)
     public static final long DEFAULT_SESSION_TTL = 10800L; // 3 ore
     private final RedisTemplate<String, Sessione> redisTemplate;
-
+    /*
+     * Prefisso key della sessione 
+     */
+    private static final String KEY_PREFIX = "User_session";
+    /*
+     * Logger
+     */
     private static final Logger logger = LoggerFactory.getLogger(SessionService.class);
 
     @Autowired
@@ -34,13 +42,22 @@ public class SessionService {
         this.redisTemplate = redisTemplate;
     }
 
+    /**
+     * Crea la chiave della sessione usando playerId e un timestamp. Il formato
+     * della chiave sarà: "prefix:playerId:timestamp".
+     */
+    private String buildCompositeKey(String userId) {
+        return KEY_PREFIX + ":" + userId + ":";
+    }
+
     public interface SessionCall {
+
         void execute() throws Exception;
     }
 
     private boolean executeSessionCall(String caller, SessionCall call) {
         try {
-            call.execute(); 
+            call.execute();
             logger.info("{} - Operazione completata con successo", caller);
             return true;
         } catch (JedisConnectionException e) {
@@ -56,15 +73,19 @@ public class SessionService {
         } catch (Exception e) {
             logger.error("{} - Errore sconosciuto: {}", caller, e.getMessage(), e);
         }
-        return false; 
+        return false;
+    }
+
+    public String createSession(String playerId) throws Exception {
+        return createSession(playerId, null);
     }
 
     public String createSession(String playerId, Optional<Long> ttlSeconds) throws Exception {
         long ttl = ttlSeconds.filter(ttlSec -> ttlSec > 0).orElse(DEFAULT_SESSION_TTL);
         logger.info("createSession - Creazione sessione per il giocatore {} con TTL: {}", playerId, ttl);
 
-        Sessione session = new Sessione(playerId);
-        String sessionKey = session.getIdSessione();
+        String sessionKey = buildCompositeKey(playerId);
+        Sessione session = new Sessione(playerId, sessionKey);
 
         boolean success = executeSessionCall("createSession", () -> {
             redisTemplate.opsForValue().setIfAbsent(sessionKey, session, ttl, TimeUnit.SECONDS);
@@ -79,7 +100,13 @@ public class SessionService {
         return sessionKey;
     }
 
-    public Sessione getSession(String sessionKey) {
+    public Sessione getSession(String playerId) {
+        boolean SessionExist = doesSessionExistForPlayer(playerId);
+        if(!SessionExist){
+            throw new SessionDontExist("Sessione non esiste per il playerId: " + playerId);
+        }
+
+        String sessionKey = buildCompositeKey(playerId);
         logger.info("getSession - Recupero della sessione per sessionKey: {}", sessionKey);
         Sessione sessione = redisTemplate.opsForValue().get(sessionKey);
 
@@ -90,6 +117,16 @@ public class SessionService {
 
         logger.info("getSession - Sessione recuperata con successo per sessionKey: {}", sessionKey);
         return sessione;
+    }
+
+    /**
+     * Cerca una sessione esistente per il player.
+     */
+    public boolean doesSessionExistForPlayer(String playerId) {
+        String key = KEY_PREFIX + ":" + playerId + ":";
+        return executeSessionCall("doesSessionExistForPlayer", 
+            () -> Boolean.TRUE.equals(redisTemplate.hasKey(key))
+        );
     }
 
     public boolean renewSessionTTL(String sessionKey, long ttlSeconds) {
@@ -105,16 +142,28 @@ public class SessionService {
         return success;
     }
 
-    public boolean deleteSession(String sessionKey) {
+    public boolean deleteSession(String playerId) {
+        boolean SessionExist = doesSessionExistForPlayer(playerId);
+        if(!SessionExist){
+            throw new SessionDontExist("Sessione non esiste per il playerId: " + playerId);
+        }
+
+        String sessionKey = buildCompositeKey(playerId);
+
         logger.info("deleteSession - Eliminazione della sessione per sessionKey: {}", sessionKey);
         return executeSessionCall("deleteSession", () -> {
             redisTemplate.delete(sessionKey);
         });
     }
 
-    public boolean updateSession(String sessionKey, Sessione updatedSession, Optional<Long> ttlSeconds) {
+    public boolean updateSession(String playerId, Sessione updatedSession, Optional<Long> ttlSeconds) {
+        boolean SessionExist = doesSessionExistForPlayer(playerId);
+        if(!SessionExist){
+            throw new SessionDontExist("Sessione non esiste per il playerId: " + playerId);
+        }
+
         long ttl = ttlSeconds.filter(ttlSec -> ttlSec > 0).orElse(DEFAULT_SESSION_TTL);
-        logger.info("updateSession - Aggiornamento della sessione per sessionKey: {} con TTL: {}", sessionKey, ttl);
+        logger.info("updateSession - Aggiornamento della sessione per playerId: {} con TTL: {}", playerId, ttl);
 
         if (updatedSession == null) {
             logger.error("updateSession - La sessione aggiornata non può essere null");
@@ -122,6 +171,7 @@ public class SessionService {
         }
 
         return executeSessionCall("updateSession", () -> {
+            String sessionKey = buildCompositeKey(playerId);
             redisTemplate.opsForValue().set(sessionKey, updatedSession, ttl, TimeUnit.SECONDS);
         });
     }
@@ -132,17 +182,42 @@ public class SessionService {
         return (keys == null || keys.isEmpty()) ? Collections.emptyList() : redisTemplate.opsForValue().multiGet(keys);
     }
 
-    public boolean removeGameMode(String sessionKey, String mode, Optional<Long> ttlSeconds) {
-        logger.info("removeGameMode - Rimozione del game mode: {} dalla sessione: {}", mode, sessionKey);
-        Sessione session = getSession(sessionKey);
-        session.removeModalita(mode);
-        return updateSession(sessionKey, session, ttlSeconds);
+    public GameLogic getGameMode(String playerId, String mode){
+        Sessione sessione = getSession(playerId);
+        if(sessione.hasModalita(mode)){
+            return sessione.getGame(mode);
+        }else{
+            throw new GameModeDontExist("Non esiste modalità " + mode);   
+        }
     }
 
-    public boolean updateGameMode(String sessionKey, GameLogic game, Optional<Long> ttlSeconds) {
-        logger.info("updateGameMode - Aggiornamento del game mode: {} per la sessione: {}", game.getMode(), sessionKey);
-        Sessione session = getSession(sessionKey);
-        session.addModalita(game.getMode(), game);
-        return updateSession(sessionKey, session, ttlSeconds);
+    public boolean SetGameMode(String playerId, GameLogic game, Optional<Long> ttlSeconds) {
+        logger.info("GetGameMode - Aggiunta del game mode: {} per il player: {}", game.getMode(), playerId);
+        Sessione session = getSession(playerId);
+        if(session.hasModalita(game.getMode())){
+            //Già esiste 
+            throw new GameModeAlreadyExist("Esiste modalità " + game.getMode());
+        }else{
+            session.addModalita(game.getMode(), game);
+            return updateSession(playerId, session, ttlSeconds);
+        }
+    }
+
+    public boolean removeGameMode(String playerId, String mode, Optional<Long> ttlSeconds) {
+        logger.info("removeGameMode - Rimozione del game mode: {} per il player: {}", mode, playerId);
+        Sessione session = getSession(playerId);
+        session.removeModalita(mode);
+        return updateSession(playerId, session, ttlSeconds);
+    }
+
+    public boolean updateGameMode(String playerId, GameLogic game, Optional<Long> ttlSeconds) {
+        logger.info("updateGameMode - Aggiornamento del game mode: {} per il player: {}", game.getMode(), playerId);
+        Sessione session = getSession(playerId);
+        if(session.hasModalita(game.getMode())){
+            session.addModalita(game.getMode(), game);
+            return updateSession(playerId, session, ttlSeconds);
+        }else{
+            throw new GameModeDontExist("Non esiste modalità" + game.getMode());
+        }
     }
 }
