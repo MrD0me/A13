@@ -22,12 +22,17 @@ import java.time.format.DateTimeFormatter;
 
 import org.json.JSONArray;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.g2.Game.GameModes.Compile.CompileResult;
 import com.g2.Interfaces.ServiceManager;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public abstract class GameLogic {
 
-    private final ServiceManager serviceManager;
+    // Il serviceManager non deve essere serializzato (lo reinietteremo se necessario)
+    @JsonIgnore
+    private ServiceManager serviceManager;
 
     //IDs
     private int GameID;
@@ -79,13 +84,13 @@ public abstract class GameLogic {
 
     protected void CreateTurn(String Time, int userScore) {
         //Apro un nuovo turno
-        String response= serviceManager.handleRequest("T4", "CreateTurn", String.class, this.PlayerID, this.RoundID, Time);
+        String response = serviceManager.handleRequest("T4", "CreateTurn", String.class, this.PlayerID, this.RoundID, Time);
         //Chiudo il turno 
         JSONArray jsonArray = new JSONArray(response);
         this.TurnID = jsonArray.getJSONObject(0).getInt("id");
-        System.out.println("CReate turn id: " +  this.TurnID );
+        System.out.println("CReate turn id: " + this.TurnID);
         String userScore_string = String.valueOf(userScore);
-        String TurnID_string = String.valueOf( this.TurnID);
+        String TurnID_string = String.valueOf(this.TurnID);
         serviceManager.handleRequest("T4", "EndTurn", userScore_string, Time, TurnID_string);
     }
 
@@ -142,5 +147,10 @@ public abstract class GameLogic {
 
     public String getPlayerID() {
         return PlayerID;
+    }
+
+    // Setter per reiniettare il serviceManager dopo deserializzazione, se necessario
+    public void setServiceManager(ServiceManager serviceManager) {
+        this.serviceManager = serviceManager;
     }
 }

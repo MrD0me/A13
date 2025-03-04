@@ -1,5 +1,7 @@
 package com.g2.Game.GameDTO;
 
+import java.util.Objects;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.g2.Game.GameModes.Compile.CompileResult;
 
@@ -41,8 +43,9 @@ public class GameResponseDTO {
         this.gameOver = gameFinished;
         this.isWinner = isWinner;
         // Dettagli della copertura per l'utente 
-        this.UserCoverageDetails = UserCompileResult;
-        this.RobotCoveragerDetails = RobotCompileResult;
+        // Assegna un valore di fallback se i CompileResult sono null
+        this.UserCoverageDetails = Objects.requireNonNullElse(UserCompileResult, CompileResult.DEFAULT);
+        this.RobotCoveragerDetails = Objects.requireNonNullElse(RobotCompileResult, CompileResult.DEFAULT);
     }
 
     // Getters and setters

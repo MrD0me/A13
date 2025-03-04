@@ -4,17 +4,27 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.g2.Interfaces.ServiceManager;
 
 public class CompileResult {
     /*
+     * Istanza di default 
+     */
+    public static final CompileResult DEFAULT = new CompileResult(
+            "", // XML_coverage vuoto
+            "", // Compile output vuoto
+            null, // CoverageService nullo
+            null // ServiceManager nullo
+    );
+    /*
      * Campi 
      */
     @JsonProperty("compileOutput")
-    private final String compileOutput;
+    private String compileOutput;
     @JsonProperty("XML_coverage")
-    private final String XML_coverage;
+    private String XML_coverage;
     /*
      * Dettagli della coverage JaCoCo
      */
@@ -27,11 +37,17 @@ public class CompileResult {
     /*
      * Servizi usati 
      */
-    private final ServiceManager serviceManager;
-    private final CoverageService coverageService;
+    @JsonIgnore
+    private ServiceManager serviceManager;
+    @JsonIgnore
+    private CoverageService coverageService;
 
     // Logger per la classe
     private static final Logger logger = LoggerFactory.getLogger(CompileResult.class);
+
+    //Costruttore Vuoto
+    public CompileResult(){
+    }
 
     // Costruttore con XML coverage
     public CompileResult(String XML_coverage, String compileOutput, CoverageService coverageService, ServiceManager serviceManager) {
@@ -88,12 +104,15 @@ public class CompileResult {
     }
 
     private void calculateCoverage() {
-        if (this.XML_coverage != null) {
+        if (this.XML_coverage != null && !this.XML_coverage.isEmpty()) {
             this.LineCoverage = coverageService.getCoverage(this.XML_coverage, "LINE");
             this.BranchCoverage = coverageService.getCoverage(this.XML_coverage, "BRANCH");
             this.InstructionCoverage = coverageService.getCoverage(this.XML_coverage, "INSTRUCTION");
         } else {
             logger.warn("XML coverage è nulla. Coverage results sarà nulla");
+            this.LineCoverage = new CoverageResult(0, 0);
+            this.BranchCoverage = new CoverageResult(0, 0);
+            this.InstructionCoverage = new CoverageResult(0, 0);
         }
     }
 
@@ -130,6 +149,14 @@ public class CompileResult {
 
     public void setLineCoverage(CoverageResult LineCoverage) {
         this.LineCoverage = LineCoverage;
+    }
+
+    public void setCompileOutput(String compileOutput) {
+        this.compileOutput = compileOutput;
+    }
+
+    public void setXML_coverage(String XML_coverage) {
+        this.XML_coverage = XML_coverage;
     }
 
 }
