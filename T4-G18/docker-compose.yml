@@ -1,4 +1,4 @@
-version: '3'
+name: t4
 
 volumes:
   pgdata:
@@ -8,9 +8,10 @@ volumes:
 
 services:
   app:
-    build: .
-    ports:
-      - 3000:3000/tcp
+    image: mick0974/a13:t4-g18
+    container_name: t4-controller
+    expose:
+      - 8084
     volumes:
       - appdata:/app/data
       - ./config.docker.json:/app/config.json
@@ -18,8 +19,10 @@ services:
       - db
     networks:
       - global-network
+
   db:
     image: postgres:14-alpine3.17
+    container_name: t4-postgres_db
     environment:
       POSTGRES_PASSWORD: postgres
     volumes:

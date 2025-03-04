@@ -1,13 +1,12 @@
-version: '3.12.12'
+name: t7
 
 services:
   app:
-    build: .
+    image: mick0974/a13:t7-g31
+    container_name: t7-controller
     restart: always
     expose:
-      - 1234
-    # ports:
-    #   - 1234:1234
+      - 8087
     networks:
       - global-network
 

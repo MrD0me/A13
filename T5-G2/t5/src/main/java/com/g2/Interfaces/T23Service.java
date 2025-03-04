@@ -30,7 +30,8 @@ import com.g2.Model.User;
 @Service
 public class T23Service extends BaseService {
 
-    private static final String BASE_URL = "http://t23-g1-app-1:8080";
+    private static final String BASE_URL = "http://t23-controller:8082";
+    //private static final String BASE_URL = "http://127.0.0.1:8082";
 
     @SuppressWarnings("unchecked")
     public T23Service(RestTemplate restTemplate) {

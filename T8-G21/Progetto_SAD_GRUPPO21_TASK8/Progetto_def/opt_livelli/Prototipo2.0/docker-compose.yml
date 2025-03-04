@@ -1,10 +1,11 @@
-version: '2'
+name: t8
 
 services:
   t8_generazione:
-    build: ./
-    ports:
-      - 3080:3080
+    image: mick0974/a13:t8-g21
+    container_name: t8-controller
+    expose:
+      - 8088
     networks:
       - global-network
     volumes:

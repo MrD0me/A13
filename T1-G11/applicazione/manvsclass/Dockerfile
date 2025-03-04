@@ -22,4 +22,4 @@ RUN bash installazione.sh
 #WORKDIR /app
 
 EXPOSE 8080
-CMD ["java","-jar","manvsclass.jar"]
+CMD ["java","-jar", "-Dspring.profiles.active=prod", "manvsclass.jar"]

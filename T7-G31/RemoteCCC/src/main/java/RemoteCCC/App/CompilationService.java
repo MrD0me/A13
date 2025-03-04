@@ -118,7 +118,7 @@ public class CompilationService {
                 logger.info("[Compilation Service] Errori: {}", outputMaven);
             }
 
-            //FileUtil.deleteDirectoryRecursively(Paths.get(config.getPathCompiler()));
+            FileUtil.deleteDirectoryRecursively(Paths.get(config.getPathCompiler()));
         } catch (FileConcurrencyException e) {
             logger.error("[Compilation Service] [LOCK ERROR] ", e);
         } catch (IOException e) {

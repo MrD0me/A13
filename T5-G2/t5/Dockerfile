@@ -8,4 +8,4 @@ COPY ./target/t5-0.1.0-SNAPSHOT.jar /app/
 WORKDIR /app
 
 # Comando di avvio dell'applicazione
-CMD ["java", "-jar", "t5-0.1.0-SNAPSHOT.jar"]
+CMD ["java", "-jar", "-Dspring.profiles.active=prod", "t5-0.1.0-SNAPSHOT.jar"]

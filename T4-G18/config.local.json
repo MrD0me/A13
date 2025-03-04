@@ -1,6 +1,6 @@
 {
     "postgresUrl": "postgresql://postgres:postgres@127.0.0.1:5432/postgres",
-    "listenAddress": "0.0.0.0:3000",
+    "listenAddress": "0.0.0.0:8084",
     "apiPrefix": "/",
     "dataPath": "data",
     "enableSwagger": false,

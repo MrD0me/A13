@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import com.groom.manvsclass.util.ServiceURL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
@@ -20,13 +21,23 @@ public class NotificationService {
     private static final Logger logger = LoggerFactory.getLogger(NotificationService.class);
     private final RestTemplate restTemplate;
 
+
+    ServiceURL serviceURL;
+    public NotificationService(ServiceURL serviceURL, RestTemplate restTemplate) {
+        this.serviceURL = serviceURL;
+        this.restTemplate = restTemplate;
+    }
+
     // Iniezione di RestTemplate tramite costruttore
+    /*
     public NotificationService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
+     */
+
     public String sendNotification(String email, Integer studentID, String title, String message, String type) {
-        String url = "http://t23-g1-app-1:8080/new_notification";
+        String url = "http://" + serviceURL.getT23ServiceURL() + "/new_notification";
 
         // Verifica che almeno uno dei due identificatori sia fornito
         if (email == null && studentID == null) {
