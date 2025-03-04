@@ -3,7 +3,7 @@ package com.g2.Game.GameDTO;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class StartGameResponseDTO {
-     @JsonProperty("gameId")
+    @JsonProperty("gameId")
     private int gameId;
     @JsonProperty("status")
     private String status;

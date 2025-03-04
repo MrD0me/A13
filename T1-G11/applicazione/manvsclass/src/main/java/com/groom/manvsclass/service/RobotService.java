@@ -8,7 +8,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import com.groom.manvsclass.model.ServiceURL;
+import com.groom.manvsclass.util.ServiceURL;
 import com.groom.manvsclass.util.filesystem.FileOperationUtil;
 import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
@@ -48,6 +48,12 @@ public class RobotService {
 	private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(RobotService.class.getName());
 
 	//--------------------------------------------------
+
+	ServiceURL serviceURL;
+
+	public RobotService(ServiceURL serviceURL) {
+		this.serviceURL = serviceURL;
+	}
 
 	private int[] getJacocoCoverageByCoverageType(String filePath, String coverageType) {
 		try {
@@ -172,7 +178,7 @@ public class RobotService {
 	private void uploadRobotCoverageInT4(int[] evoSuiteStatistics, int[][] jacocoStatistics, int livello, String className, String robotName, String coverage) throws IOException{
 		HttpClient httpClient = HttpClientBuilder.create().build();
 
-		HttpPost httpPost = new HttpPost("http://" + ServiceURL.T4.getServiceURL() + "/robots");
+		HttpPost httpPost = new HttpPost("http://" + serviceURL.getT4ServiceURL() + "/robots");
 
 		// Creazione di un array JSON per contenere le informazioni sui robot generati
 		JSONArray arr = new JSONArray();
@@ -316,7 +322,10 @@ public class RobotService {
 
 	private void generateMissingEvoSuiteCoverage(String classUTName, String classUTPackageName, Path classUTPath, Path testPath, Path toCoveragePath, Path evoSuiteWorkingDir, String testPackageName) throws IOException {
 		try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
-			HttpPost httpPostT8 = new HttpPost("http://" + ServiceURL.T8.getServiceURL() + "/coverage/randoop");
+
+
+			logger.info("serviceURL.getT8ServiceURL(): " + serviceURL.getT8ServiceURL());
+			HttpPost httpPostT8 = new HttpPost("http://" + serviceURL.getT8ServiceURL() + "/coverage/randoop");
 
 			// Creazione del body JSON
 			JSONObject reqBody = new JSONObject();
@@ -361,7 +370,7 @@ public class RobotService {
 				return;
 			}
 
-			HttpPost httpPost = new HttpPost("http://" + ServiceURL.T7.getServiceURL() + "/coverage/evosuite");
+			HttpPost httpPost = new HttpPost("http://" + serviceURL.getT7ServiceURL() + "/coverage/evosuite");
 
 			MultipartEntityBuilder builder = MultipartEntityBuilder.create();
 			builder.setMode(HttpMultipartMode.STRICT); // Assicura compatibilità

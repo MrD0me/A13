@@ -1,24 +1,23 @@
-version: '3.12.12'
+name: t1
 
 services:
   controller:
-    build: .
+    image: mick0974/a13:t1-g11
+    container_name: t1-controller
     restart: always
     expose:
-      - 8080
-    # ports:
-    #   - 8080:8080
+      - 8081
     depends_on:
       - mongo_db
     volumes:
       - ./FilesUpload:/Files-Upload
-      - VolumeT9:/VolumeT9
-      - VolumeT8:/VolumeT8
+      - VolumeT0:/VolumeT0
     networks:
       - global-network      
 
   mongo_db:
     image: "mongo:6.0.6"
+    container_name: t1-mongo_db
     restart: always
     ports:
       - 27017:27017
@@ -32,7 +31,5 @@ networks:
     external: true
 
 volumes:
-  VolumeT9:
-    external: true
-  VolumeT8:
+  VolumeT0:
     external: true

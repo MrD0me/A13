@@ -36,11 +36,9 @@ public class ServiceManager {
     @Autowired
     public ServiceManager(ServiceConfig config, RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
-
         // Carica i servizi definiti nella configurazione
         String[] enabledServices = config.getEnabled().split(",");
         Map<String, String> serviceMapping = config.getMapping();
-
         for (String serviceName : enabledServices) {
             serviceName = serviceName.trim();
             String className = serviceMapping.get(serviceName);

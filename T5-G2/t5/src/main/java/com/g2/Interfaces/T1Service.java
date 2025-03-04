@@ -33,7 +33,8 @@ import com.g2.Model.ClassUT;
 @Service
 public class T1Service extends BaseService {
 
-    private static final String BASE_URL = "http://manvsclass-controller-1:8080";
+    private static final String BASE_URL = "http://t1-controller:8081";
+    //private static final String BASE_URL = "http://127.0.0.1:8081";
 
     public T1Service(RestTemplate restTemplate) {
         super(restTemplate, BASE_URL);

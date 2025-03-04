@@ -10,5 +10,5 @@ RUN bash ./docker-entrypoint.sh
 
 WORKDIR /app/Serv
 
-EXPOSE 3080
+EXPOSE 8088
 ENTRYPOINT [ "node", "prova_esecuzione_parametri4.js" ] 

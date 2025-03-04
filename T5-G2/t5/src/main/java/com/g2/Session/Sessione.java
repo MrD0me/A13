@@ -1,0 +1,178 @@
+package com.g2.Session;
+
+import java.io.Serializable;
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.g2.Game.GameModes.GameLogic;
+
+/**
+ * Classe che rappresenta una sessione di un utente. Contiene una mappa delle
+ * diverse modalità di gioco associate a un utente.
+ */
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "@class")
+public class Sessione implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    @JsonProperty("id_sess")
+    private final String idSessione;
+
+    @JsonProperty("id_user")
+    private final String userId;
+
+    // Timestamp di creazione della sessione (immutabile)
+    @JsonProperty("created_at")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
+    private final Instant createdAt;
+
+    // Timestamp aggiornato ad ogni update della sessione
+    @JsonProperty("updated_at")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
+    private Instant updatedAt;
+
+    // Mappa che contiene le modalità di gioco associate a un wrapper
+    @JsonProperty("modalita")
+    private Map<String, ModalitaWrapper> modalita;
+
+    /*
+     * Prefisso key della sessione 
+     */
+    private static final String KEY_PREFIX = "User_session";
+
+    /**
+     * Crea la chiave della sessione usando playerId e un timestamp. Il formato
+     * della chiave sarà: "prefix:playerId:timestamp".
+     */
+    private String buildCompositeKey() {
+        return KEY_PREFIX + ":" + this.userId + ":" + this.createdAt;
+    }
+
+    /**
+     * Costruttore per inizializzare una sessione.
+     *
+     * @param idSessione Identificativo univoco della sessione
+     * @param userId Identificativo dell'utente proprietario della sessione
+     */
+    public Sessione(String idSessione, String userId) {
+        this.idSessione = Objects.requireNonNull(idSessione, "idSessione non può essere null");
+        this.userId = Objects.requireNonNull(userId, "userId non può essere null");
+        this.createdAt = Instant.now();
+        this.updatedAt = this.createdAt;
+        this.modalita = new HashMap<>();
+    }
+
+    /**
+     * Costruttore per inizializzare una sessione, key autogenerata
+     *
+     * @param userId Identificativo dell'utente proprietario della sessione
+     */
+    public Sessione(String userId) {
+        this.userId = Objects.requireNonNull(userId, "userId non può essere null");
+        this.createdAt = Instant.now();
+        this.updatedAt = this.createdAt;
+        this.modalita = new HashMap<>();
+        this.idSessione = buildCompositeKey();
+    }
+
+    // Getters
+    public String getIdSessione() {
+        return idSessione;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public Map<String, ModalitaWrapper> getModalita() {
+        return modalita;
+    }
+
+    public void setModalita(Map<String, ModalitaWrapper> modalita) {
+        this.modalita = Objects.requireNonNull(modalita, "modalita non può essere null");
+        this.updatedAt = Instant.now(); // Aggiorna il timestamp di update
+    }
+
+    /**
+     * Rimuove una modalità di gioco dalla sessione.
+     *
+     * @param key Nome della modalità da rimuovere
+     * @return true se la modalità è stata rimossa, false se la modalità non
+     * esisteva
+     */
+    public boolean removeModalita(String key) {
+        if (this.modalita.containsKey(key)) {
+            this.modalita.remove(key);
+            this.updatedAt = Instant.now(); // Aggiorna il timestamp di update
+            return true; // Modalità rimossa con successo
+        }
+        return false; // La modalità non esisteva nella sessione
+    }
+
+    /**
+     * Aggiunge (o aggiorna) una modalità di gioco nella sessione.
+     *
+     * @param key Nome della modalità (es. "Sfida", "Allenamento")
+     * @param game Oggetto GameLogic associato alla modalità
+     */
+    public void addModalita(String key, GameLogic game) {
+        Objects.requireNonNull(key, "La chiave della modalità non può essere null");
+        Objects.requireNonNull(game, "L'oggetto GameLogic non può essere null");
+        this.modalita.put(key, new ModalitaWrapper(game));
+        this.updatedAt = Instant.now(); // Aggiorna il timestamp di update
+    }
+
+    /**
+     * Controlla se una determinata modalità è presente nella sessione.
+     *
+     * @param key Nome della modalità da cercare
+     * @return true se la modalità esiste, false altrimenti
+     */
+    public boolean hasModalita(String key) {
+        return this.modalita.containsKey(key);
+    }
+
+
+    @Override
+    public String toString() {
+        return "Sessione{"
+                + "idSessione='" + idSessione + '\''
+                + ", userId='" + userId + '\''
+                + ", createdAt=" + createdAt
+                + ", updatedAt=" + updatedAt
+                + ", modalita=" + modalita
+                + '}';
+    }
+
+    /**
+     * Record per rappresentare una modalità di gioco con timestamp di creazione
+     * e aggiornamento.
+     */
+    @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "@class")
+    public record ModalitaWrapper(
+            @JsonProperty("gameobject") GameLogic gameobject,
+            @JsonProperty("created_at")
+            @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC") Instant createdAt,
+            @JsonProperty("updated_at")
+            @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC") Instant updatedAt) implements Serializable {
+
+        private static final long serialVersionUID = 1L;
+
+        public ModalitaWrapper(GameLogic gameobject) {
+            this(gameobject, Instant.now(), Instant.now());
+        }
+    }
+}

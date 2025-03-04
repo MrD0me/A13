@@ -28,7 +28,8 @@ import org.springframework.web.client.RestTemplate;
 @Service
 public class T7Service extends BaseService {
 
-    private static final String BASE_URL = "http://remoteccc-app-1:1234";
+    private static final String BASE_URL = "http://t7-controller:8087";
+    //private static final String BASE_URL = "http://127.0.0.1:8087";
 
     public T7Service(RestTemplate restTemplate) {
         super(restTemplate, BASE_URL);

@@ -1,11 +1,12 @@
-version: '3.12.12'
+name: t6
 
 services:
   app:
-    build: .
+    image: mick0974/a13:t6-g12
+    container_name: t6-controller
     restart: always
     expose:
-      - 80
+      - 8086
     # ports:
     #   - 8083:80
     networks:

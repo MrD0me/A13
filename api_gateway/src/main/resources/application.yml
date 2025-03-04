@@ -9,55 +9,56 @@ ribbon:
   eureka:
     enabled: false
 
-zuul: 
+zuul:
   host:
-    connect-timeout-millis: 600000 
+    connect-timeout-millis: 600000
     socket-timeout-millis: 600000
   routes:
     jacoco-service:
       sensitiveHeaders:
       path: /api/getJaCoCoReport/**
-      url: http://t6-g12-app-1:80/
+      url: http://${T6_ENDPOINT:t6-controller}:${T6_PORT:8086}/
     receiveClass-service:
       sensitiveHeaders:
       path: /api/receiveClassUnderTest/**
-      url: http://t6-g12-app-1:80/receiveClassUnderTest
+      url: http://${T6_ENDPOINT:t6-controller}:${T6_PORT:8086}/receiveClassUnderTest
     calculateScalataFinalScore-service:
       sensitiveHeaders:
       path: /api/calculateScalataFinalScore/**
-      url: http://t6-g12-app-1:80/calculateScalataFinalScore
+      url: http://${T6_ENDPOINT:t6-controller}:${T6_PORT:8086}/calculateScalataFinalScore
     sendInfo-service:
       sensitiveHeaders:
       path: /api/sendInfo/**
-      url: http://t6-g12-app-1:80/sendInfo
+      url: http://${T6_ENDPOINT:t6-controller}:${T6_PORT:8086}/sendInfo
     saveData-service:
       sensitiveHeaders:
       path: /api/save-data/**
-      url: http://t5-app-1:8080/save-data
+      url: http://${T5_ENDPOINT:t5-controller}:${T5_PORT:8085}/save-data
     saveScalata-service:
       sensitiveHeaders:
       path: /api/save-scalata/**
-      url: http://t5-app-1:8080/save-scalata
+      url: http://${T5_ENDPOINT:t5-controller}:${T5_PORT:8085}/save-scalata
     downloadFile-service:
       sensitiveHeaders:
       path: /api/downloadFile/**
-      url: http://manvsclass-controller-1:8080/downloadFile
+      url: http://${T1_ENDPOINT:t1-controller}:${T1_PORT:8081}/downloadFile
     run-service:
       sensitiveHeaders:
       path: /api/run/**
-      url: http://t6-g12-app-1:80/run
+      url: http://${T6_ENDPOINT:t6-controller}:${T6_PORT:8086}/run
     loadingresult-service:
       sensitiveHeaders:
-      path: /api/VolumeT8/FolderTree/**
-      url:  http://prototipo20-t8_generazione-1:3080/api/VolumeT8/FolderTree
+      path: /api/VolumeT0/FolderTree/**
+      url:  http://${T8_ENDPOINT:t8-controller}:${T8_PORT:8088}/api/VolumeT0/FolderTree
     compile-and-codecoverage-service:
       sensitiveHeaders:
       path: /api/compile-and-codecoverage/**
-      url: http://remoteccc-app-1:1234/compile-and-codecoverage
+      url: http://${T7_ENDPOINT:t7-controller}:${T7_PORT:8087}/compile-and-codecoverage
     getEvoSuiteCoverageForRobot-service:
       sensitiveHeaders:
       path: /api/coverage/**
-      url: http://prototipo20-t8_generazione-1:3080/api/coverage
+      url: http://${T8_ENDPOINT:t8-controller}:${T8_PORT:8088}/api/coverage
+
 eureka:
   client:
     enabled: false

@@ -1,12 +1,11 @@
-version: '3.12.12'
+name: api_gateway
 
 services:
   gateway:
-    build: .
+    image: mick0974/a13:api-gateway
+    container_name: api_gateway-controller
     expose:
       - 8090
-    # ports:
-    #   - 8090:8090
     networks:
       - global-network
       

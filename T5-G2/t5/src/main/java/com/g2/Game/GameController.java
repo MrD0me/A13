@@ -16,14 +16,18 @@
  */
 package com.g2.Game;
 
-import org.json.JSONObject;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -36,6 +40,8 @@ import com.g2.Game.GameModes.GameLogic;
 import com.g2.Game.Service.Exceptions.GameAlreadyExistsException;
 import com.g2.Game.Service.Exceptions.GameDontExistsException;
 import com.g2.Game.Service.GameServiceManager;
+
+import jakarta.validation.Valid;
 
 //Qui introduco tutte le chiamate REST per la logica di gioco/editor
 @CrossOrigin
@@ -70,26 +76,45 @@ public class GameController {
      *  se non esiste instanzia un nuovo gioco 
      */
     @PostMapping("/StartGame")
-    public ResponseEntity<StartGameResponseDTO> startGame(@RequestBody StartGameRequestDTO request) {
+    public ResponseEntity<StartGameResponseDTO> startGame(@Valid @RequestBody StartGameRequestDTO request) {
         try {
+            logger.info("[StartGame] Richiesta ricevuta: " + request);
             // Mappare il DTO nel modello di dominio
             GameLogic game = gameServiceManager.CreateGameLogic(
-                                            request.getPlayerId(),
-                                            request.getMode(),
-                                            request.getUnderTestClassName(),
-                                            request.getTypeRobot(),
-                                            request.getDifficulty());
-
+                                request.getPlayerId(),
+                                request.getMode(),
+                                request.getUnderTestClassName(),
+                                request.getTypeRobot(),
+                                request.getDifficulty()
+                            );
             // Mappatura del modello di dominio nel DTO di risposta
             StartGameResponseDTO response = new StartGameResponseDTO(game.getGameID(), "created");
             return ResponseEntity.ok(response);
         } catch (GameAlreadyExistsException e) {
             logger.error("[GAMECONTROLLER][StartGame] " + e.getMessage());
-            StartGameResponseDTO response = new StartGameResponseDTO(-1, "GameAlreadyExistsException");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new StartGameResponseDTO(-1, "GameAlreadyExistsException"));
+        } catch (Exception e) {
+            logger.error("[GAMECONTROLLER][StartGame] Unexpected error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new StartGameResponseDTO(-1, "Internal Server Error"));
         }
     }
 
+    /*
+     * Handler eccezione campi non validi 
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        Map<String, String> errors = new HashMap<>();
+        /*
+         * Ottengo gli errori per ogni binding di un json e popolo la mappa così posso poi inviarla 
+         */
+        ex.getBindingResult().getFieldErrors().forEach(error
+                -> errors.put(error.getField(), error.getDefaultMessage())
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
+    }
 
     /*
      *  Chiamata principale del game engine, l'utente ogni volta può comunicare la sua richiesta di
@@ -113,23 +138,4 @@ public class GameController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
     }
-
-    // Metodo per creare una risposta di errore
-    /*
-     * ERROR CODE che mando al client
-     *  0 - modalità non esiste
-     *  1 -  l'utente ha cambiato le impostazioni della partita
-     *  2 -  esiste già la partita
-     *  3 -  è avvenuta un eccezione
-     *  4 -  non esiste la partita
-     *  5 -  partita eliminata
-     */
-    @SuppressWarnings("unused")
-    private ResponseEntity<String> createErrorResponse(String errorMessage, String errorCode) {
-        JSONObject error = new JSONObject();
-        error.put("error", errorMessage);
-        error.put("errorCode", errorCode);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error.toString());
-    }
-
 }

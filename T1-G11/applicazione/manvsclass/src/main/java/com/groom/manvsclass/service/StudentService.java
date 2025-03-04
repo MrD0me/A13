@@ -1,5 +1,6 @@
 package com.groom.manvsclass.service;
 
+import com.groom.manvsclass.util.ServiceURL;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -20,6 +21,11 @@ import java.util.List;
 public class StudentService {
 
     private final HttpClient httpClient = HttpClientBuilder.create().build();
+
+    ServiceURL serviceURL;
+    public StudentService(ServiceURL serviceURL) {
+        this.serviceURL = serviceURL;
+    }
 
     public ResponseEntity<?> ottieniStudentiDettagli(List<String> studentiIds, String jwt) {
         System.out.println("Inizio metodo ottieniStudentiDettagli");
@@ -44,7 +50,9 @@ public class StudentService {
 
             // 3. Configura la richiesta HTTP POST
             System.out.println("Configurazione della richiesta HTTP POST...");
-            HttpPost httpPost = new HttpPost("http://t23-g1-app-1:8080/studentsByIds");
+
+            HttpPost httpPost = new HttpPost("http://" + serviceURL.getT23ServiceURL() + "/studentsByIds");
+
             httpPost.setHeader("Authorization", "Bearer " + jwt);
             httpPost.setHeader("Content-Type", "application/json");
             httpPost.setEntity(entity);

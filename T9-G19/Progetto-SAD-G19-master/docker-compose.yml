@@ -1,8 +1,9 @@
-version: '3.12.12'
+name: t9
 
 services:
   app:
-    build: .
+    image: mick0974/a13:t9-g19
+    container_name: t9-app
     networks:
       - global-network
     volumes:
