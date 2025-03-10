@@ -69,6 +69,38 @@ var console_robot = CodeMirror.fromTextArea(
 );
 
 /*
+* utility 
+*/
+
+function getParameterByName(name) {
+	const url = window.location.href;
+	name = name.replace(/[\[\]]/g, "\\$&");
+	const regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)");
+	const results = regex.exec(url);
+	if (!results) return null;
+	if (!results[2]) return "";
+	return decodeURIComponent(results[2].replace(/\+/g, " "));
+}
+
+function GetMode() {
+	const mode = getParameterByName("mode");
+	if (mode) {
+		const trimmed = mode.replace(/[^a-zA-Z0-9\s]/g, " ").trim();
+		return trimmed;
+	}
+    return null;
+}
+
+function GetClassName(){
+    const ClassName = getParameterByName("ClassUT");
+    if (ClassName){
+        const trimmed = ClassName.replace(/[^a-zA-Z0-9\s]/g, " ").trim();
+		return trimmed; 
+    }
+    return null;
+}
+
+/*
 *   ZONE DEL EDITOR 
 */
 const divider_Console       = document.getElementById("divider_Console");
@@ -85,30 +117,6 @@ const close_console_utente  = document.getElementById("close_console_utente");
 const run_button = document.getElementById("runButton");
 const coverage_button = document.getElementById("coverageButton");
 
-/*
-*   MESSAGGI E TESTO 
-*/
-
-const mode = document.getElementById("Nome_modalita").textContent = get_mode_text(localStorage.getItem("modalita"));
-// const mode_sfida             = /*[[${welcomeMessage}]]*/
-// const mode_allenamento       = /*[[${welcomeMessage}]]*/
-// const mode_scalata           = /*[[${welcomeMessage}]]*/
-
-//  const status_sending:       "Sending Test..."	
-//  const status_loading: 	    "Loading Results..." 	
-//  const status_compiling:     "Compiling..."  
-//  const status_ready: 		"Ready" 		
-//  const status_error: 		"Error" 		
-//  const status_turn_end:      "Turn Ended" 	
-//  const status_game_end:      "Game Ended" 
-
-
-//  const status_button_coverage gioca 
-//  const status_button_run      submit ?? 
-//  const var_info_ClasseUT      "ClasseUT: "
-//  const var_info_difficulty
-//  const var_info_robot 
-
 //  Variabili di gioco 
 
 var turno = 0; // numero di turni giocati fino ad ora
@@ -120,3 +128,8 @@ var perc_robot = "0"; // percentuale di copertura del robot scelto
 var userScore = 0;
 var locGiocatore = 0;
 var currentDate = new Date();
+
+const mode      = GetMode();
+const ClassName = GetClassName();
+
+document.getElementById("Nome_modalita").textContent = get_mode_text(mode);

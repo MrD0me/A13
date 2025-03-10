@@ -46,7 +46,7 @@ $(document).ready(function () {
         const currentDate = new Date();
         const formattedDate = `${String(currentDate.getDate()).padStart(2, "0")}/${String(currentDate.getMonth() + 1).padStart(2, "0")}/${currentDate.getFullYear()}`;
         const replacements = {
-            TestClasse: `Test${localStorage.getItem("underTestClassName")}`,
+            TestClasse: `Test${ClassName}`,
             username: jwtData.sub,
             userID: jwtData.userId,
             date: formattedDate,
@@ -56,6 +56,7 @@ $(document).ready(function () {
         editor_utente.setValue(savedContent);
         editor_utente.refresh();
     }
+    
     if (localStorage.getItem('storico')) {
         viewStorico();
     }
@@ -112,12 +113,14 @@ function handleResponse(response, formData, isGameEnd, loadingKey, buttonKey) {
     }
 
     // Se la copertura è disponibile, la processa
-    processCoverage(userCoverage, formData, 
+    processCoverage(
+                    userCoverage, formData, 
                     robotScore, userScore, 
                     isGameEnd, loadingKey, 
                     buttonKey, userJacocoCoverage, 
                     robotJacocoCoverage, robotCoverage, 
-                    isWinner);
+                    isWinner
+                );
 }
 
 // Processa la copertura del codice e aggiorna i dati di gioco
@@ -162,18 +165,13 @@ function handleCompileError(loadingKey, buttonKey) {
 // Recupera il report di coverage da T8
 async function fetchCoverageReport(formData) {
     const url = createApiUrl(formData, orderTurno); // Crea l'URL dell'API
-    return await ajaxRequest_ForT8(url, "POST", formData.get("testingClassCode"), false, "text"); // Esegue la richiesta AJAX
-}
-
-// Recupera il report di coverage per il robot da T8
-async function fetchRobotEvoSuiteCoverageReport(formData) {
-    const url = `/robots/evosuitecoverage` //coverage/robot/${formData.get("className")}/${formData.get("difficulty")}`
-    const data = {
-        testClassId: localStorage.getItem("underTestClassName"),
-        robotType: localStorage.getItem("robot"),
-        difficulty: localStorage.getItem("difficulty")
-    }
-    return await ajaxRequest(url, "GET", data, true, "text"); // Esegue la richiesta AJAX
+    return await ajaxRequest_ForT8( 
+                                    url, 
+                                    "POST", 
+                                    formData.get("testingClassCode"), 
+                                    false,
+                                    "text"
+                                ); // Esegue la richiesta AJAX
 }
 
 // Gestisce la fine del gioco, mostra un messaggio e pulisce i dati
@@ -187,7 +185,7 @@ function handleEndGame(userScore) {
 
 // Reimposta i pulsanti per consentire nuove azioni
 function resetButtons() {
-    run_button.disabled = (localStorage.getItem("modalita") === "Allenamento"); // Abilita/disabilita in base alla modalità
+    run_button.disabled = (mode === "Allenamento"); // Abilita/disabilita in base alla modalità
     coverage_button.disabled = false; // Abilita il pulsante di coverage
 }
 
@@ -208,6 +206,9 @@ window.addEventListener('beforeunload', (event) => {
         // Il messaggio predefinito non può essere personalizzato, ma il modal può apparire
         return ''; // Restituisce una stringa vuota per attivare il messaggio predefinito
     }
+    // Pulisco il localstorage dal test scritto dall'utente 
+    localStorage.removeItem('codeMirrorContent');
+    localStorage.removeItem('storico');
 });
 
 // Pulsante "Run/Submit"

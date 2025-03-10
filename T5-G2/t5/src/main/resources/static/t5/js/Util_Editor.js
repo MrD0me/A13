@@ -35,24 +35,21 @@ function createApiUrl(formData, orderTurno) {
 
 // Funzione per generare il percorso del test
 function generaPercorsoTest(orderTurno, formData) {
-	let modalita = localStorage.getItem("modalita");
 	const playerId = formData.get("playerId");
 	const gameId = formData.get("gameId");
 	const roundId = formData.get("roundId");
 	const classeLocal = formData.get("className");
-
-	modalita = (modalita === "Allenamento") ? "Sfida" : modalita;
 	
 	// Verifica la modalità e costruisce il percorso appropriato
-	if (modalita === "Scalata" || modalita === "Sfida") {
+	if (mode === "Scalata" || mode === "Sfida") {
 		const scalataPart =
-			modalita === "Scalata"
+		mode === "Scalata"
 				? `/${localStorage.getItem("SelectedScalata")}${localStorage.getItem(
 						"scalataId"
 				  )}`
 				: "";
 
-		return `/VolumeT0/FolderTree/StudentLogin/Player${playerId}/${modalita}${scalataPart}/${classeLocal}/Game${gameId}/Round${roundId}/Turn${orderTurno}/TestReport`;
+		return `/VolumeT0/FolderTree/StudentLogin/Player${playerId}/${mode}${scalataPart}/${classeLocal}/Game${gameId}/Round${roundId}/Turn${orderTurno}/TestReport`;
 	} else {
 		console.error("Errore: modalità non trovata");
 		window.location.href = "/main";

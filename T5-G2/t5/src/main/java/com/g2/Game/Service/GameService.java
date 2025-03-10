@@ -1,3 +1,20 @@
+/*
+ *   Copyright (c) 2025 Stefano Marano https://github.com/StefanoMarano80017
+ *   All rights reserved.
+
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+
+ *   http://www.apache.org/licenses/LICENSE-2.0
+
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ */
+
 package com.g2.Game.Service;
 
 import java.util.List;
@@ -98,6 +115,10 @@ public class GameService {
         }
     }
 
+    public boolean UpdateGame(String playerId, GameLogic game){
+        return sessionService.updateGameMode(playerId, game);
+    }
+
     public CompileResult handleCompile(String Classname, String testingClassCode) {
         logger.info("handleCompile: Inizio compilazione per className={}.", Classname);
         return new CompileResult(Classname, testingClassCode, this.serviceManager);
@@ -105,7 +126,7 @@ public class GameService {
 
     /*
     *  Sfrutto T4 per avere i risultati dei robot
-     */
+    */
     public CompileResult GetRobotCoverage(GameLogic currentGame) {
         try {
             logger.info("Richiesta Coverage robot per testClass={}, robotType={}, difficulty={}.",
@@ -129,6 +150,7 @@ public class GameService {
         currentGame.NextTurn(userScore, robotScore);
         boolean gameFinished = isGameEnd || currentGame.isGameEnd();
         logger.info("handleGameLogic: Stato partita (gameFinished={}) per playerId={}.", gameFinished, currentGame.getPlayerID());
+        UpdateGame(currentGame.getPlayerID(), currentGame);
         return gameFinished;
     }
 
@@ -145,7 +167,13 @@ public class GameService {
          */
         if (gameFinished) {
             logger.info("handleGameLogic: Partita terminata per playerId={}. Avvio aggiornamento progressi e notifiche.", currentGame.getPlayerID());
+            /*
+             * Notifiche e trofei 
+             */
             updateProgressAndNotifications(currentGame.getPlayerID());
+            /*
+             * Chiudo la partita in T4 e chiudo sessione 
+             */
             EndGame(currentGame, userScore);
         }
         /*
@@ -166,11 +194,11 @@ public class GameService {
     public void EndGame(GameLogic currentGame, int userscore) {
         logger.info("endGame: Terminazione partita per playerId={}.", currentGame.getPlayerID());
         /*
-        *   L'utente ha deciso di terminare la partita o 
-        *    la modalità di gioco ha determianto il termine
-        *   Salvo la partita 
-        *   Distruggo la partita salvata in sessione  
-         */
+        *       L'utente ha deciso di terminare la partita o 
+        *       la modalità di gioco ha determianto il termine
+        *       Salvo la partita 
+        *       Distruggo la partita salvata in sessione  
+        */
         currentGame.EndRound();
         currentGame.EndGame(userscore);
         destroyGame(currentGame.getPlayerID(), currentGame.getMode());

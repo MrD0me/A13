@@ -138,7 +138,7 @@ public class GuiController {
         } catch (SessionDontExist e) {
             return "redirect:/main";
         }
-
+        
         ServiceObjectComponent classeUT = new ServiceObjectComponent(serviceManager, "classeUT", "T1", "getClassUnderTest", ClassUT);
         editor.setObjectComponents(classeUT);
         return editor.handlePageRequest();
