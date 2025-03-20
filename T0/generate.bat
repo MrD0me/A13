@@ -8,7 +8,7 @@ if "%~5"=="" (
     exit /b 1
 )
 
-if not "%~6"=="" (
+if not "%~7"=="" (
     echo Usage: %~nx0 ^<tool^> ^<class_name^> [^<package_name^>] ^<class_path^> ^<num_levels^> ^<host_output_dir^>
     echo ^<tool^>: randoop ^| evosuite
     exit /b 1
@@ -18,7 +18,7 @@ set CONTAINER_ID=t0-generator
 set TOOL=%1
 set CLASS_NAME=%2
 
-:: Se il numero di parametri è 5, significa che il package name è vuoto
+:: Se ci sono esattamente 5 parametri, il package name è vuoto
 if "%~6"=="" (
     set PACKAGE_NAME=
     set CLASS_PATH=%3
