@@ -145,7 +145,7 @@ public class UserProfileController {
         /*
          * Richiedo a T4 gli achievement sbloccati dall'utente
          */
-        List<UserGameStatistics> achievements = (List<UserGameStatistics>) serviceManager.handleRequest("T4", "getUserAchievements", Long.parseLong(achievement.getUserId()));
+        List<UserGameProgress> achievements = (List<UserGameProgress>) serviceManager.handleRequest("T4", "getUserAchievements", Long.parseLong(achievement.getUserId()));
         model.addAttribute("achievements", achievements);
 
         return achievement.handlePageRequest();

@@ -1,4 +1,4 @@
-package matchStatistics
+package userprogress
 
 import (
 	"github.com/alarmfox/game-repository/api"
@@ -6,12 +6,10 @@ import (
 )
 
 type Service interface {
-	Create(request *CreateRequest) (MatchStatistics, error)
-	UpdateHasWon(playerId Long, gameMode StringWrapper, classUT StringWrapper, robotType StringWrapper, difficulty StringWrapper, hasWon bool) (MatchStatistics, error)
-	GetMatchStatistics(playerId Long, gameMode StringWrapper, classUT StringWrapper, robotType StringWrapper, difficulty StringWrapper) (MatchStatistics, error)
-	UpdateAchievements(matchID Long, newAchievements []string) (GameModeAchievements, error)
-	GetAchievements(matchID Long) (GameModeAchievements, error)
-	GetMatchStatisticsWithAchievements(playerID Long) ([]WithAchievements, error)
+	Create(r *CreateRequest) (UserGameProgressResponse, error)
+	GetUserGameProgress(playerId Long, gameMode StringWrapper, classUT StringWrapper, robotType StringWrapper, difficulty StringWrapper) (UserGameProgressResponse, error)
+	UpdateHasWon(playerId Long, gameMode StringWrapper, classUT StringWrapper, robotType StringWrapper, difficulty StringWrapper, hasWon bool) (UserGameProgressResponse, error)
+	UpdateAchievements(playerId Long, gameMode StringWrapper, classUT StringWrapper, robotType StringWrapper, difficulty StringWrapper, newAchievements []string) (UserGameProgressResponse, error)
 }
 
 type Controller struct {
@@ -38,7 +36,7 @@ func (rc *Controller) Create(w http.ResponseWriter, r *http.Request) error {
 	return api.WriteJson(w, http.StatusCreated, winMatch)
 }
 
-func (rc *Controller) GetMatchStatistics(w http.ResponseWriter, r *http.Request) error {
+func (rc *Controller) GetUserGameProgress(w http.ResponseWriter, r *http.Request) error {
 	playerId, err := api.FromUrlParams[Long](r, "playerId")
 	if err != nil {
 		return api.MakeHttpError(err)
@@ -64,7 +62,7 @@ func (rc *Controller) GetMatchStatistics(w http.ResponseWriter, r *http.Request)
 		return api.MakeHttpError(err)
 	}
 
-	winMatch, err := rc.service.GetMatchStatistics(playerId, gameMode, classUT, robotType, difficulty)
+	winMatch, err := rc.service.GetUserGameProgress(playerId, gameMode, classUT, robotType, difficulty)
 	if err != nil {
 		return api.MakeHttpError(err)
 	}
@@ -112,7 +110,27 @@ func (rc *Controller) UpdateHasWon(w http.ResponseWriter, r *http.Request) error
 }
 
 func (rc *Controller) UpdateAchievements(w http.ResponseWriter, r *http.Request) error {
-	matchId, err := api.FromUrlParams[Long](r, "matchId")
+	playerId, err := api.FromUrlParams[Long](r, "playerId")
+	if err != nil {
+		return api.MakeHttpError(err)
+	}
+
+	gameMode, err := api.FromUrlParams[StringWrapper](r, "gameMode")
+	if err != nil {
+		return api.MakeHttpError(err)
+	}
+
+	classUT, err := api.FromUrlParams[StringWrapper](r, "classUT")
+	if err != nil {
+		return api.MakeHttpError(err)
+	}
+
+	robotType, err := api.FromUrlParams[StringWrapper](r, "robotType")
+	if err != nil {
+		return api.MakeHttpError(err)
+	}
+
+	difficulty, err := api.FromUrlParams[StringWrapper](r, "difficulty")
 	if err != nil {
 		return api.MakeHttpError(err)
 	}
@@ -122,35 +140,7 @@ func (rc *Controller) UpdateAchievements(w http.ResponseWriter, r *http.Request)
 		return err
 	}
 
-	winMatch, err := rc.service.UpdateAchievements(matchId, request.Achievements)
-	if err != nil {
-		return api.MakeHttpError(err)
-	}
-
-	return api.WriteJson(w, http.StatusOK, winMatch)
-}
-
-func (rc *Controller) GetAchievement(w http.ResponseWriter, r *http.Request) error {
-	matchId, err := api.FromUrlParams[Long](r, "matchId")
-	if err != nil {
-		return api.MakeHttpError(err)
-	}
-
-	winMatch, err := rc.service.GetAchievements(matchId)
-	if err != nil {
-		return api.MakeHttpError(err)
-	}
-
-	return api.WriteJson(w, http.StatusOK, winMatch)
-}
-
-func (rc *Controller) GetAchievementByPlayerID(w http.ResponseWriter, r *http.Request) error {
-	playerId, err := api.FromUrlParams[Long](r, "playerId")
-	if err != nil {
-		return api.MakeHttpError(err)
-	}
-
-	winMatch, err := rc.service.GetMatchStatisticsWithAchievements(playerId)
+	winMatch, err := rc.service.UpdateAchievements(playerId, gameMode, classUT, robotType, difficulty, request.Achievements)
 	if err != nil {
 		return api.MakeHttpError(err)
 	}

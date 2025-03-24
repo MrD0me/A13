@@ -54,31 +54,24 @@ public class T4Service extends BaseService {
                 Integer.class, Integer.class
         ));
 
-        registerAction("checkIfAlreadyWon", new ServiceActionDefinition(
-                params -> checkIfAlreadyWon((int) params[0], (String) params[1], (String) params[2],
+        registerAction("getUserGameProgress", new ServiceActionDefinition(
+                params -> getUserGameProgress((int) params[0], (String) params[1], (String) params[2],
                         (String) params[3], (String) params[4]), Integer.class, String.class, String.class, String.class, String.class
         ));
 
-        registerAction("matchIsWon", new ServiceActionDefinition(
-                params -> matchIsWon((int) params[0], (String) params[1], (String) params[2],
+        registerAction("updateUserRecordForVictory", new ServiceActionDefinition(
+                params -> updateUserRecordForVictory((int) params[0], (String) params[1], (String) params[2],
                         (String) params[3], (String) params[4]), Integer.class, String.class, String.class, String.class, String.class
         ));
 
-        registerAction("newMatch", new ServiceActionDefinition(
-                params -> newMatch((int) params[0], (String) params[1], (String) params[2],
+        registerAction("createUserGameProgress", new ServiceActionDefinition(
+                params -> createUserGameProgress((int) params[0], (String) params[1], (String) params[2],
                         (String) params[3], (String) params[4]), Integer.class, String.class, String.class, String.class, String.class
         ));
 
-        registerAction("updateUserMatchAchievements", new ServiceActionDefinition(
-                params -> updateUserMatchAchievements((long) params[0], (String[]) params[1]), Long.class, String[].class
-        ));
-
-        registerAction("getUserMatchAchievements", new ServiceActionDefinition(
-                params -> getUserMatchAchievements((long) params[0]), Long.class
-        ));
-
-        registerAction("getUserAchievements", new ServiceActionDefinition(
-                params -> getUserAchievements((long) params[0]), Long.class
+        registerAction("updateUserGameProgressAchievements", new ServiceActionDefinition(
+                params -> updateUserGameProgressAchievements((int) params[0], (String) params[1], (String) params[2],
+                        (String) params[3], (String) params[4], (String[]) params[5]), Integer.class, String.class, String.class, String.class, String.class, String[].class
         ));
 
         registerAction("getAvailableRobots", new ServiceActionDefinition(
@@ -143,49 +136,11 @@ public class T4Service extends BaseService {
     }
 
     /*
-     * ENDPOINT /matchstatistics
+     * ENDPOINT /progress
      */
-    // Usa GET /matchstatistics/achievements/{matchId} per ottenere gli achievement ottenuti dall'utente su quel match
-    private GameModeAchievements getUserMatchAchievements(long matchId) {
-        final String endpoint = "/matchstatistics/achievements/" + matchId;
-        return callRestGET(endpoint, null, GameModeAchievements.class);
-    }
-
-    // Usa GET /matchstatistics/achievements/user/{matchId} per aggiungere nuovi achievement ottenuti dall'utente su quel match
-    private List<UserGameStatistics> getUserAchievements(long playerId) {
-        final String endpoint = "/matchstatistics/achievements/user/" + playerId;
-        return callRestGET(endpoint, null, new ParameterizedTypeReference<List<UserGameStatistics>>(){});
-    }
-
-    // Usa PUT /matchstatistics/achievements/{matchId} per aggiungere nuovi achievement ottenuti dall'utente su quel match
-    private GameModeAchievements updateUserMatchAchievements(long matchId, String[] achievements) {
-        final String endpoint = "/matchstatistics/achievements/" + matchId;
-
-        JSONObject requestBody = new JSONObject();
-        requestBody.put("achievements", achievements);
-        return callRestPut(endpoint, requestBody, null, null, GameModeAchievements.class);
-    }
-
-    // Usa GET /matchstatistics/{playerId}/{gameMode}/{classUT}/{robotType}/{difficulty} per verificare se l'utente "playerId"
-    // ha già battuto il robot "robotType" alla difficoltà "difficulty" nella classe "classUT"
-    private MatchStatistics checkIfAlreadyWon(int playerId, String gameMode, String classUT, String robotType, String difficulty) {
-        final String endpoint =  String.format("/matchstatistics/%s/%s/%s/%s/%s", playerId, gameMode, classUT, robotType, difficulty);
-        return callRestGET(endpoint, null, MatchStatistics.class);
-    }
-
-    // Usa PUT /matchstatistics/{playerId}/{gameMode}/{classUT}/{robotType}/{difficulty} per settare il match come vinto
-    // dall'utente
-    private MatchStatistics matchIsWon(int playerId, String gameMode, String classUT, String robotType, String difficulty) {
-        final String endpoint =  String.format("/matchstatistics/%s/%s/%s/%s/%s", playerId, gameMode, classUT, robotType, difficulty);
-
-        JSONObject requestBody = new JSONObject();
-        requestBody.put("has_won", true);
-        return callRestPut(endpoint, requestBody, null, null, MatchStatistics.class);
-    }
-
-    // Usa POST /matchstatistics per creare un nuovo match
-    private MatchStatistics newMatch(int playerId, String gameMode, String classUT, String robotType, String difficulty) {
-        final String endpoint =  "/matchstatistics";
+    // Usa POST /progress per creare un nuovo GameRecord (se non esiste) e il relativo UserGameProgress (se non esiste)
+    private UserGameProgress createUserGameProgress(int playerId, String gameMode, String classUT, String robotType, String difficulty) {
+        final String endpoint =  "/progress";
 
         JSONObject requestBody = new JSONObject();
         requestBody.put("player_id", playerId);
@@ -193,9 +148,39 @@ public class T4Service extends BaseService {
         requestBody.put("class_ut", classUT);
         requestBody.put("robot_type", robotType);
         requestBody.put("difficulty", difficulty);
-        return callRestPost(endpoint, requestBody, null, null, MatchStatistics.class);
+        return callRestPost(endpoint, requestBody, null, null, UserGameProgress.class);
     }
 
+    // Usa GET /progress/{playerId}/{gameMode}/{classUT}/{robotType}/{difficulty} per ottenere il progresso dell'utente
+    // "playerId" per il GameRecord identificato dalla modalità "gameMode", dal robot "robotType", dalla difficoltà
+    // "difficulty" e dalla classe "classUT"
+    private UserGameProgress getUserGameProgress(int playerId, String gameMode, String classUT, String robotType, String difficulty) {
+        final String endpoint =  String.format("/progress/%s/%s/%s/%s/%s", playerId, gameMode, classUT, robotType, difficulty);
+        return callRestGET(endpoint, null, UserGameProgress.class);
+    }
+
+    // Usa PUT /progress/achievements/{matchId} per aggiungere nuovi achievement ottenuti dall'utente su quel match
+    private UserGameProgress updateUserGameProgressAchievements(int playerId, String gameMode, String classUT, String robotType, String difficulty, String[] achievements) {
+        final String endpoint =  String.format("/progress/achievements/%s/%s/%s/%s/%s", playerId, gameMode, classUT, robotType, difficulty);
+
+        JSONObject requestBody = new JSONObject();
+        requestBody.put("achievements", achievements);
+        return callRestPut(endpoint, requestBody, null, null, UserGameProgress.class);
+    }
+
+    // Usa PUT /progress/state/{playerId}/{gameMode}/{classUT}/{robotType}/{difficulty} per settare che l'utente ha vinto
+    // quel GameRecord
+    private UserGameProgress updateUserRecordForVictory(int playerId, String gameMode, String classUT, String robotType, String difficulty) {
+        final String endpoint =  String.format("/progress/state/%s/%s/%s/%s/%s", playerId, gameMode, classUT, robotType, difficulty);
+
+        JSONObject requestBody = new JSONObject();
+        requestBody.put("has_won", true);
+        return callRestPut(endpoint, requestBody, null, null, UserGameProgress.class);
+    }
+
+    /*
+     * ENDPOINT /experience
+     */
     // Usa GET /experience/{playerId} per ottenere i punti esperienza dell'utente identificato da "playerId"
     private Experience getUserExperiencePoints(int playerId) {
         final String endpoint = "/experience/" + playerId;

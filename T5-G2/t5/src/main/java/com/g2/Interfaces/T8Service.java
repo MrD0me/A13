@@ -15,25 +15,22 @@ public class T8Service extends BaseService {
 
         registerAction("evosuiteUserCoverage", new ServiceActionDefinition(
                 params -> evosuiteUserCoverage((String) params[0], (String) params[1], (String) params[2],
-                        (String) params[3], (String) params[4], (String) params[5], (Integer) params[6]),
-                String.class, String.class, String.class, String.class, String.class, String.class, Integer.class
+                        (String) params[3], (String) params[4]),
+                String.class, String.class, String.class, String.class, String.class
         ));
 
     }
 
-    private String evosuiteUserCoverage(String testCode, String classUTName, String classUTPath,
-                                      String classUTPackage, String userDir,
-                                      String coverageSavePath, int playerId) {
+    private String evosuiteUserCoverage(String testClassName, String testClassCode, String classUTName,
+                                      String classUTCode, String classUTPackage) {
         final String endpoint = "/api/VolumeT0";
 
         JSONObject requestBody = new JSONObject();
-        requestBody.put("testCode", testCode);
+        requestBody.put("testClassName", testClassName);
+        requestBody.put("testClassCode", testClassCode);
         requestBody.put("classUTName", classUTName);
-        requestBody.put("classUTPath", classUTPath);
+        requestBody.put("classUTCode", classUTCode);
         requestBody.put("classUTPackage", classUTPackage);
-        requestBody.put("userDir", userDir);
-        requestBody.put("coverageSavePath", coverageSavePath);
-        requestBody.put("playerId", playerId);
 
         return callRestPost(endpoint, requestBody, null, null, String.class);
     }

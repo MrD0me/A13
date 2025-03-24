@@ -2,9 +2,11 @@ package com.g2.Model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class MatchStatistics {
-    @JsonProperty("match_id")
-    private long matchId;
+import java.util.Arrays;
+
+public class UserGameProgress {
+    @JsonProperty("user_game_progress_id")
+    private long userGameProgressId;
     @JsonProperty("player_id")
     private long playerId;
     @JsonProperty("game_mode")
@@ -17,16 +19,18 @@ public class MatchStatistics {
     private String difficulty;
     @JsonProperty("has_won")
     private boolean won;
+    @JsonProperty("achievements")
+    private String[] achievements;
 
-    public MatchStatistics() {
+    public UserGameProgress() {
     }
 
-    public long getMatchId() {
-        return matchId;
+    public long getUserGameProgressId() {
+        return userGameProgressId;
     }
 
-    public void setMatchId(long matchId) {
-        this.matchId = matchId;
+    public void setUserGameProgressId(long userGameProgressId) {
+        this.userGameProgressId = userGameProgressId;
     }
 
     public long getPlayerId() {
@@ -77,16 +81,25 @@ public class MatchStatistics {
         this.won = won;
     }
 
+    public String[] getAchievements() {
+        return achievements;
+    }
+
+    public void setAchievements(String[] achievements) {
+        this.achievements = achievements;
+    }
+
     @Override
     public String toString() {
-        return "MatchStatistics{" +
-                "matchId=" + matchId +
+        return "UserGameProgress{" +
+                "userGameProgressId=" + userGameProgressId +
                 ", playerId=" + playerId +
                 ", gameMode='" + gameMode + '\'' +
                 ", classUT='" + classUT + '\'' +
                 ", robotType='" + robotType + '\'' +
                 ", difficulty='" + difficulty + '\'' +
                 ", won=" + won +
+                ", achievements=" + Arrays.toString(achievements) +
                 '}';
     }
 }

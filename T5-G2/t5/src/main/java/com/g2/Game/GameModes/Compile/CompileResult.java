@@ -7,6 +7,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.g2.Interfaces.ServiceManager;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+
 public class CompileResult {
     /*
      * Istanza di default 
@@ -76,39 +83,20 @@ public class CompileResult {
         calculateCoverage(); // Calcola coverage
     }
 
-    // Costruttore con richiesta a T1, T7 e T8 per l'utente
-    public CompileResult(String ClassName, String testingClassCode, GameLogic currentGame, ServiceManager serviceManager) {
-        String testingClassName = "Test" + ClassName + ".java";
-        String underTestClassName = ClassName + ".java";
-        this.serviceManager = serviceManager;
-        // Recupero il codice della classe under test
-        String underTestClassCode = this.serviceManager.handleRequest("T1", "getClassUnderTest", String.class, ClassName);
-        // Chiamata a T7 per calcolare jacoco coverage
-        String response_T7 = this.serviceManager.handleRequest("T7", "CompileCoverage", String.class, testingClassName, testingClassCode, underTestClassName, underTestClassCode);
-
-        // Chiamata a T8 per calcolare evosuite coverage
-        String classUTPath = String.format("/VolumeT0/FolderTree/ClassUT/unmodified_src/%s/%s.java", ClassName, ClassName);
-        System.out.println(classUTPath);
-        String userDir = String.format("/VolumeT0/FolderTree/StudentLogin/Player%s/%s/%s/Game%s/Round%s/Turn%s/TestReport",
-                currentGame.getPlayerID(), currentGame.getMode(), currentGame.getClasseUT(), currentGame.getGameID(), currentGame.getRoundID(), currentGame.getTurnID());
-        System.out.println(userDir);
-        String response_T4 = this.serviceManager.handleRequest("T8", "evosuiteUserCoverage", String.class,
-                testingClassCode, ClassName, classUTPath, "", userDir, "/app", Integer.parseInt(currentGame.getPlayerID()));
-
+    // Costruttore per l'utente
+    public CompileResult(JSONObject response_T4, JSONObject response_T7) {
         // Estraggo i valori dalle risposte
-        JSONObject responseObj = new JSONObject(response_T4);
-        this.evosuiteLine = responseObj.optInt("evoSuiteLine", 0);
-        this.evosuiteBranch = responseObj.optInt("evoSuiteBranch", 0);
-        this.evosuiteException = responseObj.optInt("evoSuiteException", 0);
-        this.evosuiteWeakMutation = responseObj.optInt("evoSuiteWeakMutation", 0);
-        this.evosuiteOutput = responseObj.optInt("evoSuiteOutput", 0);
-        this.evosuiteMethod = responseObj.optInt("evoSuiteMethod", 0);
-        this.evosuiteMethodNoException = responseObj.optInt("evoSuiteMethodNoException", 0);
-        this.evosuiteCBranch = responseObj.optInt("evoSuiteCBranch", 0);
+        this.evosuiteLine = response_T4.optInt("evoSuiteLine", 0);
+        this.evosuiteBranch = response_T4.optInt("evoSuiteBranch", 0);
+        this.evosuiteException = response_T4.optInt("evoSuiteException", 0);
+        this.evosuiteWeakMutation = response_T4.optInt("evoSuiteWeakMutation", 0);
+        this.evosuiteOutput = response_T4.optInt("evoSuiteOutput", 0);
+        this.evosuiteMethod = response_T4.optInt("evoSuiteMethod", 0);
+        this.evosuiteMethodNoException = response_T4.optInt("evoSuiteMethodNoException", 0);
+        this.evosuiteCBranch = response_T4.optInt("evoSuiteCBranch", 0);
 
-        responseObj = new JSONObject(response_T7);
-        this.XML_coverage = responseObj.optString("coverage", null);
-        this.compileOutput = responseObj.optString("outCompile", null);
+        this.XML_coverage = response_T7.optString("coverage", null);
+        this.compileOutput = response_T7.optString("outCompile", null);
         this.coverageService = new CoverageService();
         calculateCoverage(); // Calcolo coverage
     }

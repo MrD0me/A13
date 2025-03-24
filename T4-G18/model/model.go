@@ -5,27 +5,37 @@ import (
 	"time"
 )
 
-type MatchStatistics struct {
+type GameRecord struct {
 	ID         int64  `gorm:"primaryKey;autoIncrement"`
-	PlayerID   int64  `gorm:"primaryKey;autoIncrement:false"`
 	GameMode   string `gorm:"primaryKey;autoIncrement:false"`
 	ClassUT    string `gorm:"primaryKey;autoIncrement:false"`
 	RobotType  string `gorm:"primaryKey;autoIncrement:false"`
 	Difficulty string `gorm:"primaryKey;autoIncrement:false"`
-	HasWon     bool   `gorm:"default:false"`
 }
 
-func (MatchStatistics) TableName() string {
-	return "match_statistics"
+func (GameRecord) TableName() string {
+	return "game_records"
 }
 
-type GameModeAchievements struct {
-	Achievement string `gorm:"primaryKey;autoIncrement:false"`
-	MatchID     int64  `gorm:"primaryKey;autoIncrement:false"`
+type UserGameProgress struct {
+	ID           int64 `gorm:"primaryKey;autoIncrement"`
+	GameRecordID int64 `gorm:"index"`
+	PlayerID     int64 `gorm:"index"`
+	HasWon       bool  `gorm:"default:false"`
 }
 
-func (GameModeAchievements) TableName() string {
-	return "game_mode_achievements"
+func (UserGameProgress) TableName() string {
+	return "user_game_progresses"
+}
+
+type AchievementProgress struct {
+	ID                 int64  `gorm:"primaryKey"`
+	UserGameProgressID int64  `gorm:"not null"`
+	Achievement        string `gorm:"not null"`
+}
+
+func (AchievementProgress) TableName() string {
+	return "achievement_progresses"
 }
 
 type Experience struct {

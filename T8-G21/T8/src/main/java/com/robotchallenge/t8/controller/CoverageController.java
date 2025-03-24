@@ -42,9 +42,12 @@ public class CoverageController {
     @PostMapping(value = "/api/VolumeT0", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<String> calculateStudentEvosuiteCoverage(@RequestBody StudentCoverageRequestDTO request) {
         logger.info("[CoverageController] [POST /api/VolumeT0] Ricevuta richiesta");
-        int[] evoSuiteStatistics = coverageService.calculateStudentCoverage(request);
+        String result = coverageService.calculateStudentCoverage(request);
+
+        int[] evoSuiteStatistics = coverageService.getCoveragePercentageStatistics(result);
 
         JSONObject response = new JSONObject();
+        response.put("statistics", result);
         response.put("evoSuiteLine", evoSuiteStatistics[0]);
         response.put("evoSuiteBranch", evoSuiteStatistics[1]);
         response.put("evoSuiteException", evoSuiteStatistics[2]);

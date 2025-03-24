@@ -8,10 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -62,30 +59,11 @@ public class CoverageService {
         return result;
     }
 
-    public int[] calculateStudentCoverage(StudentCoverageRequestDTO request) throws RuntimeException {
-        String operationDir = request.getUserDir();
+    public String calculateStudentCoverage(StudentCoverageRequestDTO request) throws RuntimeException {
         String classUTName = request.getClassUTName();
-        String testCode = request.getTestCode();
-
-        String srcDir = String.format("%s/src/java/main", operationDir);
-        String testDir = String.format("%s/src/test/main", operationDir);
-        String coverageDir = String.format("%s/coverage", operationDir);
-        try {
-            Files.createDirectories(Paths.get(srcDir));
-            Files.createDirectories(Paths.get(testDir));
-            Files.createDirectories(Paths.get(coverageDir));
-        } catch (IOException | NullPointerException e) {
-            logger.error("[calculateStudentCoverage] Errore durante la creazione delle cartelle del progetto in VolumeT0: ", e);
-            throw new RuntimeException("[calculateStudentCoverage] Errore durante la creazione delle cartelle del progetto in VolumeT0: " + e);
-        }
-
-        try {
-            Files.copy(Paths.get(request.getClassUTPath()), Paths.get(srcDir, classUTName + ".java"), StandardCopyOption.REPLACE_EXISTING);
-            Files.copy(new ByteArrayInputStream(testCode.getBytes()), Paths.get(testDir, "Test" + classUTName + ".java"), StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException | NullPointerException e) {
-            logger.error("[calculateStudentCoverage] Errore durante la copia dei sorgenti in VolumeT0: ", e);
-            throw new RuntimeException("[calculateStudentCoverage] Errore durante la copia dei sorgenti in VolumeT0: " + e);
-        }
+        String classUTCode = request.getClassUTCode();
+        String testClassCode = request.getTestClassCode();
+        String testClassName = request.getTestClassName();
 
         String currentCWD = Paths.get(".").toAbsolutePath().normalize().toString();
         logger.info("[calculateStudentCoverage] CWD: {}", currentCWD);
@@ -93,10 +71,13 @@ public class CoverageService {
         String baseCwd = String.format("%s/%s", currentCWD, "EvoSuite_Coverage_" + generateTimestamp());
         String cwdSrc = String.format("%s/src/main/java", baseCwd);
         String cwdTest = String.format("%s/src/test/java", baseCwd);
+        Path baseCwd_Path = Path.of(baseCwd);
         try {
-            Files.createDirectory(Paths.get(baseCwd));
-            FileOperationUtil.copyDirectoryRecursively(Paths.get(srcDir), Paths.get(cwdSrc));
-            FileOperationUtil.copyDirectoryRecursively(Paths.get(testDir), Paths.get(cwdTest));
+            Files.createDirectories(baseCwd_Path);
+            Files.createDirectories(Path.of(cwdSrc));
+            Files.createDirectories(Path.of(cwdTest));
+            Files.write(Path.of(cwdSrc, classUTName + ".java"), classUTCode.getBytes(), StandardOpenOption.CREATE);
+            Files.write(Path.of(cwdTest, testClassName + ".java"), testClassCode.getBytes(), StandardOpenOption.CREATE);
             Files.copy(Paths.get(currentCWD, "evosuite", "evosuite-1.0.6.jar"), Paths.get(baseCwd, "evosuite-1.0.6.jar"), StandardCopyOption.REPLACE_EXISTING);
             Files.copy(Paths.get(currentCWD, "evosuite", "evosuite-standalone-runtime-1.0.6.jar"), Paths.get(baseCwd, "evosuite-standalone-1.0.6.jar"), StandardCopyOption.REPLACE_EXISTING);
             Files.copy(Paths.get(currentCWD, "evosuite", "pom2.xml"), Paths.get(baseCwd, "pom.xml"), StandardCopyOption.REPLACE_EXISTING);
@@ -108,13 +89,49 @@ public class CoverageService {
         String result = calculateEvosuiteCoverage(baseCwd, request.getClassUTPackage(), request.getClassUTName());
 
         try {
-            Files.copy(new ByteArrayInputStream(result.getBytes()), Paths.get(coverageDir, "statistics.csv"), StandardCopyOption.REPLACE_EXISTING);
-            FileOperationUtil.deleteDirectoryRecursively(Path.of(baseCwd));
-            return getCoveragePercentageStatistics(result);
+            FileOperationUtil.deleteDirectoryRecursively(baseCwd_Path);
+            return result;
         } catch (IOException | NullPointerException e) {
             logger.error("[calculateStudentCoverage] Errore durante la copia dei sorgenti in VolumeT0: ", e);
             throw new RuntimeException("[calculateStudentCoverage] Errore durante la copia dei sorgenti in VolumeT0: " + e);
         }
+    }
+
+    public int[] getCoveragePercentageStatistics(String content) {
+        List<Integer> values = new ArrayList<>();
+        String line;
+        String delimiter = ",";
+
+        try (BufferedReader br = new BufferedReader(new StringReader(content))) {
+            boolean firstLine = true; // salto la prima riga, che contiene i nomi delle colonne
+
+            while ((line = br.readLine()) != null) {
+                if (firstLine) {
+                    firstLine = false;
+                    continue;
+                }
+
+                String[] columns = line.split(delimiter);
+
+                // Verifico che esistano almeno 3 colonne, la percentuale di coverage si trova sulla terza
+                if (columns.length >= 3) {
+                    try {
+                        double value = Double.parseDouble(columns[2].trim()) * 100;
+                        values.add((int) value);
+                    } catch (NumberFormatException e) {
+                        logger.error("[getCoveragePercentageStatistics] Errore durante la conversione dei valori di copertura percentuale: {}", e.getMessage());
+                        throw new RuntimeException("[getCoveragePercentageStatistics] Errore durante la conversione dei valori di copertura percentuale: " + e.getMessage(), e);
+
+                    }
+                }
+            }
+        } catch (IOException e) {
+            logger.error("[getCoveragePercentageStatistics] Errore durante l'estrazione della colonna della copertura percentuale: {}", e.getMessage());
+            throw new RuntimeException("[getCoveragePercentageStatistics] Errore durante l'estrazione della colonna della copertura percentuale: " + e.getMessage(), e);
+        }
+
+        // Converto la lista in array di interi
+        return values.stream().mapToInt(i -> i).toArray();
     }
 
     private String calculateEvosuiteCoverage(String workingDir, String classUTPackage, String classUTName) {
@@ -141,7 +158,7 @@ public class CoverageService {
         }
     }
 
-    private void runCommand (String workingDir, Integer timer, String ...command){
+    private void runCommand(String workingDir, Integer timer, String ...command){
         Process process = null;
         try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
             ProcessBuilder processBuilder = new ProcessBuilder();
@@ -184,7 +201,7 @@ public class CoverageService {
         }
     }
 
-    private static void streamGobbler (InputStream inputStream, String streamType){
+    private static void streamGobbler(InputStream inputStream, String streamType){
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
             String line;
             while ((line = reader.readLine()) != null) {
@@ -193,43 +210,6 @@ public class CoverageService {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    private int[] getCoveragePercentageStatistics(String content) {
-        List<Integer> values = new ArrayList<>();
-        String line;
-        String delimiter = ",";
-
-        try (BufferedReader br = new BufferedReader(new StringReader(content))) {
-            boolean firstLine = true; // salto la prima riga, che contiene i nomi delle colonne
-
-            while ((line = br.readLine()) != null) {
-                if (firstLine) {
-                    firstLine = false;
-                    continue;
-                }
-
-                String[] columns = line.split(delimiter);
-
-                // Verifico che esistano almeno 3 colonne, la percentuale di coverage si trova sulla terza
-                if (columns.length >= 3) {
-                    try {
-                        double value = Double.parseDouble(columns[2].trim()) * 100;
-                        values.add((int) value);
-                    } catch (NumberFormatException e) {
-                        logger.error("[getCoveragePercentageStatistics] Errore durante la conversione dei valori di copertura percentuale: {}", e.getMessage());
-                        throw new RuntimeException("[getCoveragePercentageStatistics] Errore durante la conversione dei valori di copertura percentuale: " + e.getMessage(), e);
-
-                    }
-                }
-            }
-        } catch (IOException e) {
-            logger.error("[getCoveragePercentageStatistics] Errore durante l'estrazione della colonna della copertura percentuale: {}", e.getMessage());
-            throw new RuntimeException("[getCoveragePercentageStatistics] Errore durante l'estrazione della colonna della copertura percentuale: " + e.getMessage(), e);
-        }
-
-        // Converto la lista in array di interi
-        return values.stream().mapToInt(i -> i).toArray();
     }
 
     private String generateTimestamp() {

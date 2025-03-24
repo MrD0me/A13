@@ -9,26 +9,20 @@ import lombok.ToString;
 @Setter
 @ToString
 public class StudentCoverageRequestDTO {
-    @JsonProperty("testCode")
-    String testCode;
+    @JsonProperty("testClassName")
+    String testClassName;
+
+    @JsonProperty("testClassCode")
+    String testClassCode;
 
     @JsonProperty("classUTName")
     private String classUTName;
 
-    @JsonProperty("classUTPath")
-    private String classUTPath;
+    @JsonProperty("classUTCode")
+    private String classUTCode;
 
     @JsonProperty("classUTPackage")
     private String classUTPackage;
-
-    @JsonProperty("userDir")
-    private String userDir;
-
-    @JsonProperty("coverageSavePath")
-    private String coverageSavePath;
-
-    @JsonProperty("playerId")
-    private long playerId;
 
     public StudentCoverageRequestDTO() {}
 }

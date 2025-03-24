@@ -218,7 +218,7 @@ function generateEndGameMessage(userScore, robotScore, isWinner, expGained) {
 function handleUnlockedAchievements(unlockedAchievements) {
     openModalWithText(
         unlockedNewAchievementMessage.title,
-        `${unlockedNewAchievementMessage.text}\n${unlockedAchievements.map(a => ` - ${achievementData[a]?.name || a}\n`).join("")}`,
+        `${unlockedNewAchievementMessage.descr}\n${unlockedAchievements.map(a => ` - ${achievementData[a]?.name || a}\n`).join("")}`,
         [{ tagName: "button", text: "Chiudi", data_bs_dismiss: "modal", class: 'btn btn-primary' }]
     );
 }

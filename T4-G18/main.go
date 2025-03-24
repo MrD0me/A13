@@ -17,12 +17,12 @@ import (
 	"github.com/alarmfox/game-repository/api"
 	"github.com/alarmfox/game-repository/api/experience"
 	"github.com/alarmfox/game-repository/api/game"
-	"github.com/alarmfox/game-repository/api/matchStatistics"
 	"github.com/alarmfox/game-repository/api/playerhascategoryachievement"
 	"github.com/alarmfox/game-repository/api/robot"
 	"github.com/alarmfox/game-repository/api/round"
 	"github.com/alarmfox/game-repository/api/scalatagame"
 	"github.com/alarmfox/game-repository/api/turn"
+	"github.com/alarmfox/game-repository/api/userprogress"
 	"github.com/alarmfox/game-repository/limiter"
 	"github.com/alarmfox/game-repository/model"
 	"github.com/go-chi/chi/v5"
@@ -140,8 +140,9 @@ func run(ctx context.Context, c Configuration) error {
 		&model.Robot{},
 		&model.PlayerHasCategoryAchievement{},
 		&model.Experience{},
-		&model.MatchStatistics{},
-		&model.GameModeAchievements{},
+		&model.GameRecord{},
+		&model.UserGameProgress{},
+		&model.AchievementProgress{},
 	)
 
 	if err != nil {
@@ -242,7 +243,7 @@ func run(ctx context.Context, c Configuration) error {
 			// experience endpoint
 			experienceController = experience.NewController(experience.NewRepository(db))
 			// matches win endpoint
-			matchStatisticsController = matchStatistics.NewController(matchStatistics.NewRepository(db))
+			userProgressController = userprogress.NewController(userprogress.NewRepository(db))
 		)
 
 		/* Registra gli endpoint API.
@@ -255,7 +256,7 @@ func run(ctx context.Context, c Configuration) error {
 			scalataController,
 			phcaController,
 			experienceController,
-			matchStatisticsController,
+			userProgressController,
 		))
 	})
 
@@ -478,7 +479,7 @@ func setupRoutes(gc *game.Controller,
 	sgc *scalatagame.Controller,
 	pc *playerhascategoryachievement.Controller,
 	ec *experience.Controller,
-	mc *matchStatistics.Controller,
+	uc *userprogress.Controller,
 ) *chi.Mux {
 
 	r := chi.NewRouter()
@@ -504,19 +505,15 @@ func setupRoutes(gc *game.Controller,
 		r.Put("/{playerId}", api.HandlerFunc(ec.Update))
 	})
 
-	r.Route("/matchstatistics", func(r chi.Router) {
+	r.Route("/progress", func(r chi.Router) {
 		// Get match
-		r.Get("/{playerId}/{gameMode}/{classUT}/{robotType}/{difficulty}", api.HandlerFunc(mc.GetMatchStatistics))
+		r.Get("/{playerId}/{gameMode}/{classUT}/{robotType}/{difficulty}", api.HandlerFunc(uc.GetUserGameProgress))
 		// Add new match
-		r.Post("/", api.HandlerFunc(mc.Create))
+		r.Post("/", api.HandlerFunc(uc.Create))
 		// Update match as won
-		r.Put("/{playerId}/{gameMode}/{classUT}/{robotType}/{difficulty}", api.HandlerFunc(mc.UpdateHasWon))
+		r.Put("/state/{playerId}/{gameMode}/{classUT}/{robotType}/{difficulty}", api.HandlerFunc(uc.UpdateHasWon))
 		// Update achievements for match
-		r.Put("/achievements/{matchId}", api.HandlerFunc(mc.UpdateAchievements))
-		// Add achievements for match
-		r.Get("/achievements/{matchId}", api.HandlerFunc(mc.GetAchievement))
-		// Get achievements for player
-		r.Get("/achievements/user/{playerId}", api.HandlerFunc(mc.GetAchievementByPlayerID))
+		r.Put("/achievements/{playerId}/{gameMode}/{classUT}/{robotType}/{difficulty}", api.HandlerFunc(uc.UpdateAchievements))
 	})
 
 	r.Route("/games", func(r chi.Router) {
