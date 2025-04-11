@@ -120,13 +120,6 @@
             <groupId>io.lettuce</groupId>
             <artifactId>lettuce-core</artifactId>
         </dependency>
-
-        <!-- Actuator per esporre endpoint come /health, /info, /prometheus -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
-        </dependency>
-
         <!-- Micrometer Prometheus registry -->
         <dependency>
             <groupId>io.micrometer</groupId>
