@@ -35,14 +35,17 @@ import org.springframework.web.client.RestTemplate;
 public class T4Service extends BaseService {
 
     // Costante che definisce l'URL di base per le richieste REST
-    private static final String BASE_URL = "http://t4-controller:8084";
-    // private static final String BASE_URL = "http://127.0.0.1:8084";
+    private static final String BASE_URL = "http://api_gateway-controller:8090";
+    //private static final String BASE_URL = "http://127.0.0.1:8090";
+
+    private static final String SERVICE_PREFIX = "gamerepo";
+
 
     // Costruttore della classe, inizializza il servizio con il RestTemplate e l'URL
     // di base
     public T4Service(RestTemplate restTemplate) {
         // Inizializzazione del servizio base con RestTemplate e URL specificato
-        super(restTemplate, BASE_URL);
+        super(restTemplate, BASE_URL + "/" + SERVICE_PREFIX);
 
         registerAction("getUserExperiencePoints", new ServiceActionDefinition(
                 params -> getUserExperiencePoints((int) params[0]),
@@ -376,7 +379,7 @@ public class T4Service extends BaseService {
 
     private String EndRound(String Time, int roundId) {
         //Anche qui non è stato previsto un parametro per la chiamata rest e quindi va costruito a mano
-        final String endpoint = "rounds/" + String.valueOf(roundId);
+        final String endpoint = "/rounds/" + String.valueOf(roundId);
         try {
             JSONObject formData = new JSONObject();
             formData.put("closedAt", Time);
@@ -402,7 +405,7 @@ public class T4Service extends BaseService {
     private String EndTurn(String user_score, String Time, String turnId) {
         // Anche qui non è stato previsto un parametro per la chiamata rest e quindi va
         // costruito a mano
-        final String endpoint = "turns/" + turnId;
+        final String endpoint = "/turns/" + turnId;
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("TurnID", turnId);
         jsonObject.put("scores", user_score);

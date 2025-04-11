@@ -82,7 +82,7 @@ if %ERRORLEVEL% neq 0 (
 cd /d "%ROOT_DIR%"
 
 echo Deploying api_gateway
-cd /d "%ROOT_DIR%\api_gateway"
+cd /d "%ROOT_DIR%\apiGateway"
 docker compose up -d
 if %ERRORLEVEL% neq 0 (
     echo Error deploying api_gateway

@@ -31,8 +31,8 @@ public class RegistrationService {
      */
     public boolean initializeExperiencePoints(Integer playerId) {
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
-            HttpPost httpPostT8 = new HttpPost("http://" + serviceURL.getT4ServiceURL() + "/experience");
-            logger.info("[initializeExperiencePoints] Invio richiesta a T4 su endpoint {}", httpPostT8.getURI());
+            HttpPost httpPostT4 = new HttpPost("http://" + serviceURL.getT4ServiceURL() + "/experience");
+            logger.info("[initializeExperiencePoints] Invio richiesta a T4 su endpoint {}", httpPostT4.getURI());
 
             JSONObject reqBody = new JSONObject();
             reqBody.put("player_id", playerId);
@@ -40,10 +40,10 @@ public class RegistrationService {
 
             // Imposta il body della richiesta
             StringEntity entity = new StringEntity(reqBody.toString(), ContentType.APPLICATION_JSON);
-            httpPostT8.setEntity(entity);
+            httpPostT4.setEntity(entity);
 
             // Esegue la richiesta HTTP
-            try (CloseableHttpResponse response = httpClient.execute(httpPostT8)) {
+            try (CloseableHttpResponse response = httpClient.execute(httpPostT4)) {
                 JSONObject responseBody = new JSONObject(EntityUtils.toString(response.getEntity()));
                 logger.info("[initializeExperiencePoints] Risposta ricevuta {}", responseBody);
                 return !responseBody.isEmpty();

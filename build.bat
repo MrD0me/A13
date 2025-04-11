@@ -92,7 +92,7 @@ cd /d "%ROOT_DIR%"
 
 rem Build api_gateway
 echo Building api_gateway
-cd /d "%ROOT_DIR%\api_gateway"
+cd /d "%ROOT_DIR%\apiGateway"
 call mvn clean package
 if ERRORLEVEL 1 (
     echo Error in api_gateway build during call mvn clean package

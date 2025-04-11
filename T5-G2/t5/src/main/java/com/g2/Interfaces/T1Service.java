@@ -33,11 +33,15 @@ import com.g2.Model.ClassUT;
 @Service
 public class T1Service extends BaseService {
 
-    private static final String BASE_URL = "http://t1-controller:8081";
-    //private static final String BASE_URL = "http://127.0.0.1:8081";
+    private static final String BASE_URL = "http://api_gateway-controller:8090";
+    //private static final String BASE_URL = "http://127.0.0.1:8090";
+
+    private static final String SERVICE_PREFIX = "adminService";
 
     public T1Service(RestTemplate restTemplate) {
-        super(restTemplate, BASE_URL);
+
+        super(restTemplate, BASE_URL + "/" + SERVICE_PREFIX);
+
         // Registrazione delle azioni
         registerAction("getStatistics", new ServiceActionDefinition(
                 params -> getStatistics()

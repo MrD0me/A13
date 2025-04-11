@@ -118,7 +118,7 @@ for %%i in (%SELECTION%) do (
         cd /d "%ROOT_DIR%"
     ) else if %%i==8 (
         echo Building api_gateway
-        cd /d "%ROOT_DIR%\api_gateway"
+        cd /d "%ROOT_DIR%\apiGateway"
         call mvn clean package || (echo Error in api_gateway build & exit /b 1)
         docker build -t mick0974/a13:api-gateway .
         if ERRORLEVEL 1 (

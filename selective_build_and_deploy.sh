@@ -90,7 +90,7 @@ for i in "${SELECTION[@]}"; do
             ;;
         8)
             echo "Building api_gateway"
-            cd "$ROOT_DIR/api_gateway"
+            cd "$ROOT_DIR/apiGateway"
             mvn clean package || { echo "Error in api_gateway build"; exit 1; }
             docker build -t mick0974/a13:api-gateway .
             docker compose up -d

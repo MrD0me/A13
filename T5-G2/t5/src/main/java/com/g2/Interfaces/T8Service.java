@@ -7,11 +7,14 @@ import org.springframework.web.client.RestTemplate;
 @Service
 public class T8Service extends BaseService {
 
-    //private static final String BASE_URL = "http://127.0.0.1:8088";
-    private static final String BASE_URL = "http://t8-controller:8088";
+    private static final String BASE_URL = "http://api_gateway-controller:8090";
+    //private static final String BASE_URL = "http://127.0.0.1:8090";
+
+    private static final String SERVICE_PREFIX = "compile/evosuite";
+
 
     protected T8Service(RestTemplate restTemplate) {
-        super(restTemplate, BASE_URL);
+        super(restTemplate, BASE_URL + "/" + SERVICE_PREFIX);
 
         registerAction("evosuiteUserCoverage", new ServiceActionDefinition(
                 params -> evosuiteUserCoverage((String) params[0], (String) params[1], (String) params[2],

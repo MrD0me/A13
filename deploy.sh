@@ -55,7 +55,7 @@ docker compose up -d || { echo "Error deploying ui_gateway"; exit 1; }
 cd "$ROOT_DIR"
 
 echo "Deploying api_gateway"
-cd "$ROOT_DIR/api_gateway"
+cd "$ROOT_DIR/apiGateway"
 docker compose up -d || { echo "Error deploying api_gateway"; exit 1; }
 cd "$ROOT_DIR"
 

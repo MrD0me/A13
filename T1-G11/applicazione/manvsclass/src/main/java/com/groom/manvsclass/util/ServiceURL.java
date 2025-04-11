@@ -8,51 +8,36 @@ import javax.annotation.PostConstruct;
 @Component
 public class ServiceURL {
 
-    @Value("${services.t23.endpoint}")
-    private String t23Endpoint;
+    @Value("${API_GATEWAY_ENDPOINT:api-gateway_controller}")
+    private String apiGatewayEndpoint;
 
-    @Value("${services.t23.port}")
-    private int t23Port;
+    @Value("${API_GATEWAY_PORT:8090}")
+    private int apiGatewayPort;
 
-    @Value("${services.t4.endpoint}")
-    private String t4Endpoint;
-
-    @Value("${services.t4.port}")
-    private int t4Port;
-
-    @Value("${services.t7.endpoint}")
-    private String t7Endpoint;
-
-    @Value("${services.t7.port}")
-    private int t7Port;
-
-    @Value("${services.t8.endpoint}")
-    private String t8Endpoint;
-
-    @Value("${services.t8.port}")
-    private int t8Port;
+    private final String t23Prefix = "userService";
+    private final String t4Prefix = "gamerepo";
+    private final String t7Prefix = "compile/randoop";
+    private final String t8Prefix = "compile/evosuite";
 
     @PostConstruct
     public void init() {
-        System.out.println("🔹 T23 Endpoint: " + t23Endpoint);
-        System.out.println("🔹 T23 Port: " + t23Port);
-        System.out.println("🔹 T8 Endpoint: " + t8Endpoint);
-        System.out.println("🔹 T8 Port: " + t8Port);
+        System.out.println("🔹 API Gateway Endpoint: " + apiGatewayEndpoint);
+        System.out.println("🔹 API Gateway Port: " + apiGatewayPort);
     }
 
     public String getT23ServiceURL() {
-        return String.format("%s:%d", t23Endpoint, t23Port);
+        return String.format("%s:%d/%s", apiGatewayEndpoint, apiGatewayPort, t23Prefix);
     }
 
     public String getT4ServiceURL() {
-        return String.format("%s:%d", t4Endpoint, t4Port);
+        return String.format("%s:%d/%s", apiGatewayEndpoint, apiGatewayPort, t4Prefix);
     }
 
     public String getT7ServiceURL() {
-        return String.format("%s:%d", t7Endpoint, t7Port);
+        return String.format("%s:%d/%s", apiGatewayEndpoint, apiGatewayPort, t7Prefix);
     }
 
     public String getT8ServiceURL() {
-        return String.format("%s:%d", t8Endpoint, t8Port);
+        return String.format("%s:%d/%s", apiGatewayEndpoint, apiGatewayPort, t8Prefix);
     }
 }

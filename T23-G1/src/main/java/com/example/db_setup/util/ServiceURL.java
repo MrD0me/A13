@@ -7,19 +7,22 @@ import javax.annotation.PostConstruct;
 
 @Component
 public class ServiceURL {
-    @Value("${services.t4.endpoint}")
-    private String t4Endpoint;
+    @Value("${API_GATEWAY_ENDPOINT:api-gateway_controller}")
+    private String apiGatewayEndpoint;
 
-    @Value("${services.t4.port}")
-    private int t4Port;
+    @Value("${API_GATEWAY_PORT:8090}")
+    private int apiGatewayPort;
+
+    private final String t4Prefix = "gamerepo";
 
     @PostConstruct
     public void init() {
-        System.out.println("🔹 T4 Endpoint: " + t4Endpoint);
-        System.out.println("🔹 T4 Port: " + t4Port);
+        System.out.println("🔹 API Gateway Endpoint: " + apiGatewayEndpoint);
+        System.out.println("🔹 API Gateway Port: " + apiGatewayPort);
     }
 
     public String getT4ServiceURL() {
-        return String.format("%s:%d", t4Endpoint, t4Port);
+        return String.format("%s:%d/%s", apiGatewayEndpoint, apiGatewayPort, t4Prefix);
     }
+
 }

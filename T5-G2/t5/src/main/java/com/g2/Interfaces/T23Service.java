@@ -30,12 +30,14 @@ import com.g2.Model.User;
 @Service
 public class T23Service extends BaseService {
 
-    private static final String BASE_URL = "http://t23-controller:8082";
-    //private static final String BASE_URL = "http://127.0.0.1:8082";
+    private static final String BASE_URL = "http://api_gateway-controller:8090";
+    //private static final String BASE_URL = "http://127.0.0.1:8090";
+
+    private static final String SERVICE_PREFIX = "userService";
 
     @SuppressWarnings("unchecked")
     public T23Service(RestTemplate restTemplate) {
-        super(restTemplate, BASE_URL);
+        super(restTemplate, BASE_URL + "/" + SERVICE_PREFIX);
 
         // Registrazione delle azioni
         registerAction("GetAuthenticated", new ServiceActionDefinition(

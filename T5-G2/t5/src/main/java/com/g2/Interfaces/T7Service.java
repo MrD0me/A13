@@ -28,11 +28,13 @@ import org.springframework.web.client.RestTemplate;
 @Service
 public class T7Service extends BaseService {
 
-    private static final String BASE_URL = "http://t7-controller:8087";
-    //private static final String BASE_URL = "http://127.0.0.1:8087";
+    private static final String BASE_URL = "http://api_gateway-controller:8090";
+    //private static final String BASE_URL = "http://127.0.0.1:8090";
+
+    private static final String SERVICE_PREFIX = "compile/randoop";
 
     public T7Service(RestTemplate restTemplate) {
-        super(restTemplate, BASE_URL);
+        super(restTemplate, BASE_URL + "/" + SERVICE_PREFIX);
 
         // Registrazione di un'azione chiamata "CompileCoverage" con la definizione di
         // un'azione di servizio
