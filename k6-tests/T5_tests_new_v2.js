@@ -93,6 +93,14 @@ function startGame() {
     const password = user.password;
 
     const loginPayload = { email, password };
+    /*
+    * {redirects: 0} è necessario per catturare l'header della risposta di redirect, che contiene nei cookie il valore del
+    * jwt.
+    * L'operazione GET /login restituisce un redirect a /main in caso di successo; k6 cattura solo la risposta
+    * di GET /main (200) e non quella del redirect (302), che contiene i cookie di interesse.
+    *
+    * https://community.grafana.com/t/issues-extracting-details-from-http-redirects/132061
+    */
     const loginHeader = { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, redirects: 0 };
     let resLogin = http.post(`${ENDPOINT}/login`, loginPayload, loginHeader);
 
