@@ -57,33 +57,6 @@
                 </div>
             </div>
 
-            <!-- Modalità 2 -->
-            <div class="col mb-4 d-flex align-items-stretch">
-                <div class="card shadow-lg bg-dark text-white">
-                    <img src="/t5/images/Scalata.jpeg" class="card-img-top" alt="Immagine Modalità 2">
-
-                    <div class="card-body">
-                        <h3 class="card-title text-center" th:text="#{scalata}"></h3>
-                        <p th:text="#{scalata_desc}"></p>                      
-                    </div>
-                    <div class="card-footer">
-                        <div class="row  row-cols-2">
-                            <div class="col">
-                                    <span class="badge bg-primary" th:text="#{tag_lunga}"></span>
-                                    <span class="badge bg-info text-dark" th:text="#{tag_competitiva}"></span>
-                                    <span class="badge bg-primary" th:text="#{tag_progressiva}"></span>
-                            </div>
-                            <div class="col text-end">
-                                <a href="/gamemode?mode=Scalata" class="btn btn-success mx-3 my-2">
-                                    <i class="bi bi-play-fill me-2"></i>
-                                    <span th:text="#{tasto_play}"></span>
-                                </a> 
-                            </div>
-                        </div>
-                    </div>
-                    </div>
-                </div>
-
             <!-- Modalità 3 -->
             <div class="col mb-4 d-flex align-items-stretch">
                 <div class="card shadow-lg bg-dark text-white">
@@ -103,12 +76,46 @@
                                 <a href="/gamemode?mode=Allenamento" class="btn btn-success mx-3 my-2">
                                     <i class="bi bi-play-fill me-2"></i>
                                     <span th:text="#{tasto_play}"></span>
-                                </a> 
+                                </a>
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Modalità 2 -->
+            <div class="col mb-4 d-flex align-items-stretch">
+                <div class="card shadow-lg bg-dark text-white">
+                    <img src="/t5/images/Scalata.jpeg" class="card-img-top" alt="Immagine Modalità 2">
+
+                    <div class="card-body">
+                        <h3 class="card-title text-center" th:text="#{scalata}"></h3>
+                        <p th:text="#{scalata_desc}"></p>                      
+                    </div>
+                    <div class="card-footer">
+                        <div class="row  row-cols-2">
+                            <div class="col">
+                                    <span class="badge bg-primary" th:text="#{tag_lunga}"></span>
+                                    <span class="badge bg-info text-dark" th:text="#{tag_competitiva}"></span>
+                                    <span class="badge bg-primary" th:text="#{tag_progressiva}"></span>
+                            </div>
+                            <div class="col text-end">
+                                <!--
+                                <a href="/gamemode?mode=Scalata" class="btn btn-success mx-3 my-2" disabled="disabled">
+                                    <i class="bi bi-play-fill me-2"></i>
+                                    <span th:text="#{tasto_play}"></span>
+                                </a>
+                                -->
+                                <button type="button" class="btn btn-success mx-3 my-2"
+                                        data-bs-toggle="modal" data-bs-target="#Alert" disabled="disabled">
+                                    <i class="bi bi-play-fill me-2"></i>
+                                    <span th:text="#{tasto_play}"></span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
+            </div>
 
             <!-- Modalità 4 -->
             <div class="col mb-4 d-flex align-items-stretch">
@@ -127,7 +134,7 @@
                             </div>
                             <div class="col text-end">
                                 <button type="button" class="btn btn-success mx-3 my-2"
-                                 data-bs-toggle="modal" data-bs-target="#Alert">
+                                 data-bs-toggle="modal" data-bs-target="#Alert" disabled="disabled">
                                     <i class="bi bi-play-fill me-2"></i>
                                     <span th:text="#{tasto_play}"></span>
                                 </button>
