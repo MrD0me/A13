@@ -176,13 +176,6 @@ function getAdmin() {
 // Inizializzazione al caricamento della pagina
 document.addEventListener("DOMContentLoaded", () => getAdmin());
 
-// Modifica per il bottone Achievement
-document
-  .querySelector(".button-achievement")
-  .addEventListener("click", function () {
-    window.location.href = "/achievements"; // Reindirizza alla pagina degli achievement
-  });
-
 // Modifica per il bottone Classes
 document.querySelector(".button-class").addEventListener("click", function () {
   window.location.href = "/class"; // Reindirizza alla pagina delle classi

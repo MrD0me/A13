@@ -112,14 +112,6 @@ public class AdminService {
         }
     }
 
-
-
-
-
-
-
-
-
     public ResponseEntity<?> registraAdmin(Admin admin1, String jwt) {
         if (jwtService.isJwtValid(jwt)) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Already logged in");
@@ -140,15 +132,15 @@ public class AdminService {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Cognome non valido");
         }
 
-        //3: L'username deve rispettare necessariamente il seguente formato: "[username di lunghezza compresa tra 2 e 30 caratteri]_unina"
-        if (admin1.getUsername().length() >= 2 && admin1.getUsername().length() <= 30 && Pattern.matches(".*_unina$", admin1.getUsername())) {
+        //3: L'username deve rispettare necessariamente il seguente formato: "[username di lunghezza compresa tra 2 e 30 caratteri]"
+        if (admin1.getUsername().length() >= 2 && admin1.getUsername().length() <= 30) {
             this.userAdmin.setUsername(admin1.getUsername());
         } else {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Username non valido, deve rispettare il seguente formato: [username di lunghezza compresa tra 2 e 30 caratteri]_unina");
         }
 
-        //4: L'email deve essere necessariamente quella istituzionale e terminare: o con [nome]@studenti.unina.it oppure [nome]@unina.it
-        if (Pattern.matches("^[a-zA-Z0-9._%+-]+@(?:studenti\\.)?unina\\.it$", admin1.getEmail())) {
+        //4: L'email deve essere valida
+        if (Pattern.matches("^[\\w!#$%&*+/=?{|}~^-]+(?:\\.[\\w!#$%&*+/=?{|}~^-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,63}$", admin1.getEmail())) {
             Admin existingAdmin = arepo.findById(admin1.getEmail()).orElse(null);
             if (existingAdmin != null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Admin con questa mail già registrato");
@@ -307,67 +299,6 @@ public class AdminService {
         Admin savedAdmin = arepo.save(admin);
         return ResponseEntity.ok().body(savedAdmin);
     }
-
-
-
-
-    public ModelAndView showAchievementsPage(HttpServletRequest request, String jwt) {
-        if (jwtService.isJwtValid(jwt)) {
-            ModelAndView model = new ModelAndView("achievements");
-
-            List<Gamemode> allGamemodes = Arrays.asList(Gamemode.values());
-            List<StatisticRole> allRoles = Arrays.asList(StatisticRole.values());
-            List<Robot> allRobots = Arrays.asList(Robot.values());
-
-            List<Statistic> allStatistics = statisticRepository.findAll();
-
-            model.addObject("gamemodesList", allGamemodes);
-            model.addObject("rolesList", allRoles);
-            model.addObject("robotsList", allRobots);
-            model.addObject("statisticsList", allStatistics);
-
-            return model;
-        }
-
-        return new ModelAndView("login_admin");
-    }
-
-    public ResponseEntity<?> listAchievements() {
-        List<Achievement> achievements = achievementRepository.findAll();
-        return new ResponseEntity<>(achievements, HttpStatus.OK);
-    }
-
-    public Object createAchievement(Achievement achievement, String jwt, HttpServletRequest request) {
-        if (!jwtService.isJwtValid(jwt)) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("(POST /createAchivement) Attenzione, non sei loggato!");
-        }
-
-        achievementRepository.save(achievement);
-        return showAchievementsPage(request, jwt);
-    }
-
-    public ResponseEntity<?> listStatistics() {
-        List<Statistic> statistics = statisticRepository.findAll();
-        return new ResponseEntity<>(statistics, HttpStatus.OK);
-    }
-
-    public Object createStatistic(Statistic statistic, String jwt, HttpServletRequest request) {
-        if (!jwtService.isJwtValid(jwt)) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("(POST /createStatistic) Attenzione, non sei loggato!");
-        }
-
-        statisticRepository.save(statistic);
-        return showAchievementsPage(request, jwt);
-    }
-
-    public Object deleteStatistic(String Id, String jwt, HttpServletRequest request) {
-        if (!jwtService.isJwtValid(jwt)) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("(POST /deleteStatistic) Attenzione, non sei loggato!");
-        }
-
-        statisticRepository.deleteById(Id);
-        return new ModelAndView("achievements");
-    } 
 
     public ResponseEntity<Admin> getAdminByUsername(String username, String jwt) {
         if (jwtService.isJwtValid(jwt)) {
