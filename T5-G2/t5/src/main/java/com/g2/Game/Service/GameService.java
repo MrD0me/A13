@@ -209,7 +209,7 @@ public class GameService {
                     response_T8 = new JSONObject(responseT8Raw);
                 }
 
-                fileOperationService.writeTurn(underTestClassCode, underTestClassFileName, testingClassCode, testingClassFileName,
+                fileOperationService.writeTurnNew(underTestClassCode, underTestClassFileName, testingClassCode, testingClassFileName,
                         response_T8.optString("statistics", ""), "statistics.csv", userSrcDir, userTestDir, userCoverageDir);
 
                 return new CompileResult(currentGame.getUserCompileResult(), response_T8);

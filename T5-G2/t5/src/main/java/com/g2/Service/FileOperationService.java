@@ -44,12 +44,12 @@ public class FileOperationService {
 
     public void writeTurnNew(String underTestClassCode, String underTestClassName,
                              String testingClassCode, String testingClassName,
-                             String response_T7, String filename,
+                             String response, String filename,
                              String userSrcDir, String userTestDir, String userCoverageDir) {
         try {
             Files.copy(new ByteArrayInputStream(underTestClassCode.getBytes()), Path.of(userSrcDir, underTestClassName), StandardCopyOption.REPLACE_EXISTING);
             Files.copy(new ByteArrayInputStream(testingClassCode.getBytes()), Paths.get(userTestDir, "Test" + testingClassName), StandardCopyOption.REPLACE_EXISTING);
-            Files.copy(new ByteArrayInputStream(response_T7.getBytes()), Paths.get(userCoverageDir, filename), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(new ByteArrayInputStream(response.getBytes()), Paths.get(userCoverageDir, filename), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException | NullPointerException e) {
             logger.error("[writeTurn] Errore durante la scrittura dei file in VolumeT0: ", e);
             throw new RuntimeException("[writeTurn] Errore durante la scrittura dei file in VolumeT0: " + e);
