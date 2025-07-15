@@ -2,14 +2,14 @@
 setlocal enabledelayedexpansion
 
 :: Verifico il numero di parametri
-if "%~5"=="" (
-    echo Usage: %~nx0 ^<tool^> ^<class_name^> [^<package_name^>] ^<class_path^> ^<num_levels^> ^<host_output_dir^>
+if "%~4"=="" (
+    echo Usage: %~nx0 ^<tool^> ^<class_name^> [^<package_name^>] ^<class_path^> ^<host_output_dir^>
     echo ^<tool^>: randoop ^| evosuite
     exit /b 1
 )
 
-if not "%~7"=="" (
-    echo Usage: %~nx0 ^<tool^> ^<class_name^> [^<package_name^>] ^<class_path^> ^<num_levels^> ^<host_output_dir^>
+if not "%~6"=="" (
+    echo Usage: %~nx0 ^<tool^> ^<class_name^> [^<package_name^>] ^<class_path^> ^<host_output_dir^>
     echo ^<tool^>: randoop ^| evosuite
     exit /b 1
 )
@@ -17,18 +17,17 @@ if not "%~7"=="" (
 set CONTAINER_ID=t0-generator
 set TOOL=%1
 set CLASS_NAME=%2
+set NUM_LEVELS=3
 
-:: Se ci sono esattamente 5 parametri, il package name è vuoto
-if "%~6"=="" (
+:: Se ci sono esattamente 4 parametri, il package name è vuoto
+if "%~5"=="" (
     set PACKAGE_NAME=
     set CLASS_PATH=%3
-    set NUM_LEVELS=%4
-    set HOST_OUTPUT_DIR=%5
+    set HOST_OUTPUT_DIR=%4
 ) else (
     set PACKAGE_NAME=%3
     set CLASS_PATH=%4
-    set NUM_LEVELS=%5
-    set HOST_OUTPUT_DIR=%6
+    set HOST_OUTPUT_DIR=%5
 )
 
 :: Definisco delle directory in base al tipo del robot

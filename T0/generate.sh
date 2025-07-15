@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Verify if the correct parameters are provided
-if [ "$#" -lt 5 ] || [ "$#" -gt 6 ]; then
-    echo "Usage: $0 <tool> <class_name> [<package_name>] <class_path> <num_levels> <host_output_dir>"
+if [ "$#" -lt 4 ] || [ "$#" -gt 5 ]; then
+    echo "Usage: $0 <tool> <class_name> [<package_name>] <class_path> <host_output_dir>"
     echo "<tool>: randoop | evosuite"
     exit 1
 fi
@@ -11,19 +11,17 @@ TOOL=$1
 CLASS_NAME=$2
 CONTAINER_ID=t0-generator
 
-if [ "$#" -eq 6 ]; then
+if [ "$#" -eq 5 ]; then
     PACKAGE_NAME=$3
     CLASS_PATH=$4
-    NUM_LEVELS=$5
-    HOST_OUTPUT_DIR=$6
+    HOST_OUTPUT_DIR=$5
 else
     PACKAGE_NAME=""
     CLASS_PATH=$3
-    NUM_LEVELS=$4
-    HOST_OUTPUT_DIR=$5
+    HOST_OUTPUT_DIR=$4
 fi
 
-
+NUM_LEVELS=3
 # Define directories and scripts based on the chosen robot
 if [ "$TOOL" == "randoop" ]; then
     ROOT_DIR="/generator/RandoopGenerator"
