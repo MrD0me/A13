@@ -35,11 +35,11 @@ public class CoverageController {
     }
 
     @PostMapping(value = "/coverage/opponent", produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<EvosuiteScoreDTO> calculateRobotEvosuiteCoverage(@RequestBody RobotCoverageRequestDTO request) {
+    ResponseEntity<EvosuiteCoverageDTO> calculateRobotEvosuiteCoverage(@RequestBody RobotCoverageRequestDTO request) {
         logger.info("[CoverageController] [POST /score/opponent] Ricevuta richiesta con body: {}", request);
         String result = coverageService.calculateRobotCoverage(request);
 
-        EvosuiteScoreDTO responseBody = BuildResponse.buildDTO(result);
+        EvosuiteCoverageDTO responseBody = BuildResponse.buildExtendedDTO(result);
 
         logger.info("[CoverageController] [POST /score/opponent] Risultato: {}", responseBody);
         logger.info("[CoverageController] [POST /score/opponent] OK 200");

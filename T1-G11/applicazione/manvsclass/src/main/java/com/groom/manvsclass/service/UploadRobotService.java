@@ -340,10 +340,11 @@ public class UploadRobotService {
                 }
 
                 Path evoSuiteWorkingPath = Paths.get(String.format("%s/%s", volumeBasePath, classUTName + "_EvoSuiteCoverage"));
-
+                logger.info("Creating evosuite folder: " + Files.createDirectories(evoSuiteWorkingPath));
                 try {
                     EvosuiteCoverageDTO coverageDTO = apiGatewayClient.callGenerateMissingEvoSuiteCoverage(classUTName, srcPackagePath, srcCode_EvoSuiteTmp, testCodeT8_EvoSuiteTmp, toCoveragePath, evoSuiteWorkingPath, testPackagePath);
                     FileOperationUtil.writeStringToFile(coverageDTO.getResultFileContent(), new File(String.format("%s/%s", toCoveragePath, "statistics.csv")));
+                    FileOperationUtil.deleteDirectoryRecursively(evoSuiteWorkingPath);
                 } catch (Exception e) {
                     e.printStackTrace();
                     FileOperationUtil.deleteDirectoryRecursively(evoSuiteWorkingPath);

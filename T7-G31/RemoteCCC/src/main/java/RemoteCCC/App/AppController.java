@@ -126,7 +126,7 @@ public class AppController {
             CompilationService compilationService = new CompilationService(mvn_path);
             compilationService.compileAndTestEvoSuiteTests(projectCode);
 
-            JacocoScoreDTO responseBody = BuildResponse.buildDTO(compilationService.Coverage);
+            JacocoCoverageDTO responseBody = BuildResponse.buildExtendedDTO(compilationService.Coverage, compilationService.outputMaven, compilationService.Errors);
             return ResponseEntity.status(HttpStatus.OK).header("Content-Type", "application/json").body(responseBody); // Imposta l'intestazione Content-Type
         } catch (JSONException e) {
             logger.error("[Compile-and-codecoverage]", e);

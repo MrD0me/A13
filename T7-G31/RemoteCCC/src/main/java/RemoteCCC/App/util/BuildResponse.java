@@ -24,11 +24,11 @@ public class BuildResponse {
         return responseBody;
     }
 
-    public static JacocoCoverageDTO buildExtendedDTO(String xmlContent, String outCompila, boolean errors) {
+    public static JacocoCoverageDTO buildExtendedDTO(String xmlContent, String outCompile, boolean errors) {
         JacocoCoverageDTO responseBody = new JacocoCoverageDTO();
         responseBody.setCoverage(xmlContent);
         responseBody.setErrors(errors);
-        responseBody.setOutCompile(outCompila);
+        responseBody.setOutCompile(outCompile);
         responseBody.setJacocoScoreDTO(buildDTO(xmlContent));
         return responseBody;
     }

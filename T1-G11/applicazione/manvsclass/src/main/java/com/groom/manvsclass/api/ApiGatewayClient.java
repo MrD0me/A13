@@ -130,13 +130,13 @@ public class ApiGatewayClient {
     public EvosuiteCoverageDTO callGenerateMissingEvoSuiteCoverage(String classUTName, String classUTPackageName, Path classUTPath, Path testPath, Path toCoveragePath, Path evoSuiteWorkingDir, String testPackageName) throws IOException {
         JSONObject reqBody = new JSONObject();
         reqBody.put("classUTName", classUTName);
-        reqBody.put("classUTPath", classUTPath);
+        reqBody.put("classUTPath", classUTPath.toString());
         reqBody.put("classUTPackage", classUTPackageName);
-        reqBody.put("unitTestPath", testPath);
-        reqBody.put("evosuiteWorkingDir", evoSuiteWorkingDir);
+        reqBody.put("unitTestPath", testPath.toString());
+        reqBody.put("evosuiteWorkingDir", evoSuiteWorkingDir.toString());
 
         ResponseEntity<EvosuiteCoverageDTO> response = exchangeHelper.exchange(evosuiteCoverageServiceUrl + "/coverage/opponent",
-                null, HttpMethod.POST, null, reqBody, EvosuiteCoverageDTO.class);
+                null, HttpMethod.POST, null, reqBody.toMap(), EvosuiteCoverageDTO.class);
 
         if (response.getStatusCode().isError())
             throw new RuntimeException("Error generating evosuite coverage");
