@@ -26,14 +26,14 @@ public class AuthenticatedUserInterceptor implements HandlerInterceptor {
     private final JwtProvider jwtProvider;
     private final AuthService authService;
 
-    private final List<String> playerUrls = new ArrayList<String>(){{
+    private static final List<String> playerUrls = new ArrayList<String>(){{
         add("/login");
         add("/register");
         add("/change_password");
         add("/reset_password");
     }};
 
-    private final List<String> adminUrls = new ArrayList<String>(){{
+    private static final List<String> adminUrls = new ArrayList<String>(){{
         add("/admin/login");
         add("/admin/register");
         add("/admin/change_password");

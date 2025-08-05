@@ -7,10 +7,10 @@ It can be invoked by:
 
 ## Available REST Endpoints
 
-| HTTP Method | Endpoint                    | Function                                                                                          |
-| ----------- | --------------------------- | ------------------------------------------------------------------------------------------------- |
-| POST        | `/coverage/evosuite`        | Calculates the missing JaCoCo coverage for a robot uploaded by the administrator.                 |
-| POST        | `/compile-and-codecoverage` | Verifies the compilability and the coverage of the JUnit code written by the player during a match. |
+| HTTP Method | Endpoint             | Function                                                                                          |
+| ----------- |----------------------| ------------------------------------------------------------------------------------------------- |
+| POST        | `/coverage/opponent` | Calculates the missing JaCoCo coverage for a robot uploaded by the administrator.                 |
+| POST        | `/coverage/player`   | Verifies the compilability and the coverage of the JUnit code written by the player during a match. |
 
 ## Executor and Task Queue
 

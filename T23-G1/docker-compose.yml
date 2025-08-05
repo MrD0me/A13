@@ -35,6 +35,7 @@ services:
       - db
     environment:
       DB_URL: jdbc:mysql://db:3306/${MYSQL_DATABASE}  # Usa il nome del DB definito nel .env
+      JWT_KEY_SECRET: ${JWT_KEY_SECRET}
     networks:
       - global-network
   

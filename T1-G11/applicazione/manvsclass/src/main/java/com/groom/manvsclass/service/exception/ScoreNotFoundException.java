@@ -1,4 +1,4 @@
-package com.groom.manvsclass.service.exceptions;
+package com.groom.manvsclass.service.exception;
 
 public class ScoreNotFoundException extends RuntimeException {
   private final String field;

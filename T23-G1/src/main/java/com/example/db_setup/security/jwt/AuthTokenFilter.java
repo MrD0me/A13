@@ -37,8 +37,8 @@ public class AuthTokenFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         try {
-            //Cookie cookie = WebUtils.getCookie(request, authProperties.getJwtCookieName());
-            Cookie cookie = WebUtils.getCookie(request, "jwt");
+            Cookie cookie = WebUtils.getCookie(request, authProperties.getJwtCookieName());
+            //Cookie cookie = WebUtils.getCookie(request, "jwt");
             logger.info("jwt cookie found: {}", cookie);
             String jwt = cookie != null ? cookie.getValue() : null;
 

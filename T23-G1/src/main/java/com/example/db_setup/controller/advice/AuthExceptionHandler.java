@@ -1,6 +1,5 @@
 package com.example.db_setup.controller.advice;
 
-import com.example.db_setup.service.AuthService;
 import com.example.db_setup.service.exception.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +19,7 @@ public class AuthExceptionHandler {
 
     private final MessageSource messageSource;
 
-    private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
+    private static final Logger logger = LoggerFactory.getLogger(AuthExceptionHandler.class);
 
     public AuthExceptionHandler(MessageSource messageSource) {
         this.messageSource = messageSource;
@@ -44,14 +43,14 @@ public class AuthExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleServiceNotAvailableException(ServiceNotAvailableException e, Locale locale) {
         return ResponseEntity.internalServerError().body(
                 Map.of("errors", List.of(Map.of("field",  e.getField(),
-                        "error", messageSource.getMessage("experience.init.error", null, locale)))));
+                        "message", messageSource.getMessage("experience.init.error", null, locale)))));
     }
 
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleUserNotFoundException(UserNotFoundException e, Locale locale) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                 Map.of("errors", List.of(Map.of("field", e.getField(),
-                        "error", messageSource.getMessage("LoginDTO.user.notfound", null, locale)))));
+                        "message", messageSource.getMessage("LoginDTO.user.notfound", null, locale)))));
 
     }
 
@@ -61,21 +60,21 @@ public class AuthExceptionHandler {
 
         return ResponseEntity.internalServerError().body(
                 Map.of("errors", List.of(Map.of("field", "none",
-                        "error", messageSource.getMessage("emailService.messagingException", null, locale)))));
+                        "message", messageSource.getMessage("emailService.messagingException", null, locale)))));
     }
 
     @ExceptionHandler(PasswordResetTokenNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handlePasswordResetTokenNotFoundException(PasswordResetTokenNotFoundException e, Locale locale) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
                 Map.of("errors", List.of(Map.of("field", e.getField(),
-                        "error", messageSource.getMessage("passwordResetToken.incorrect", null, locale)))));
+                        "message", messageSource.getMessage("passwordResetToken.incorrect", null, locale)))));
     }
 
     @ExceptionHandler(IncompatibleEmailException.class)
     public ResponseEntity<Map<String, Object>> handleIncompatibleEmailException(IncompatibleEmailException e, Locale locale) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
                 Map.of("errors", List.of(Map.of("field", e.getField(),
-                        "error", messageSource.getMessage("passwordResetToken.incorrect", null, locale)))));
+                        "message", messageSource.getMessage("passwordResetToken.incorrect", null, locale)))));
 
     }
 
@@ -83,7 +82,7 @@ public class AuthExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleInvalidRefreshTokenException(InvalidRefreshTokenException e, Locale locale) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
                 Map.of("errors", List.of(Map.of("field", e.getField(),
-                        "error", messageSource.getMessage("refreshToken.incorrect", null, locale)))));
+                        "message", messageSource.getMessage("refreshToken.incorrect", null, locale)))));
 
     }
 }

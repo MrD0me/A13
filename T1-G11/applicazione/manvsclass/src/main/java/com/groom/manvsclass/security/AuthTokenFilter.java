@@ -32,7 +32,6 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthTokenFilter.class);
     private final ApiGatewayClient apiGatewayClient;
-    private static final AntPathMatcher uriMatcher = new AntPathMatcher();
     private static final List<String> PLAYER_ALLOWED_URIS = List.of(
             "/opponents/**",
             "/ottieniTeamByStudentId",

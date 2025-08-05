@@ -18,6 +18,8 @@ public class JwtProvider {
     private static final Logger logger = LoggerFactory.getLogger(JwtProvider.class);
     private final AuthenticationPropertiesConfig authProperties;
 
+    private final String keySecret = System.getenv("JWT_KEY_SECRET");
+
     public ResponseCookie generateJwtCookie(String email, Long userId, Role role) {
         String jwt = Jwts.builder()
                 .setSubject(email)
@@ -25,7 +27,7 @@ public class JwtProvider {
                 .setExpiration(new Date((new Date()).getTime() + authProperties.getJwtCookieExpirationMs()))
                 .claim("userId", userId)
                 .claim("role", role)
-                .signWith(SignatureAlgorithm.HS256, "mySecretKey")
+                .signWith(SignatureAlgorithm.HS256, keySecret)
                 .compact();
 
         ResponseCookie cookie = ResponseCookie.from(authProperties.getJwtCookieName(), jwt)
@@ -43,7 +45,7 @@ public class JwtProvider {
 
     public String getUserEmailFromJwtToken(String authToken) {
         Claims claims = Jwts.parser()
-                .setSigningKey("mySecretKey")
+                .setSigningKey(keySecret)
                 .parseClaimsJws(authToken)
                 .getBody();
 
@@ -52,7 +54,7 @@ public class JwtProvider {
 
     public Role getUserRoleFromJwtToken(String authToken) {
         Claims claims = Jwts.parser()
-                .setSigningKey("mySecretKey")
+                .setSigningKey(keySecret)
                 .parseClaimsJws(authToken)
                 .getBody();
 
@@ -62,7 +64,7 @@ public class JwtProvider {
     public JwtValidationResult validateJwtToken(String authToken) {
         try {
             Claims claims = Jwts.parser()
-                    .setSigningKey("mySecretKey")
+                    .setSigningKey(keySecret)
                     .parseClaimsJws(authToken)
                     .getBody();
 
