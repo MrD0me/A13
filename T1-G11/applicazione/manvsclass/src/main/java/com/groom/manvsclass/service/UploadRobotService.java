@@ -48,7 +48,6 @@ public class UploadRobotService {
     //--------------------------------------------------
 
     private final ApiGatewayClient apiGatewayClient;
-    @Autowired
 	private final OpponentRepository opponentRepository;
 
 	public UploadRobotService(ApiGatewayClient apiGatewayClient, OpponentRepository opponentRepository) {
@@ -321,35 +320,31 @@ public class UploadRobotService {
             boolean[] coverageFound = saveCoverageFilesInVolume(fromCoveragePath, toCoveragePath);
 
             if (!coverageFound[1]) {
-                Path srcCode_EvoSuiteTmp = Paths.get(String.format("%s/%s/%s", volumeBasePath, classUTName + "_EvoSuiteCoverage", BASE_SRC_PATH));
-                Path testCodeT8_EvoSuiteTmp = Paths.get(String.format("%s/%s/%s", volumeBasePath, classUTName + "_EvoSuiteCoverage", BASE_TEST_PATH));
+                Path tmpFolder_ToZip = Paths.get(String.format("%s/%s/tmp_zip", volumeBasePath, classUTName));
 
-                splitPackageNames = saveTestFilesInVolume(fromTestPath, testCodeT8_EvoSuiteTmp, classUTName, robotType);
-                String[] srcPackageName_EvoSuiteTmp = splitPackageNames[0];
-                String[] testPackageName_EvoSuiteTmp = splitPackageNames[1];
-                saveSrcFileInVolume(classUTFile, srcCode_EvoSuiteTmp, srcPackageName_EvoSuiteTmp, classUTFileName);
+                Files.createDirectories(Paths.get(String.format("%s/%s", tmpFolder_ToZip, Paths.get(BASE_SRC_PATH))));
+                FileOperationUtil.copyDirectoryRecursively(toSrcPath, Paths.get(String.format("%s/%s", tmpFolder_ToZip, Paths.get(BASE_SRC_PATH))));
 
-                String srcPackagePath = "";
-                if (srcPackageName_EvoSuiteTmp != null) {
-                    srcPackagePath = String.join(".", srcPackageName_EvoSuiteTmp) + ".";
-                }
+                Files.createDirectories(Paths.get(String.format("%s/%s", tmpFolder_ToZip, Paths.get(BASE_TEST_PATH))));
+                FileOperationUtil.copyDirectoryRecursively(toTestPath, Paths.get(String.format("%s/%s", tmpFolder_ToZip, Paths.get(BASE_TEST_PATH))));
 
-                String testPackagePath = "";
-                if (testPackageName_EvoSuiteTmp != null) {
-                    testPackagePath = String.join(".", testPackageName_EvoSuiteTmp) + ".";
-                }
+                FileOperationUtil.zipDirectory(String.format("%s/src", tmpFolder_ToZip), String.format("%s/src.zip", tmpFolder_ToZip));
+                File zip = new File(String.format("%s/src.zip", tmpFolder_ToZip));
 
-                Path evoSuiteWorkingPath = Paths.get(String.format("%s/%s", volumeBasePath, classUTName + "_EvoSuiteCoverage"));
-                logger.info("Creating evosuite folder: " + Files.createDirectories(evoSuiteWorkingPath));
-                try {
-                    EvosuiteCoverageDTO coverageDTO = apiGatewayClient.callGenerateMissingEvoSuiteCoverage(classUTName, srcPackagePath, srcCode_EvoSuiteTmp, testCodeT8_EvoSuiteTmp, toCoveragePath, evoSuiteWorkingPath, testPackagePath);
+                String srcPackage = "";
+                if (srcPackageNameSplit != null)
+                    srcPackage = String.join(".", srcPackageNameSplit) + ".";
+
+                if (!zip.exists()) {
+                    System.err.println("Errore: Il file ZIP non è stato creato correttamente.");
+                    FileOperationUtil.deleteDirectoryRecursively(tmpFolder_ToZip);
+                } else {
+                    EvosuiteCoverageDTO coverageDTO = apiGatewayClient.callGenerateMissingEvoSuiteCoverage(classUTName, srcPackage, zip);
                     FileOperationUtil.writeStringToFile(coverageDTO.getResultFileContent(), new File(String.format("%s/%s", toCoveragePath, "statistics.csv")));
-                    FileOperationUtil.deleteDirectoryRecursively(evoSuiteWorkingPath);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    FileOperationUtil.deleteDirectoryRecursively(evoSuiteWorkingPath);
-                    throw new RuntimeException(e);
                 }
+
+                Files.delete(zip.toPath());
+                FileOperationUtil.deleteDirectoryRecursively(tmpFolder_ToZip);
             }
 
             if (!coverageFound[0]) {

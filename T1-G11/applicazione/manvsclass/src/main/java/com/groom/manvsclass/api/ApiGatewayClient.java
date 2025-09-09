@@ -1,6 +1,7 @@
 package com.groom.manvsclass.api;
 
 import com.groom.manvsclass.model.dto.OpponentDTO;
+import com.groom.manvsclass.model.dto.RequestEvosuiteCoverageDTO;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -13,10 +14,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.*;
+import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
 import testrobotchallenge.commons.models.dto.score.EvosuiteCoverageDTO;
 import testrobotchallenge.commons.models.dto.score.JacocoCoverageDTO;
 import testrobotchallenge.commons.models.opponent.GameMode;
@@ -30,8 +33,14 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
+/**
+ * ApiGatewayClient contiene tutte le chiamate API di T1 verso gli altri microservizi del sistema.
+ */
 @Component
 public class ApiGatewayClient {
 
@@ -62,7 +71,7 @@ public class ApiGatewayClient {
     }
 
     /**
-     * Valida il token JWT.
+     * Valida il token JWT ricevuto nell'header della richiesta utente contattando T23
      */
     public JwtValidationResponseDTO callValidateJwtToken(String jwtToken) {
         ResponseEntity<JwtValidationResponseDTO> response = exchangeHelper.exchange(userServiceUrl + "/auth/validateToken?jwt=" + jwtToken,
@@ -77,7 +86,7 @@ public class ApiGatewayClient {
     }
 
     /**
-     * Richiede un nuovo jwt token usando il refresh token.
+     * Richiede un nuovo jwt token usando il refresh token presente nell'header della richiesta utente contattando T23.
      */
     public String callRefreshJwtToken(String refreshToken) {
         HttpHeaders headers = new HttpHeaders();
@@ -127,16 +136,17 @@ public class ApiGatewayClient {
 
     }
 
-    public EvosuiteCoverageDTO callGenerateMissingEvoSuiteCoverage(String classUTName, String classUTPackageName, Path classUTPath, Path testPath, Path toCoveragePath, Path evoSuiteWorkingDir, String testPackageName) throws IOException {
-        JSONObject reqBody = new JSONObject();
-        reqBody.put("classUTName", classUTName);
-        reqBody.put("classUTPath", classUTPath.toString());
-        reqBody.put("classUTPackage", classUTPackageName);
-        reqBody.put("unitTestPath", testPath.toString());
-        reqBody.put("evosuiteWorkingDir", evoSuiteWorkingDir.toString());
+    public EvosuiteCoverageDTO callGenerateMissingEvoSuiteCoverage(String classUTName, String classUTPackageName, File zip) {
+        // FileSystemResource fileResource = new FileSystemResource(zip);
+
+        MultipartBodyBuilder builder = new MultipartBodyBuilder();
+        builder.part("request", new RequestEvosuiteCoverageDTO(classUTName, classUTPackageName));
+        builder.part("project", new FileSystemResource(zip));
+
+        MultiValueMap<String, HttpEntity<?>> requestBody = builder.build();
 
         ResponseEntity<EvosuiteCoverageDTO> response = exchangeHelper.exchange(evosuiteCoverageServiceUrl + "/coverage/opponent",
-                null, HttpMethod.POST, null, reqBody.toMap(), EvosuiteCoverageDTO.class);
+                null, HttpMethod.POST, null, requestBody, EvosuiteCoverageDTO.class);
 
         if (response.getStatusCode().isError())
             throw new RuntimeException("Error generating evosuite coverage");

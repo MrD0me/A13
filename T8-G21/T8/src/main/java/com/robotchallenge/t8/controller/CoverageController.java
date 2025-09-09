@@ -1,7 +1,7 @@
 package com.robotchallenge.t8.controller;
 
 import com.robotchallenge.t8.config.CustomExecutorConfiguration;
-import com.robotchallenge.t8.dto.request.RobotCoverageRequestDTO;
+import com.robotchallenge.t8.dto.request.OpponentCoverageRequestDTO;
 import com.robotchallenge.t8.dto.request.StudentCoverageRequestDTO;
 import com.robotchallenge.t8.service.CoverageService;
 import com.robotchallenge.t8.util.BuildResponse;
@@ -11,12 +11,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import testrobotchallenge.commons.models.dto.score.EvosuiteCoverageDTO;
 
+import java.io.IOException;
 import java.util.concurrent.*;
 
 @Controller
@@ -33,10 +32,24 @@ public class CoverageController {
         this.coverageService = coverageService;
     }
 
+    /*
     @PostMapping(value = "/coverage/opponent", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<EvosuiteCoverageDTO> calculateRobotEvosuiteCoverage(@RequestBody RobotCoverageRequestDTO request) {
         logger.info("[CoverageController] [POST /score/opponent] Ricevuta richiesta con body: {}", request);
         String result = coverageService.calculateRobotCoverage(request);
+
+        EvosuiteCoverageDTO responseBody = BuildResponse.buildExtendedDTO(result);
+
+        logger.info("[CoverageController] [POST /score/opponent] Risultato: {}", responseBody);
+        logger.info("[CoverageController] [POST /score/opponent] OK 200");
+        return ResponseEntity.status(HttpStatus.OK).header("Content-Type", "application/json").body(responseBody);
+    }
+     */
+
+    @PostMapping(value = "/coverage/opponent", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<EvosuiteCoverageDTO> calculateRobotEvosuiteCoverage(@RequestPart("request") OpponentCoverageRequestDTO request, @RequestPart("project") MultipartFile project) throws IOException {
+        logger.info("[CoverageController] [POST /score/opponent] Ricevuta richiesta con body {} e MultiPartFile {}", request, project.getOriginalFilename());
+        String result = coverageService.calculateRobotCoverage(request, project);
 
         EvosuiteCoverageDTO responseBody = BuildResponse.buildExtendedDTO(result);
 
