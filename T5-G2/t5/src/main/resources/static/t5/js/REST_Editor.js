@@ -37,7 +37,7 @@ async function getGameActionRequestBody() {
 async function handleBeforeUnload(e) {
     let leaveGameRequestBody = await getGameActionRequestBody();
     console.log("[POST /leave] Sending request upon leaving");
-    navigator.sendBeacon("/leave", JSON.stringify(leaveGameRequestBody));
+    navigator.sendBeacon("/api/gameEngine/leave", JSON.stringify(leaveGameRequestBody));
 }
 window.addEventListener("beforeunload", handleBeforeUnload);
 
@@ -98,7 +98,7 @@ async function handleGameAction(isGameEnd, compileUponEndTime=false) {
 
             if (!compileUponEndTime) {
                 requestBody["testingClassCode"] = "";
-                const response = await runGameAction("/CompileEvosuite", requestBody);
+                const response = await runGameAction("/api/gameEngine/CompileEvosuite", requestBody);
                 console.log("/EndGame", response);
                 setStatus("game_end");
 
@@ -108,12 +108,12 @@ async function handleGameAction(isGameEnd, compileUponEndTime=false) {
                     canWin, unlockedAchievements,
                     userScore, robotScore,
                 } = response;
-                const endResponse = await runGameAction("/EndGame", requestBody);
+                const endResponse = await runGameAction("/api/gameEngine/EndGame", requestBody);
 
                 handleGameEnd(endResponse, unlockedAchievements);
                 toggleLoading(false, loadingKey, buttonKey);
             } else {
-                const endResponse = await runGameAction("/EndGame", requestBody);
+                const endResponse = await runGameAction("/api/gameEngine/EndGame", requestBody);
 
                 handleGameEnd(endResponse, []);
                 toggleLoading(false, loadingKey, buttonKey);
@@ -125,7 +125,7 @@ async function handleGameAction(isGameEnd, compileUponEndTime=false) {
     } else {
         try {
             //Esegue l'azione di gioco
-            const response = await runGameAction("/run", requestBody);
+            const response = await runGameAction("/api/gameEngine/run", requestBody);
             setStatus("compiling");
             handleGameRun(response, loadingKey, buttonKey, false);
             resetButtons();
