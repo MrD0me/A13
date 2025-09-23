@@ -11,8 +11,8 @@ import java.util.function.BiFunction;
 public class NumberAllRobotForClassBeaten {
 
     private NumberAllRobotForClassBeaten() {
-        throw new IllegalStateException("Classe utility che verifica quali achievement di tipo \"Numero di Robot battuti per classe\" " +
-                "sono stato sbloccati nella partita");
+        throw new IllegalStateException("Classe utility che definisce il template e verifica di sblocco per achievement " +
+                "di tipo \"Numero di Robot battuti per classe\"");
     }
 
     public static Map<String, BiFunction<Map<String, List<GameProgressDTO>>, Map<String, List<OpponentSummary>>, Boolean>> getAchievementFunctions() {

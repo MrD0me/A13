@@ -10,8 +10,7 @@ import java.util.function.Function;
 public class NumberRobotBeaten {
 
     private NumberRobotBeaten() {
-        throw new IllegalStateException("Classe utility che verifica quali achievement di tipo \"Numero di Robot battuti\" " +
-                "sono stato sbloccati nella partita");
+        throw new IllegalStateException("Classe utility che definisce gli achievement di tipo \"Numero di Robot battuti\"");
     }
 
     public static Map<String, Function<List<GameProgressDTO>, Boolean>> getAchievementFunctions() {
