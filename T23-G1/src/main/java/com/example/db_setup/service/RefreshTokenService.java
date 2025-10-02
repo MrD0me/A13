@@ -22,33 +22,32 @@ public class RefreshTokenService {
     private final AuthenticationPropertiesConfig authProperties;
 
     public ResponseCookie generateRefreshToken(Player player) {
-        String token = UUID.randomUUID().toString();
-        RefreshToken refreshToken = new RefreshToken();
-        refreshToken.setToken(token);
-        refreshToken.setPlayer(player);
-        refreshToken.setExpiryDate(Instant.now().plusMillis(authProperties.getJwtRefreshCookieExpirationMs()));
-
-        List<RefreshToken> oldUserRefreshTokens = refreshTokenRepository.findByPlayer(player);
-        for (RefreshToken oldRefreshToken : oldUserRefreshTokens)
-            this.rotate(oldRefreshToken);
-
-        refreshTokenRepository.save(refreshToken);
-        return ResponseCookie.from(authProperties.getJwtRefreshCookieName(), refreshToken.getToken()).path("/").maxAge(refreshToken.getExpiryDate().toEpochMilli()).build();
+        return generateTokenForUser(null, player);
     }
 
     public ResponseCookie generateRefreshToken(Admin admin) {
+        return generateTokenForUser(admin, null);
+    }
+
+    private ResponseCookie generateTokenForUser(Admin admin, Player player) {
         String token = UUID.randomUUID().toString();
         RefreshToken refreshToken = new RefreshToken();
         refreshToken.setToken(token);
         refreshToken.setAdmin(admin);
+        refreshToken.setPlayer(player);
         refreshToken.setExpiryDate(Instant.now().plusMillis(authProperties.getJwtRefreshCookieExpirationMs()));
 
-        List<RefreshToken> oldUserRefreshTokens = refreshTokenRepository.findByAdmin(admin);
+
+        List<RefreshToken> oldUserRefreshTokens = admin != null ?
+                refreshTokenRepository.findByAdmin(admin) :
+                refreshTokenRepository.findByPlayer(player);
+
         for (RefreshToken oldRefreshToken : oldUserRefreshTokens)
             this.rotate(oldRefreshToken);
 
         refreshTokenRepository.save(refreshToken);
         return ResponseCookie.from(authProperties.getJwtRefreshCookieName(), refreshToken.getToken()).path("/").maxAge(refreshToken.getExpiryDate().getEpochSecond()).build();
+
     }
 
     public ResponseCookie generateCleanRefreshToken() {
@@ -71,15 +70,11 @@ public class RefreshTokenService {
     }
 
     public void invalidAllUserRefreshTokens(Player player) {
-        List<RefreshToken> oldUserRefreshTokens = refreshTokenRepository.findByPlayer(player);
-        for (RefreshToken oldRefreshToken : oldUserRefreshTokens)
-            this.rotate(oldRefreshToken);
+        refreshTokenRepository.findByPlayer(player).forEach(this::rotate);
     }
 
     public void invalidAllAdminRefreshTokens(Admin admin) {
-        List<RefreshToken> oldUserRefreshTokens = refreshTokenRepository.findByAdmin(admin);
-        for (RefreshToken oldRefreshToken : oldUserRefreshTokens)
-            this.rotate(oldRefreshToken);
+        refreshTokenRepository.findByAdmin(admin).forEach(this::rotate);
     }
 
     private RefreshToken rotate(RefreshToken oldRefreshToken) {
