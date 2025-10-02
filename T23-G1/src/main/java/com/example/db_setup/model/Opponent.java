@@ -22,9 +22,12 @@ public class Opponent {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
+    @Enumerated(EnumType.STRING)
     private GameMode gameMode;
     private String classUT;
+    @Enumerated(EnumType.STRING)
     private OpponentType type;
+    @Enumerated(EnumType.STRING)
     private OpponentDifficulty difficulty;
 
     private boolean active;
