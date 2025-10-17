@@ -17,19 +17,19 @@
 
 package com.g2.session;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.g2.game.gameMode.GameLogic;
+import lombok.Setter;
+import testrobotchallenge.commons.models.opponent.GameMode;
+
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.g2.game.GameModes.GameLogic;
-import lombok.Setter;
-import testrobotchallenge.commons.models.opponent.GameMode;
 
 /**
  * Classe che rappresenta una sessione di un utente. Contiene una mappa delle
@@ -39,19 +39,15 @@ import testrobotchallenge.commons.models.opponent.GameMode;
 public class Sessione implements Serializable {
 
     private static final long serialVersionUID = 1L;
-
-    @Setter
-    @JsonProperty("id_sess")
-    private Long idSessione;
-
     @JsonProperty("id_user")
     private final String userId;
-
     // Timestamp di creazione della sessione (immutabile)
     @JsonProperty("created_at")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
     private final Instant createdAt;
-
+    @Setter
+    @JsonProperty("id_sess")
+    private Long idSessione;
     // Timestamp aggiornato ad ogni update della sessione
     @JsonProperty("updated_at")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
@@ -65,7 +61,7 @@ public class Sessione implements Serializable {
      * Costruttore per inizializzare una sessione.
      *
      * @param idSessione Identificativo univoco della sessione
-     * @param userId Identificativo dell'utente proprietario della sessione
+     * @param userId     Identificativo dell'utente proprietario della sessione
      */
     public Sessione(
             Long idSessione,
@@ -79,15 +75,15 @@ public class Sessione implements Serializable {
     }
 
     /*
-     * Costruttore per serializzare 
+     * Costruttore per serializzare
      */
     @JsonCreator
     public Sessione(
-        @JsonProperty("id_sess") Long idSessione,
-        @JsonProperty("id_user")    String userId,
-        @JsonProperty("created_at") Instant createdAt,
-        @JsonProperty("updated_at") Instant updatedAt,
-        @JsonProperty("modalita") Map<GameMode, ModalitaWrapper> modalita
+            @JsonProperty("id_sess") Long idSessione,
+            @JsonProperty("id_user") String userId,
+            @JsonProperty("created_at") Instant createdAt,
+            @JsonProperty("updated_at") Instant updatedAt,
+            @JsonProperty("modalita") Map<GameMode, ModalitaWrapper> modalita
     ) {
         this.idSessione = idSessione;
         this.userId = userId;
@@ -149,7 +145,7 @@ public class Sessione implements Serializable {
     /**
      * Aggiunge (o aggiorna) una modalità di gioco nella sessione.
      *
-     * @param key Nome della modalità (es. "Sfida", "Allenamento")
+     * @param key  Nome della modalità (es. "Sfida", "Allenamento")
      * @param game Oggetto GameLogic associato alla modalità
      */
     public void addModalita(GameMode key, GameLogic game) {
@@ -169,7 +165,7 @@ public class Sessione implements Serializable {
         return this.modalita.containsKey(key);
     }
 
-    public GameLogic getGame(GameMode mode){
+    public GameLogic getGame(GameMode mode) {
         return this.modalita.get(mode).gameobject;
     }
 
@@ -191,15 +187,16 @@ public class Sessione implements Serializable {
      */
     @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "@class")
     public record ModalitaWrapper(
-            @JsonProperty("gameobject") 
-                GameLogic gameobject,
+            @JsonProperty("gameobject")
+            GameLogic gameobject,
             @JsonProperty("created_at")
-            @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC") 
-                Instant createdAt,
+            @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
+            Instant createdAt,
             @JsonProperty("updated_at")
-            @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC") 
-                Instant updatedAt) implements Serializable {
+            @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
+            Instant updatedAt) implements Serializable {
         private static final long serialVersionUID = 1L;
+
         public ModalitaWrapper(GameLogic gameobject) {
             this(gameobject, Instant.now(), Instant.now());
         }

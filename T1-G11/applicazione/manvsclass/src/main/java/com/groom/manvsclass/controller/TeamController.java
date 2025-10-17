@@ -1,13 +1,12 @@
 package com.groom.manvsclass.controller;
 
-import java.util.List;
-
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import com.groom.manvsclass.model.Team;
 import com.groom.manvsclass.service.TeamModificationRequest;
 import com.groom.manvsclass.service.TeamService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @CrossOrigin
 @RestController
@@ -65,8 +64,8 @@ public class TeamController {
     }
 
     /*
-    * Queste chiamate sono accedibili a un utente se fa parte di quel team  
-    */
+     * Queste chiamate sono accedibili a un utente se fa parte di quel team
+     */
     @GetMapping("/ottieniTeamByStudentId")
     public ResponseEntity<Team> getTeamByStudentId(@RequestParam("StudentId") String idStudente) {
         // Invoca il servizio per recuperare il team in base all'ID dello studente
@@ -80,7 +79,7 @@ public class TeamController {
     }
 
     @GetMapping("/GetStudentTeam")
-    public ResponseEntity<?> getStudentTeam(@CookieValue(name = "jwt", required = false) String jwt, @RequestParam String studentId){
+    public ResponseEntity<?> getStudentTeam(@CookieValue(name = "jwt", required = false) String jwt, @RequestParam String studentId) {
         return teamService.GetStudentTeam(studentId, jwt);
     }
 }

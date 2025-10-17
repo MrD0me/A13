@@ -13,11 +13,9 @@
  */
 package com.g2.interfaces;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.g2.model.NotificationResponse;
+import com.g2.model.User;
 import com.g2.model.dto.GameProgressDTO;
 import com.g2.model.dto.PlayerProgressDTO;
 import com.g2.model.dto.UpdateGameProgressDTO;
@@ -32,20 +30,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
-
-import com.g2.model.NotificationResponse;
-import com.g2.model.User;
 import testrobotchallenge.commons.models.dto.auth.JwtValidationResponseDTO;
 import testrobotchallenge.commons.models.opponent.GameMode;
 import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
-import testrobotchallenge.commons.models.opponent.OpponentType;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 public class T23Service extends BaseService {
 
     private static final Logger logger = LoggerFactory.getLogger(T23Service.class);
-    private final ObjectMapper mapper = new ObjectMapper();
-
     private static final String EMAIL_FIELD = "email"; // Dichiarato come variabile per rimuovere l'issue di SonarQube per le troppe ripetizioni di "email"
     /*
      * Per il test locale senza container docker usare:
@@ -53,6 +49,7 @@ public class T23Service extends BaseService {
      */
     private static final String BASE_URL = "http://api_gateway-controller:8090";
     private static final String SERVICE_PREFIX = "userService";
+    private final ObjectMapper mapper = new ObjectMapper();
 
     /*
      * La dimensione del costruttore è stata ridotta dividendolo in sotto-metodi per essere compliant con SonarQube
@@ -148,19 +145,19 @@ public class T23Service extends BaseService {
 
     private void registerPlayerStatusActions() {
         registerAction("createPlayerProgressAgainstOpponent", new ServiceActionDefinition(
-                params -> createPlayerProgressAgainstOpponent((long) params[0], (GameMode) params[1], (String) params[2], (OpponentType) params[3], (OpponentDifficulty) params[4]),
-                Long.class, GameMode.class, String.class, OpponentType.class, OpponentDifficulty.class
+                params -> createPlayerProgressAgainstOpponent((long) params[0], (GameMode) params[1], (String) params[2], (String) params[3], (OpponentDifficulty) params[4]),
+                Long.class, GameMode.class, String.class, String.class, OpponentDifficulty.class
         ));
 
         registerAction("getPlayerProgressAgainstOpponent", new ServiceActionDefinition(
-                params -> getPlayerProgressAgainstOpponent((long) params[0], (GameMode) params[1], (String) params[2], (OpponentType) params[3], (OpponentDifficulty) params[4]),
-                Long.class, GameMode.class, String.class, OpponentType.class, OpponentDifficulty.class
+                params -> getPlayerProgressAgainstOpponent((long) params[0], (GameMode) params[1], (String) params[2], (String) params[3], (OpponentDifficulty) params[4]),
+                Long.class, GameMode.class, String.class, String.class, OpponentDifficulty.class
         ));
 
         registerAction("updatePlayerProgressAgainstOpponent", new ServiceActionDefinition(
                 params -> updatePlayerProgressAgainstOpponent((long) params[0], (GameMode) params[1], (String) params[2],
-                        (OpponentType) params[3], (OpponentDifficulty) params[4], (boolean) params[5], (Set<String>) params[6]),
-                Long.class, GameMode.class, String.class, OpponentType.class, OpponentDifficulty.class, Boolean.class, Set.class
+                        (String) params[3], (OpponentDifficulty) params[4], (boolean) params[5], (Set<String>) params[6]),
+                Long.class, GameMode.class, String.class, String.class, OpponentDifficulty.class, Boolean.class, Set.class
         ));
 
         registerAction("getPlayerProgressAgainstAllOpponent", new ServiceActionDefinition(
@@ -179,24 +176,24 @@ public class T23Service extends BaseService {
     }
 
 
-    private GameProgressDTO createPlayerProgressAgainstOpponent(long playerId, GameMode gameMode, String classUT, OpponentType type, OpponentDifficulty difficulty) {
+    private GameProgressDTO createPlayerProgressAgainstOpponent(long playerId, GameMode gameMode, String classUT, String type, OpponentDifficulty difficulty) {
         final String endpoint = "/players/%s/progression/against".formatted(playerId);
 
         JSONObject requestBody = new JSONObject();
         requestBody.put("classUT", classUT);
-        requestBody.put("gameMode", gameMode);
+        requestBody.put("gameMode", gameMode.name());
         requestBody.put("type", type);
-        requestBody.put("difficulty", difficulty);
+        requestBody.put("difficulty", difficulty.name());
         return callRestPost(endpoint, requestBody, null, null, GameProgressDTO.class);
     }
 
-    private GameProgressDTO getPlayerProgressAgainstOpponent(long playerId, GameMode gameMode, String classUT, OpponentType type, OpponentDifficulty difficulty) {
-        final String endpoint = "/players/%s/progression/against/%s/%s/%s/%s".formatted(playerId, gameMode.name(), classUT, type.name(), difficulty.name());
+    private GameProgressDTO getPlayerProgressAgainstOpponent(long playerId, GameMode gameMode, String classUT, String type, OpponentDifficulty difficulty) {
+        final String endpoint = "/players/%s/progression/against/%s/%s/%s/%s".formatted(playerId, gameMode.name(), classUT, type, difficulty.name());
         return callRestGET(endpoint, null, GameProgressDTO.class);
     }
 
-    private GameProgressDTO updatePlayerProgressAgainstOpponent(long playerId, GameMode gameMode, String classUT, OpponentType type, OpponentDifficulty difficulty, boolean isWinner, Set<String> unlockedAchievements) {
-        final String endpoint = "/players/%s/progression/against/%s/%s/%s/%s".formatted(playerId, gameMode.name(), classUT, type.name(), difficulty.name());
+    private GameProgressDTO updatePlayerProgressAgainstOpponent(long playerId, GameMode gameMode, String classUT, String type, OpponentDifficulty difficulty, boolean isWinner, Set<String> unlockedAchievements) {
+        final String endpoint = "/players/%s/progression/against/%s/%s/%s/%s".formatted(playerId, gameMode.name(), classUT, type, difficulty.name());
 
         UpdateGameProgressDTO dto = new UpdateGameProgressDTO(isWinner, unlockedAchievements);
         JSONObject requestBody;
@@ -223,7 +220,7 @@ public class T23Service extends BaseService {
     }
 
     private Set<String> updateGlobalAchievements(long playerId, Set<String> achievements) {
-        final String endpoint =  "/players/%s/progression/achievements/global".formatted(playerId);
+        final String endpoint = "/players/%s/progression/achievements/global".formatted(playerId);
 
         JSONObject requestBody = new JSONObject();
         requestBody.put("unlockedAchievements", achievements);
@@ -267,7 +264,7 @@ public class T23Service extends BaseService {
                 HttpMethod.POST, // Tipo di richiesta POST
                 requestEntity, // Corpo della richiesta (lista di studenti)
                 new ParameterizedTypeReference<List<User>>() {
-        } // Tipo di risposta che ci aspettiamo
+                } // Tipo di risposta che ci aspettiamo
         );
 
         // Gestisci la risposta
@@ -324,7 +321,7 @@ public class T23Service extends BaseService {
 
         if (response == null) {
             return new NotificationResponse();
-        }else{
+        } else {
             return response.getBody();
         }
     }
@@ -357,9 +354,9 @@ public class T23Service extends BaseService {
     }
 
     /*
-    *   Metodo per follow/unfollow di un utente
-    *   il targetUserId + chi viene seguito 
-    *   il authUserId è chi segue 
+     *   Metodo per follow/unfollow di un utente
+     *   il targetUserId + chi viene seguito
+     *   il authUserId è chi segue
      */
     public String followUser(Integer targetUserId, Integer authUserId) {
         final String endpoint = "/profile/toggle_follow";

@@ -4,39 +4,27 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+/**
+ * Classe utility che espone varie funzionalità legate al file system, quali la creazione di un nuovo file, l'unzip di un
+ * archivio zip e l'eliminazione di una directory e del suo contenuto.
+ */
 public class FileUtil {
+    /*
+     * Il codice sottostante è codice legacy, funzionante ma non controllato/rifattorizzato.
+     */
 
     // Costruttore privato aggiunto per rimuovere l'issue "Utility classes should not have public constructors"
     // identificata da SonaQube IDE
     private FileUtil() {
         throw new IllegalStateException("Classe utility per la gestione di file e file system");
-    }
-
-    public static void copyDirectoryRecursively(Path sourcePath, Path destinationPath) throws IOException {
-        if (!Files.exists(sourcePath) || !Files.isDirectory(sourcePath)) {
-            throw new IllegalArgumentException(String.format("Il percorso %s sorgente non esiste o non è una directory.", sourcePath));
-        }
-
-        Files.walkFileTree(sourcePath, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                Path targetDir = destinationPath.resolve(sourcePath.relativize(dir));
-                Files.createDirectories(targetDir);
-                return FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                Path targetFile = destinationPath.resolve(sourcePath.relativize(file));
-                Files.copy(file, targetFile, StandardCopyOption.REPLACE_EXISTING);
-                return FileVisitResult.CONTINUE;
-            }
-        });
     }
 
     public static void deleteDirectoryRecursively(Path dirPath) throws IOException {
@@ -92,7 +80,7 @@ public class FileUtil {
                     }
 
                     // Scrittura del contenuto del file
-                    try (FileOutputStream fos = new FileOutputStream(newFile);) {
+                    try (FileOutputStream fos = new FileOutputStream(newFile)) {
                         int len;
                         while ((len = zis.read(buffer)) > 0) {
                             fos.write(buffer, 0, len);

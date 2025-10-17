@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
-import testrobotchallenge.commons.models.opponent.OpponentType;
 
 @Data
 @NoArgsConstructor
@@ -16,7 +15,7 @@ public class OpponentSummary {
     @JsonProperty("classUT")
     private String classUT;
     @JsonProperty("opponentType")
-    private OpponentType type;
+    private String type;
     @JsonProperty("opponentDifficulty")
     private OpponentDifficulty difficulty;
 }

@@ -1,6 +1,6 @@
 package com.g2.model;
 
-import java.time.*;
+import java.time.LocalDate;
 import java.util.List;
 
 public class ScalataGiocata {
@@ -47,68 +47,88 @@ public class ScalataGiocata {
     public int getPlayerID() {
         return playerID;
     }
-    public int getID() {
-        return ID;
-    }
-    public String getScalataName() {
-        return scalataName;
-    }
-    public List<Game> getGames() {
-        return games;
-    }
-    public LocalDate getCreationDate() {
-        return creationDate;
-    }
-    public String getCreationTime() {
-        return creationTime;
-    }
-    public String getStartingTime() {
-        return startingTime;
-    }
-    public String getEndingTime() {
-        return endingTime;
-    }
-    public String getUpdateTime() {
-        return updateTime;
-    }
-    public float getFinalScore() {
-        return finalScore;
-    }
-    public boolean getIsFinished() {
-        return isFinished;
-    }
 
     // Setters
     public void setPlayerID(int playerID) {
         this.playerID = playerID;
     }
+
+    public int getID() {
+        return ID;
+    }
+
     public void setID(int ID) {
         this.ID = ID;
     }
+
+    public String getScalataName() {
+        return scalataName;
+    }
+
     public void setScalataName(String scalataName) {
         this.scalataName = scalataName;
     }
+
+    public List<Game> getGames() {
+        return games;
+    }
+
     public void setGames(List<Game> games) {
         this.games = games;
     }
+
+    public LocalDate getCreationDate() {
+        return creationDate;
+    }
+
     public void setCreationDate(LocalDate creationDate) {
         this.creationDate = creationDate;
     }
+
+    public String getCreationTime() {
+        return creationTime;
+    }
+
     public void setCreationTime(String creationTime) {
         this.creationTime = creationTime;
     }
+
+    public String getStartingTime() {
+        return startingTime;
+    }
+
     public void setStartingTime(String startingTime) {
         this.startingTime = startingTime;
     }
+
+    public String getEndingTime() {
+        return endingTime;
+    }
+
     public void setEndingTime(String endingTime) {
         this.endingTime = endingTime;
     }
+
+    public String getUpdateTime() {
+        return updateTime;
+    }
+
     public void setUpdateTime(String updateTime) {
         this.updateTime = updateTime;
     }
+
+    public float getFinalScore() {
+        return finalScore;
+    }
+
     public void setFinalScore(float finalScore) {
         this.finalScore = finalScore;
     }
+
+    public boolean getIsFinished() {
+        return isFinished;
+    }
+
     public void setIsFinished(boolean isFinished) {
         this.isFinished = isFinished;
     }

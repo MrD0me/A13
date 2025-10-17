@@ -1,4 +1,5 @@
 package com.g2.model;
+
 import java.time.LocalDate;
 
 public class Game {
@@ -13,18 +14,6 @@ public class Game {
     private String username;
     private double score;
 
-    public double getScore() {
-        return score;
-    }
-
-    public void setScore(double score) {
-        this.score = score;
-    }
-
-    public void setClasse(String classe) {
-        this.classe = classe;
-    }
-
     public Game(int playerId, String description, String name, String difficulty, String username) {
         this.playerId = playerId;
         this.description = description;
@@ -36,6 +25,14 @@ public class Game {
 
     public Game() {
 
+    }
+
+    public double getScore() {
+        return score;
+    }
+
+    public void setScore(double score) {
+        this.score = score;
     }
 
     public int getPlayerId() {
@@ -96,6 +93,10 @@ public class Game {
 
     public String getClasse() {
         return classe;
+    }
+
+    public void setClasse(String classe) {
+        this.classe = classe;
     }
 
     public String getUsername() {

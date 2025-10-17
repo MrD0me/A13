@@ -15,13 +15,13 @@
  *   limitations under the License.
  */
 
- package com.g2.interfaces.util;
+package com.g2.interfaces.util;
 
- import java.util.Map;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 
- import org.springframework.http.HttpHeaders;
- import org.springframework.http.MediaType;
- 
+import java.util.Map;
+
 public class HttpHeadersFactory {
 
     private HttpHeadersFactory() {
@@ -29,17 +29,17 @@ public class HttpHeadersFactory {
     }
 
     public static HttpHeaders createHeaders(Map<String, String> customHeaders, MediaType defaultContentType) {
-     HttpHeaders headers = new HttpHeaders();
+        HttpHeaders headers = new HttpHeaders();
 
-     if (customHeaders != null) {
-         customHeaders.forEach(headers::add);
-     }
+        if (customHeaders != null) {
+            customHeaders.forEach(headers::add);
+        }
 
-     if (!headers.containsKey(HttpHeaders.CONTENT_TYPE)) {
-         headers.setContentType(defaultContentType);
-     }
+        if (!headers.containsKey(HttpHeaders.CONTENT_TYPE)) {
+            headers.setContentType(defaultContentType);
+        }
 
-     return headers;
+        return headers;
     }
 }
  

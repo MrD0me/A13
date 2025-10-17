@@ -17,9 +17,8 @@
 
 package com.example.db_setup.service;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
+import com.example.db_setup.model.Notification;
+import com.example.db_setup.model.repository.NotificationRepository;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -27,9 +26,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.example.db_setup.model.repository.NotificationRepository;
-import com.example.db_setup.model.Notification;
+import java.time.LocalDateTime;
+import java.util.List;
 
+/**
+ * Classe attualmente non in uso. L'intera funzionalità delle notifiche è stata disabilitata perchè non completamente funzionante.
+ */
 @Service
 public class NotificationService {
 
@@ -55,17 +57,17 @@ public class NotificationService {
         Pageable pageable = PageRequest.of(page, size);
         return notificationRepository.findByPlayerIDAndTypeAndIsRead(playerID, type, isRead, pageable);
     }
-    
+
     public Page<Notification> getNotificationsByPlayerAndType(long playerID, String type, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return notificationRepository.findByPlayerIDAndType(playerID, type, pageable);
     }
-    
+
     public Page<Notification> getNotificationsByPlayerAndReadStatus(long playerID, Boolean isRead, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return notificationRepository.findByPlayerIDAndIsRead(playerID, isRead, pageable);
     }
-    
+
     public Page<Notification> getNotificationsByPlayer(long playerID, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return notificationRepository.findByPlayerID(playerID, pageable);
@@ -75,12 +77,12 @@ public class NotificationService {
         Pageable pageable = PageRequest.of(page, size);
         return notificationRepository.findByPlayerIDAndTypeInAndIsRead(playerID, types, isRead, pageable);
     }
-    
+
     public Page<Notification> getNotificationsByPlayerAndTypes(long playerID, List<String> types, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return notificationRepository.findByPlayerIDAndTypeIn(playerID, types, pageable);
     }
-    
+
 
     // Segnare una singola notifica come letta
     @Transactional
@@ -125,5 +127,5 @@ public class NotificationService {
     public List<Notification> getUnreadNotificationsByPlayer(long playerID) {
         return notificationRepository.findByPlayerIDAndIsReadFalseOrderByTimestampDesc(playerID);
     }
-    
+
 }

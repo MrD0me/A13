@@ -36,7 +36,7 @@ public class LocaleConfig implements WebMvcConfigurer {
         CookieLocaleResolver cookieLocaleResolver = new CookieLocaleResolver();
         cookieLocaleResolver.setDefaultLocale(Locale.ITALIAN);
         cookieLocaleResolver.setCookieName("lang");
-        cookieLocaleResolver.setCookieMaxAge(7*24*60*60);  // Imposta la durata del cookie a una settimana
+        cookieLocaleResolver.setCookieMaxAge(7 * 24 * 60 * 60);  // Imposta la durata del cookie a una settimana
         cookieLocaleResolver.setCookiePath("/"); // Imposta il percorso per il cookie
         return cookieLocaleResolver;
     }

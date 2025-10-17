@@ -15,12 +15,12 @@
  *   limitations under the License.
  */
 
- package com.g2.interfaces.util;
+package com.g2.interfaces.util;
 
- import java.util.Map;
+import org.springframework.web.util.UriComponentsBuilder;
 
- import org.springframework.web.util.UriComponentsBuilder;
- 
+import java.util.Map;
+
 
 // Costruisce un URI partendo dal baseUrl e dall'endpoint, aggiungendo eventuali
 // parametri extra
@@ -31,25 +31,25 @@ public class UriBuilderHelper {
     }
 
     public static String buildUri(String baseUrl, String endpoint, Map<String, String> queryParams) {
-     if (endpoint == null || endpoint.trim().isEmpty()) {
-         throw new IllegalArgumentException("L'endpoint non può essere nullo o vuoto.");
-     }
+        if (endpoint == null || endpoint.trim().isEmpty()) {
+            throw new IllegalArgumentException("L'endpoint non può essere nullo o vuoto.");
+        }
 
-     UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(baseUrl).path(endpoint);
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(baseUrl).path(endpoint);
 
-     if (queryParams != null && !queryParams.isEmpty()) {
-         queryParams.forEach((key, value) -> {
-             if (key == null || key.trim().isEmpty()) {
-                 throw new IllegalArgumentException("Le chiavi dei parametri non possono essere nulle o vuote.");
-             }
-             if (value == null) {
-                 throw new IllegalArgumentException("I valori dei parametri non possono essere nulli.");
-             }
-             builder.queryParam(key, value);
-         });
-     }
+        if (queryParams != null && !queryParams.isEmpty()) {
+            queryParams.forEach((key, value) -> {
+                if (key == null || key.trim().isEmpty()) {
+                    throw new IllegalArgumentException("Le chiavi dei parametri non possono essere nulle o vuote.");
+                }
+                if (value == null) {
+                    throw new IllegalArgumentException("I valori dei parametri non possono essere nulli.");
+                }
+                builder.queryParam(key, value);
+            });
+        }
 
-     return builder.build().toUriString();
+        return builder.build().toUriString();
     }
 }
  

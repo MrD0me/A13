@@ -17,13 +17,13 @@
 
 package com.g2.interfaces;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import testrobotchallenge.commons.models.dto.score.JacocoCoverageDTO;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class T7Service extends BaseService {

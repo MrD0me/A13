@@ -1,20 +1,19 @@
 package com.groom.manvsclass.controller;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.groom.manvsclass.model.Assignment;
+import com.groom.manvsclass.model.Team;
+import com.groom.manvsclass.model.repository.AssignmentRepository;
+import com.groom.manvsclass.service.TeamService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.groom.manvsclass.model.Assignment;
-import com.groom.manvsclass.model.Team;
-import com.groom.manvsclass.model.repository.AssignmentRepository;
-import com.groom.manvsclass.service.TeamService;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 //Qui ci sono le chiamate che può fare uno student per accedere a dati che gli riguardano 
 @CrossOrigin

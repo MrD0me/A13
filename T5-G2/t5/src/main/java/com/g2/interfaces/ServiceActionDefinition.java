@@ -42,7 +42,7 @@ public class ServiceActionDefinition {
     private void validateParameters(Object[] params) {
         if (params.length != parameterTypes.length) {
             throw new MissingParametersException("[ServiceActionDefinition] Numero di parametri errato: atteso "
-                + parameterTypes.length + ", ricevuto " + params.length);
+                    + parameterTypes.length + ", ricevuto " + params.length);
         }
         for (int i = 0; i < params.length; i++) {
             if (!parameterTypes[i].isInstance(params[i])) {
@@ -59,7 +59,7 @@ public class ServiceActionDefinition {
             super(message);
         }
     }
-    
+
     public class InvalidParameterTypeException extends RuntimeException {
         public InvalidParameterTypeException(String message) {
             super(message);

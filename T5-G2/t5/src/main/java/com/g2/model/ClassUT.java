@@ -16,88 +16,95 @@
  */
 
 package com.g2.model;
-import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.List;
+
 public class ClassUT {
 
-	@JsonProperty("name")
-	private String name;
-	@JsonProperty("date")
-	private String date;
-	@JsonProperty("difficulty")
-	private	String difficulty;
-	@JsonProperty("uri")
-	private String uri;
-	@JsonProperty("description")
-	private	String description;
-	@JsonProperty("category")
-	private List<String> category;
-	
-	public ClassUT(String name, String date, String description, String difficulty, String uri, List<String> category) {
+    @JsonProperty("name")
+    private String name;
+    @JsonProperty("date")
+    private String date;
+    @JsonProperty("difficulty")
+    private String difficulty;
+    @JsonProperty("uri")
+    private String uri;
+    @JsonProperty("description")
+    private String description;
+    @JsonProperty("category")
+    private List<String> category;
+
+    public ClassUT(String name, String date, String description, String difficulty, String uri, List<String> category) {
         this.name = name;
         this.date = date;
         this.difficulty = difficulty;
         this.uri = uri;
-        this.description=description;
+        this.description = description;
         this.category = category;
     }
-	// Costruttore senza argomenti
-	public ClassUT() {}
-	
-	public List<String> getCategory() {
+
+    // Costruttore senza argomenti
+    public ClassUT() {
+    }
+
+    public List<String> getCategory() {
         return category;
     }
 
     public void setCategory(List<String> category) {
         this.category = category;
     }
-    
-	public String getName() {
-		return name;
-	}
-	public void setName(String name) {
-		this.name = name;
-	}
-	
-	public void setUri(String uri) {
-		this.uri = uri;
-	}
-	
-	public String getUri() {
-		return this.uri;
-	}
 
-	public String getDate() {
-		return date;
-	}
-	public void setDate(String date) {
-		this.date = date;
-	}
-	public String getDifficulty() {
-		return difficulty;
-	}
-	public void setDifficulty(String difficulty) {
-		this.difficulty = difficulty;
-	}
-	
-	@Override
-	public String toString() {
-	    return "ClassUT{" +
-	            "name='" + name + '\'' +
-	            ", date='" + date + '\'' +
-	            ", difficulty='" + difficulty + '\'' +
-	            ", code_url='" + uri + '\'' +
-	            ", category=" + category +
-	            '}';
-	}
+    public String getName() {
+        return name;
+    }
 
-	public String getDescription() {
-		return description;
-	}
+    public void setName(String name) {
+        this.name = name;
+    }
 
-	public void setDescription(String description) {
-		this.description = description;
-	}
+    public String getUri() {
+        return this.uri;
+    }
+
+    public void setUri(String uri) {
+        this.uri = uri;
+    }
+
+    public String getDate() {
+        return date;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
+    }
+
+    public String getDifficulty() {
+        return difficulty;
+    }
+
+    public void setDifficulty(String difficulty) {
+        this.difficulty = difficulty;
+    }
+
+    @Override
+    public String toString() {
+        return "ClassUT{" +
+                "name='" + name + '\'' +
+                ", date='" + date + '\'' +
+                ", difficulty='" + difficulty + '\'' +
+                ", code_url='" + uri + '\'' +
+                ", category=" + category +
+                '}';
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
 }

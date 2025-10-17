@@ -19,18 +19,15 @@ package com.g2.interfaces;
 import com.g2.model.OpponentSummary;
 import com.g2.model.Team;
 import com.g2.model.dto.ResponseTeamComplete;
-
-import java.util.List;
-import java.util.Map;
-
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-
 import testrobotchallenge.commons.models.dto.score.basic.EvosuiteScoreDTO;
 import testrobotchallenge.commons.models.dto.score.basic.JacocoScoreDTO;
 import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
-import testrobotchallenge.commons.models.opponent.OpponentType;
+
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class T1Service extends BaseService {
@@ -69,37 +66,36 @@ public class T1Service extends BaseService {
                 String.class));
 
 
-
         registerAction("getOpponentsSummary", new ServiceActionDefinition(
                 params -> getOpponentsSummary()
         ));
 
         registerAction("getOpponentCoverage", new ServiceActionDefinition(
-                params -> getOpponentCoverage((String) params[0], (OpponentType) params[1], (OpponentDifficulty) params[2]),
-                String.class, OpponentType.class, OpponentDifficulty.class));
+                params -> getOpponentCoverage((String) params[0], (String) params[1], (OpponentDifficulty) params[2]),
+                String.class, String.class, OpponentDifficulty.class));
 
         registerAction("getOpponentJacocoScore", new ServiceActionDefinition(
-                params -> getOpponentJacocoScore((String) params[0], (OpponentType) params[1], (OpponentDifficulty) params[2]),
-                String.class, OpponentType.class, OpponentDifficulty.class));
+                params -> getOpponentJacocoScore((String) params[0], (String) params[1], (OpponentDifficulty) params[2]),
+                String.class, String.class, OpponentDifficulty.class));
 
         registerAction("getOpponentEvosuiteScore", new ServiceActionDefinition(
-                params -> getOpponentEvosuiteScore((String) params[0], (OpponentType) params[1], (OpponentDifficulty) params[2]),
-                String.class, OpponentType.class, OpponentDifficulty.class));
+                params -> getOpponentEvosuiteScore((String) params[0], (String) params[1], (OpponentDifficulty) params[2]),
+                String.class, String.class, OpponentDifficulty.class));
     }
 
 
     // Restituisce il file di coverage dell'avversario scelto
-    private String getOpponentCoverage(String classUT, OpponentType type, OpponentDifficulty difficulty) {
+    private String getOpponentCoverage(String classUT, String type, OpponentDifficulty difficulty) {
         return callRestGET("/opponents/%s/%s/%s/coverage".formatted(classUT, type, difficulty), null, String.class);
     }
 
     // Restituisce il punteggio di Evosuite ottenuto dall'avversario scelto
-    private EvosuiteScoreDTO getOpponentEvosuiteScore(String classUT, OpponentType type, OpponentDifficulty difficulty) {
+    private EvosuiteScoreDTO getOpponentEvosuiteScore(String classUT, String type, OpponentDifficulty difficulty) {
         return callRestGET("/opponents/%s/%s/%s/score/evosuite".formatted(classUT, type, difficulty), null, EvosuiteScoreDTO.class);
     }
 
     // Restituisce il punteggio di Jacoco ottenuto dall'avversario scelto
-    private JacocoScoreDTO getOpponentJacocoScore(String classUT, OpponentType type, OpponentDifficulty difficulty) {
+    private JacocoScoreDTO getOpponentJacocoScore(String classUT, String type, OpponentDifficulty difficulty) {
         return callRestGET("/opponents/%s/%s/%s/score/jacoco".formatted(classUT, type, difficulty), null, JacocoScoreDTO.class);
     }
 
@@ -143,6 +139,5 @@ public class T1Service extends BaseService {
         return callRestGET("/ottieniDettagliTeamCompleto", queryParams, ResponseTeamComplete.class);
     }
 
-    
 
 }

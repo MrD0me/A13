@@ -16,6 +16,7 @@
  */
 
 package com.g2.model;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -40,13 +41,13 @@ public class UserProfile {
 
     @JsonCreator
     public UserProfile(
-        @JsonProperty("id") Integer id, 
-        @JsonProperty("userId") Integer userId, 
-        @JsonProperty("bio") String bio, 
-        @JsonProperty("profilePicturePath") String profilePicturePath, 
-        @JsonProperty("name") String name, 
-        @JsonProperty("surname") String surname, 
-        @JsonProperty("nickname") String nickname) {
+            @JsonProperty("id") Integer id,
+            @JsonProperty("userId") Integer userId,
+            @JsonProperty("bio") String bio,
+            @JsonProperty("profilePicturePath") String profilePicturePath,
+            @JsonProperty("name") String name,
+            @JsonProperty("surname") String surname,
+            @JsonProperty("nickname") String nickname) {
         this.id = id;
         this.userId = userId;
         this.bio = bio;
@@ -58,7 +59,8 @@ public class UserProfile {
 
 
     //Costruttore vuoto necessario per thymeleaf
-    public UserProfile(){}
+    public UserProfile() {
+    }
 
     // Getters and Setters
     public String getBio() {
@@ -78,7 +80,7 @@ public class UserProfile {
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         return "UserProfile{" +
                 "ID=" + id +
                 ", bio='" + bio + '\'' +

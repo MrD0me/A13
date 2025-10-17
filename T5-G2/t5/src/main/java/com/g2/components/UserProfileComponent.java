@@ -16,13 +16,13 @@
  */
 package com.g2.components;
 
-import java.util.Collections;
-import java.util.Map;
-
 import com.g2.interfaces.ServiceManager;
 import com.g2.model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Collections;
+import java.util.Map;
 
 /**
  * Componente che recupera i dati del profilo utente dal servizio e li inserisce
@@ -30,22 +30,21 @@ import org.slf4j.LoggerFactory;
  */
 public class UserProfileComponent extends GenericObjectComponent {
 
+    private static final Logger logger = LoggerFactory.getLogger(UserProfileComponent.class);
     private final ServiceManager serviceManager;
     private final boolean isFriendProfile;
     private final Long userID;
     private final Long friendID;
 
-    private static final Logger logger = LoggerFactory.getLogger(UserProfileComponent.class);
-
     /**
      * Costruttore per il componente.
      *
      * @param serviceManager il ServiceManager per gestire la richiesta.
-     * @param modelKey la chiave con cui inserire i dati nel modello.
-     * @param userId l'ID dell'utente di cui recuperare il profilo.
-     * @param serviceName il nome del servizio da cui recuperare i dati del
-     * profilo.
-     * @param action l'azione da eseguire per ottenere il profilo.
+     * @param modelKey       la chiave con cui inserire i dati nel modello.
+     * @param userId         l'ID dell'utente di cui recuperare il profilo.
+     * @param serviceName    il nome del servizio da cui recuperare i dati del
+     *                       profilo.
+     * @param action         l'azione da eseguire per ottenere il profilo.
      */
     public UserProfileComponent(ServiceManager serviceManager,
                                 Boolean isFriendProfile,

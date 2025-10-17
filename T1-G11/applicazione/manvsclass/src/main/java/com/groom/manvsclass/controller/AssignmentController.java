@@ -1,14 +1,14 @@
 package com.groom.manvsclass.controller;
 
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 import com.groom.manvsclass.model.Assignment;
 import com.groom.manvsclass.service.AssignmentService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 @CrossOrigin
 @RestController
 public class AssignmentController {
-    
+
     private final AssignmentService assignmentService;
 
     public AssignmentController(AssignmentService assignmentService) {
@@ -16,23 +16,23 @@ public class AssignmentController {
     }
 
     @PostMapping("/creaAssignment/{idTeam}")
-    public ResponseEntity<?> creaAssignment(@PathVariable("idTeam") String idTeam, @RequestBody Assignment assignment, @CookieValue(name = "jwt", required = false) String jwt){
+    public ResponseEntity<?> creaAssignment(@PathVariable("idTeam") String idTeam, @RequestBody Assignment assignment, @CookieValue(name = "jwt", required = false) String jwt) {
         return assignmentService.creaAssignment(assignment, idTeam, jwt);
     }
 
     @GetMapping("/visualizzaTeamAssignments/{idTeam}")
-    public ResponseEntity<?> visualizzaTeamAssignments(@PathVariable("idTeam") String idTeam, @CookieValue(name = "jwt", required = false) String jwt){
-        return assignmentService.visualizzaTeamAssignment(idTeam,jwt);
+    public ResponseEntity<?> visualizzaTeamAssignments(@PathVariable("idTeam") String idTeam, @CookieValue(name = "jwt", required = false) String jwt) {
+        return assignmentService.visualizzaTeamAssignment(idTeam, jwt);
     }
-    
+
     @GetMapping("/visualizzaAssignments")
-    public ResponseEntity<?> visualizzaAssignments(@CookieValue(name = "jwt", required = false) String jwt){
+    public ResponseEntity<?> visualizzaAssignments(@CookieValue(name = "jwt", required = false) String jwt) {
         return assignmentService.visualizzaAssignments(jwt);
     }
 
     @DeleteMapping("/deleteAssignment/{idAssignment}")
-    ResponseEntity<?> deleteAssignment(@PathVariable("idAssignment") String idAssignment,@CookieValue(name = "jwt", required = false) String jwt){
-        return assignmentService.deleteAssignment(idAssignment,jwt);
+    ResponseEntity<?> deleteAssignment(@PathVariable("idAssignment") String idAssignment, @CookieValue(name = "jwt", required = false) String jwt) {
+        return assignmentService.deleteAssignment(idAssignment, jwt);
     }
 
 }

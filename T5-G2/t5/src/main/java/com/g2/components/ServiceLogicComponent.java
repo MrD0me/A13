@@ -27,16 +27,16 @@ public class ServiceLogicComponent extends GenericLogicComponent {
 
     private final String serviceName;
     private final String action;
-    protected ServiceManager serviceManager;
     private final Object[] params;
+    protected ServiceManager serviceManager;
 
     /**
      * Costruttore per il componente.
      *
      * @param serviceManager il ServiceManager per gestire la richiesta.
-     * @param serviceName il nome del servizio su cui eseguire la logica.
-     * @param action l'azione da eseguire sul servizio.
-     * @param params eventuali parametri per l'azione del servizio.
+     * @param serviceName    il nome del servizio su cui eseguire la logica.
+     * @param action         l'azione da eseguire sul servizio.
+     * @param params         eventuali parametri per l'azione del servizio.
      */
     public ServiceLogicComponent(ServiceManager serviceManager, String serviceName, String action, Object... params) {
         this.serviceManager = serviceManager;

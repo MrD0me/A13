@@ -2,6 +2,7 @@ package com.robotchallenge.t8.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import testrobotchallenge.commons.models.dto.score.EvosuiteCoverageDTO;
 
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -9,9 +10,27 @@ import java.util.Queue;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
 
+/**
+ * Classe di configurazione che definisce una coda per contenere le richieste di compilazione
+ * e un executor per gestirle in maniera concorrente.
+ *
+ * <p>
+ * Le costanti fornite sono configurabili in base alle esigenze e alle prestazioni del sistema:
+ * </p>
+ * <ul>
+ *   <li>{@link #CORE_POOL_SIZE} – numero minimo di thread nel pool.</li>
+ *   <li>{@link #MAX_POOL_SIZE} – numero massimo di thread nel pool.</li>
+ *   <li>{@link #MAX_QUEUE_SIZE} – numero massimo di richieste in coda.</li>
+ *   <li>{@link #EXECUTION_TIME_THRESHOLD} – tempo massimo consentito per l’esecuzione di una singola richiesta (in millisecondi).</li>
+ *   <li>{@link #MAX_QUEUE_TIME} – tempo massimo che una richiesta può rimanere in coda prima di essere scartata (in millisecondi).</li>
+ * </ul>
+ */
 @Configuration
 public class CustomExecutorConfiguration {
 
+    /*
+     * Costanti configurabili
+     */
     private static final int CORE_POOL_SIZE = 1;
     private static final int MAX_POOL_SIZE = 1;
     private static final int MAX_QUEUE_SIZE = 12;
@@ -19,24 +38,94 @@ public class CustomExecutorConfiguration {
     private static final int MAX_QUEUE_TIME = 180_000; // 3 minuti
 
     private static final Logger logger = Logger.getLogger(CustomExecutorConfiguration.class.getName());
+    // Lock per sincronizzare l'accesso alla coda
+    private static final Object lock = new Object();
 
+    @Bean
+    public CustomExecutorService compileExecutor() {
+        ExecutionTimeMonitor monitor = new ExecutionTimeMonitor();
+        BlockingQueue<Runnable> queue = new ExpiringBlockingQueue(MAX_QUEUE_SIZE, MAX_QUEUE_TIME);
+
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(
+                CORE_POOL_SIZE,
+                MAX_POOL_SIZE,
+                60L,
+                TimeUnit.SECONDS,
+                queue,
+                new SmartRejectHandler(monitor)
+        );
+        executor.allowCoreThreadTimeOut(true);
+
+        ExpiringTaskCleaner.startCleanerThread(queue, MAX_QUEUE_TIME, 10_000);
+
+        return new CustomExecutorService(executor, monitor);
+    }
+
+    /**
+     * Interfaccia che estende {@link Runnable} e aggiunge la possibilità di tracciare
+     * il momento in cui un task è stato inserito in coda.
+     */
     public interface TimedRunnable extends Runnable {
         long getEnqueueTime();
     }
 
+    /**
+     * Classe di monitoraggio che memorizza il tempo di esecuzione degli ultimi 10 task completati
+     * e ne restituisce la media.
+     */
     static class ExecutionTimeMonitor {
         private final Queue<Long> executionTimes = new LinkedList<>();
 
+        /**
+         * Aggiunge in coda il tempo di esecuzione dell'ultimo task completato. Se la coda è piena, ne rimuove
+         * la testa, corrispondente al task più vecchio.
+         *
+         * @param time Tempo impiegato per completare l'ultimo task.
+         */
         public synchronized void addExecutionTime(long time) {
             executionTimes.add(time);
             if (executionTimes.size() > 10) executionTimes.poll();
         }
 
+        /**
+         * Calcola la media dei tempi di esecuzione memorizzati nella coda.
+         *
+         * @return la media dei tempi di esecuzione in millisecondi, oppure {@code 0}
+         * se la coda non contiene valori.
+         */
         public synchronized long getAverageExecutionTime() {
             return (long) executionTimes.stream().mapToLong(Long::longValue).average().orElse(0);
         }
     }
 
+    /**
+     * Classe che definisce un task con un tempo di vita limitato in coda ed in esecuzione.
+     * <p>
+     * Ogni {@link TimedTask} è associato a:
+     * </p>
+     * <ul>
+     *   <li>Un tempo massimo di attesa in coda {@code maxQueueTime};</li>
+     *   <li>Un tempo massimo di esecuzione {@code maxExecutionTime};</li>
+     *   <li>Un monitor {@link ExecutionTimeMonitor} per registrare i tempi di esecuzione effettivi.</li>
+     * </ul>
+     *
+     * <p>
+     * La classe implementa {@link TimedRunnable} per restituire il momento in cui il task è stato
+     * aggiunto alla coda, {@link Callable} per poter ottenere un risultato con gestione delle eccezioni,
+     * e {@link Runnable} per essere eseguita da executor standard.
+     * </p>
+     *
+     * <p>
+     * Il task viene automaticamente terminato se:
+     * </p>
+     * <ul>
+     *   <li>Il tempo di attesa in coda supera {@code maxQueueTime};</li>
+     *   <li>Il tempo di esecuzione supera {@code maxExecutionTime};</li>
+     *   <li>Il task viene annullato tramite {@link CompletableFuture#cancel} o è già completato eccezionalmente.</li>
+     * </ul>
+     *
+     * @param <V> il tipo di risultato restituito dal task.
+     */
     public static class TimedTask<V> implements Callable<V>, TimedRunnable, Runnable {
         private final long enqueueTime;
         private final Callable<V> task;
@@ -104,7 +193,6 @@ public class CustomExecutorConfiguration {
                 throw new TimeoutException("Timeout durante l'esecuzione del task");
             } finally {
                 timeoutExecutor.shutdownNow();
-                timeoutExecutor.close();
             }
         }
 
@@ -112,9 +200,6 @@ public class CustomExecutorConfiguration {
             return future;
         }
     }
-
-    // Lock per sincronizzare l'accesso alla coda
-    private static final Object lock = new Object();
 
     public static class ExpiringTaskCleaner {
         private ExpiringTaskCleaner() {
@@ -182,7 +267,6 @@ public class CustomExecutorConfiguration {
             return removed;
         }
     }
-
 
     // Espandiamo la classe ExpiringBlockingQueue
     public static class ExpiringBlockingQueue extends LinkedBlockingQueue<Runnable> {
@@ -252,26 +336,6 @@ public class CustomExecutorConfiguration {
 
     }
 
-    @Bean
-    public CustomExecutorService compileExecutor() {
-        ExecutionTimeMonitor monitor = new ExecutionTimeMonitor();
-        BlockingQueue<Runnable> queue = new ExpiringBlockingQueue(MAX_QUEUE_SIZE, MAX_QUEUE_TIME);
-
-        ThreadPoolExecutor executor = new ThreadPoolExecutor(
-                CORE_POOL_SIZE,
-                MAX_POOL_SIZE,
-                60L,
-                TimeUnit.SECONDS,
-                queue,
-                new SmartRejectHandler(monitor)
-        );
-        executor.allowCoreThreadTimeOut(true);
-
-        ExpiringTaskCleaner.startCleanerThread(queue, MAX_QUEUE_TIME, 10_000);
-
-        return new CustomExecutorService(executor, monitor);
-    }
-
     public static class CustomExecutorService {
         private final ThreadPoolExecutor executor;
         private final ExecutionTimeMonitor monitor;
@@ -281,9 +345,9 @@ public class CustomExecutorConfiguration {
             this.monitor = monitor;
         }
 
-        public Future<String> submitTask(Callable<String> userTask) {
-            CompletableFuture<String> future = new CompletableFuture<>();
-            TimedTask<String> timedTask = new TimedTask<>(userTask, monitor, MAX_QUEUE_TIME, EXECUTION_TIME_THRESHOLD, future);
+        public Future<EvosuiteCoverageDTO> submitTask(Callable<EvosuiteCoverageDTO> userTask) {
+            CompletableFuture<EvosuiteCoverageDTO> future = new CompletableFuture<>();
+            TimedTask<EvosuiteCoverageDTO> timedTask = new TimedTask<>(userTask, monitor, MAX_QUEUE_TIME, EXECUTION_TIME_THRESHOLD, future);
 
             executor.execute(timedTask);
 

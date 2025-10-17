@@ -16,47 +16,40 @@
  */
 package com.g2.interfaces;
 
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.g2.interfaces.util.HttpHeadersFactory;
+import com.g2.interfaces.util.UriBuilderHelper;
 import com.g2.security.JwtRequestContext;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
-import com.g2.interfaces.util.HttpHeadersFactory;
-import com.g2.interfaces.util.UriBuilderHelper;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /*
  *  Questa è una classe base che implementa l'interfaccia ServiceInterface per il dispatcher ServiceManager
  *   e ti fornisce svariati metodi che mappano POST, GET, PUT E DELETE, in vari formati e header.
- *   Attenzione alcune chiamate sono state definite in modo molto rigido, potrebbero quindi non andar bene. 
+ *   Attenzione alcune chiamate sono state definite in modo molto rigido, potrebbero quindi non andar bene.
  */
 public abstract class BaseService implements ServiceInterface {
 
-    protected RestTemplate restTemplate;
-    private final String baseUrl;
-    protected final Map<String, ServiceActionDefinition> actions = new HashMap<>();
-
     private static final Logger logger = LoggerFactory.getLogger(BaseService.class);
+    protected final Map<String, ServiceActionDefinition> actions = new HashMap<>();
+    private final String baseUrl;
+    protected RestTemplate restTemplate;
 
     // Costruttore della classe base
     protected BaseService(RestTemplate restTemplate, String baseUrl) {
@@ -94,12 +87,6 @@ public abstract class BaseService implements ServiceInterface {
         HashMap<String, String> auth = new HashMap<>();
         auth.put(HttpHeaders.COOKIE, JwtRequestContext.getJwtToken());
         return auth;
-    }
-
-    // Interfaccia funzionale per le chiamate REST serve per executeRestCall(String caller, RestCall<R> call)
-    @FunctionalInterface
-    protected interface RestCall<R> {
-        R execute() throws RuntimeException;
     }
 
     /*
@@ -154,8 +141,8 @@ public abstract class BaseService implements ServiceInterface {
 
     // Metodo per chiamate POST con content type a application/x-www-form-urlencoded
     protected <R> R callRestPost(String endpoint, MultiValueMap<String, String> formData,
-            Map<String, String> queryParams, Map<String, String> customHeaders,
-            Class<R> responseType) {
+                                 Map<String, String> queryParams, Map<String, String> customHeaders,
+                                 Class<R> responseType) {
         if (formData == null) {
             throw new IllegalArgumentException("formData non può essere nullo");
         }
@@ -175,8 +162,8 @@ public abstract class BaseService implements ServiceInterface {
 
     // metodo per chiamare POST con content type a application/json
     protected <R> R callRestPost(String endpoint, JSONObject jsonObject,
-            Map<String, String> queryParams, Map<String, String> customHeaders,
-            Class<R> responseType) {
+                                 Map<String, String> queryParams, Map<String, String> customHeaders,
+                                 Class<R> responseType) {
         if (jsonObject == null) {
             throw new IllegalArgumentException("Il body JSON non può essere nullo");
         }
@@ -197,14 +184,14 @@ public abstract class BaseService implements ServiceInterface {
 
     // Metodo per chiamate PUT senza specificare content type -> default application/x-www-form-urlencoded
     protected <R> R callRestPut(String endpoint, MultiValueMap<String, String> formData,
-            Map<String, String> queryParams, Class<R> responseType) {
+                                Map<String, String> queryParams, Class<R> responseType) {
         return callRestPut(endpoint, formData, queryParams, null, responseType);
     }
 
     // Metodo per chiamate PUT con content type a application/x-www-form-urlencoded
     protected <R> R callRestPut(String endpoint, MultiValueMap<String, String> formData,
-            Map<String, String> queryParams, Map<String, String> customHeaders,
-            Class<R> responseType) {
+                                Map<String, String> queryParams, Map<String, String> customHeaders,
+                                Class<R> responseType) {
         if (endpoint == null || endpoint.isEmpty()) {
             throw new IllegalArgumentException("L'endpoint non può essere nullo o vuoto");
         }
@@ -228,8 +215,8 @@ public abstract class BaseService implements ServiceInterface {
 
     // metodo per chiamare PUT con content type a application/json
     protected <R> R callRestPut(String endpoint, JSONObject jsonObject,
-            Map<String, String> queryParams, Map<String, String> customHeaders,
-            Class<R> responseType) {
+                                Map<String, String> queryParams, Map<String, String> customHeaders,
+                                Class<R> responseType) {
         if (endpoint == null || endpoint.isEmpty()) {
             throw new IllegalArgumentException("L'endpoint non può essere nullo o vuoto");
         }
@@ -247,10 +234,6 @@ public abstract class BaseService implements ServiceInterface {
             HttpHeaders headers = buildHeaders(finalCustomHeaders, MediaType.APPLICATION_JSON);
             HttpEntity<String> requestEntity = new HttpEntity<>(jsonBody, headers);
             ResponseEntity<R> response = restTemplate.exchange(url, HttpMethod.PUT, requestEntity, responseType);
-
-            logger.info("Request URL: {}", url);
-            logger.info("Request Headers: {}", headers);
-            logger.info("Request Body: {}", jsonBody);
 
             return response.getBody();
         });
@@ -296,5 +279,11 @@ public abstract class BaseService implements ServiceInterface {
             return str.substring(1);
         }
         return str;
+    }
+
+    // Interfaccia funzionale per le chiamate REST serve per executeRestCall(String caller, RestCall<R> call)
+    @FunctionalInterface
+    protected interface RestCall<R> {
+        R execute() throws RuntimeException;
     }
 }

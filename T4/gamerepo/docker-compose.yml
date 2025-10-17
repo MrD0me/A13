@@ -3,8 +3,6 @@ name: t4
 volumes:
   pgdata:
   appdata:
-  grafdata:
-  promdata:
   pglogs:
 
 services:

@@ -19,6 +19,11 @@ package com.g2.components;
 
 public abstract class GenericLogicComponent {
     /**
+     * L'error code deve essere una stringa esplicitamente definita nella classe
+     */
+    protected String errorCode;
+
+    /**
      * Questo metodo esegue la logica del componente nel modo in cui è stata
      * definita quindi se restituisce True non ci sono stati problemi, nel caso
      * false invece devo segnalare.
@@ -36,9 +41,4 @@ public abstract class GenericLogicComponent {
      * @return
      */
     public abstract String getErrorCode();
-
-    /**
-     * L'error code deve essere una stringa esplicitamente definita nella classe 
-     */
-    protected String errorCode;
 }

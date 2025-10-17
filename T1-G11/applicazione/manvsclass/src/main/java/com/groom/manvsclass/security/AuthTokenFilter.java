@@ -31,12 +31,12 @@ import static testrobotchallenge.commons.models.user.Role.PLAYER;
 public class AuthTokenFilter extends OncePerRequestFilter {
 
     private static final Logger customLogger = LoggerFactory.getLogger(AuthTokenFilter.class);
-    private final ApiGatewayClient apiGatewayClient;
     private static final List<String> PLAYER_ALLOWED_URIS = List.of(
             "/opponents/**",
             "/ottieniTeamByStudentId",
             "/ottieniDettagliTeamCompleto"
     );
+    private final ApiGatewayClient apiGatewayClient;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
@@ -132,7 +132,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
     private boolean isPlayerAccessAllowed(HttpServletRequest request) {
         AntPathMatcher uriMatcher = new AntPathMatcher();
 
-        if (! request.getMethod().equals("GET"))
+        if (!request.getMethod().equals("GET"))
             return false;
 
         return PLAYER_ALLOWED_URIS.stream().anyMatch(allowedURI -> uriMatcher.match(allowedURI, request.getRequestURI()));

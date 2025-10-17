@@ -1,34 +1,30 @@
 package com.g2.model;
 
+import com.fasterxml.jackson.annotation.*;
+
 import java.time.Instant;
 import java.util.List;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Team {
-    
+
     @JsonProperty("idTeam")
     private String idTeam;
-    
+
     @JsonProperty("name")
     private String name;
-    
+
     @JsonProperty("creationDate")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX", timezone = "UTC")
     private Instant creationDate;
-    
+
     @JsonProperty("studenti")
     private List<String> studenti;
-    
+
     @JsonProperty("numStudenti")
     private int numStudenti;
-    
+
     // Costruttore con argomenti per Jackson
     @JsonCreator
     public Team(
@@ -43,10 +39,11 @@ public class Team {
         this.studenti = studenti;
         this.numStudenti = numStudenti;
     }
-    
+
     // Costruttore senza argomenti
-    public Team() { }
-    
+    public Team() {
+    }
+
     // Getters e Setters
     public String getIdTeam() {
         return idTeam;

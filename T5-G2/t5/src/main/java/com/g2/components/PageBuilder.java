@@ -16,33 +16,30 @@
  */
 package com.g2.components;
 
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.g2.interfaces.ServiceManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.Model;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.g2.interfaces.ServiceManager;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 
 @Service
 public class PageBuilder {
 
+    //Logger
+    private static final Logger logger = LoggerFactory.getLogger(PageBuilder.class);
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     // Lista di componenti di pagina
     private final List<GenericLogicComponent> logicComponents;
     private final List<GenericObjectComponent> objectComponents;
     /*
-    * Mappa che associa codici di errore a pagine di errore
-    * Così si può personalizzare il comportamento della pagina 
-    * in termini di redirect 
+     * Mappa che associa codici di errore a pagine di errore
+     * Così si può personalizzare il comportamento della pagina
+     * in termini di redirect
      */
     private final Map<String, String> errorPageMap = new HashMap<>();
     // Manager dei servizi,
@@ -51,27 +48,24 @@ public class PageBuilder {
     private final Model modelHtml;
     // Nome della pagina (template) da utilizzare
     private final String pageName;
-    //Lista codici d'errore ottenuti 
+    //Lista codici d'errore ottenuti
     private List<String> errorCode;
     // Aggiunto per memorizzare l'utente dal JWT
     private Long userId;
     private String jwt;
 
-    //Logger 
-    private static final Logger logger = LoggerFactory.getLogger(PageBuilder.class);
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
     //COSTRUTTORI 
+
     /**
      * @param serviceManager Gestisce la chiamate REST ai vari task
-     * @param pageName nome della pagina da implementare
+     * @param pageName       nome della pagina da implementare
      * @param pageComponents lista dei componenti che fanno parte della pagina
      */
-    public PageBuilder(ServiceManager serviceManager, 
-                        String pageName,
-                        Model modelHtml,
-                        List<GenericObjectComponent> objectComponents,
-                        List<GenericLogicComponent> logicComponents) {
+    public PageBuilder(ServiceManager serviceManager,
+                       String pageName,
+                       Model modelHtml,
+                       List<GenericObjectComponent> objectComponents,
+                       List<GenericLogicComponent> logicComponents) {
         this.serviceManager = serviceManager;
         this.objectComponents = objectComponents;
         this.logicComponents = logicComponents;
@@ -109,7 +103,27 @@ public class PageBuilder {
         logger.info("[PageBuilder] Costruttore con JWT e componenti completato per userId: {}", this.userId);
     }
 
-    //HANDLE PAGE REQUEST 
+    // METODO PER ESTRARRE USER ID DAL JWT
+    private static Long extractUserId(String jwt) {
+        try {
+            if (jwt == null || jwt.split("\\.").length < 2) {
+                throw new IllegalArgumentException("JWT non valido: formato errato");
+            }
+            byte[] decodedBytes = Base64.getDecoder().decode(jwt.split("\\.")[1]);
+            String decodedJson = new String(decodedBytes, StandardCharsets.UTF_8);
+            Map<String, Object> payload = OBJECT_MAPPER.readValue(decodedJson, Map.class);
+            Object userId = payload.get("userId");
+            if (userId == null) {
+                throw new IllegalArgumentException("JWT non valido: userId mancante");
+            }
+            return Long.parseLong(userId.toString());
+        } catch (Exception e) {
+            logger.error("[PageBuilder] Errore nella decodifica del JWT: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    //HANDLE PAGE REQUEST
     // Metodo per eseguire la logica di tutti i componenti
     private List<String> executeComponentsLogic() {
         // Lista per raccogliere eventuali errori
@@ -125,12 +139,12 @@ public class PageBuilder {
     }
 
     // Metodo per costruire la mappa combinata dei dati per il modello
-    /* 
+    /*
         Assicurati che i dati restituiti da getModel non sovrascrivano informazioni importanti.
-        Se due componenti restituiscono dati con la stessa chiave, 
+        Se due componenti restituiscono dati con la stessa chiave,
         l'ultimo componente che aggiorna la mappa sovrascriverà i dati precedenti.
      */
-    private Map<String, Object> buildModel(){
+    private Map<String, Object> buildModel() {
         Map<String, Object> combinedModel = new HashMap<>();
         for (GenericObjectComponent component : objectComponents) {
             Map<String, Object> model = component.getModel();
@@ -146,7 +160,7 @@ public class PageBuilder {
 
     // Metodo principale flusso per una richiesta di pagina
     // Esegue la logica di ogni componente, poi elabora i dati da inserire nel template
-    public String handlePageRequest(){
+    public String handlePageRequest() {
         String returnPageError = null;
         if (logicComponents != null && !logicComponents.isEmpty()) {
             // Esegui la logica di tutti i componenti
@@ -166,37 +180,17 @@ public class PageBuilder {
         return this.pageName;
     }
 
-    //COMPONENTI 
+    //COMPONENTI
     // Questo metodo serve per attivare l'autenticazione per la pagina
     public void setAuth(String jwt) {
         if (serviceManager != null) {
             setLogicComponents(new AuthComponent(serviceManager, jwt));
         }
     }
-    
-    public void setAuth(){
+
+    public void setAuth() {
         if (serviceManager != null) {
             setLogicComponents(new AuthComponent(serviceManager, jwt));
-        }
-    }
-
-    // METODO PER ESTRARRE USER ID DAL JWT
-    private static Long extractUserId(String jwt) {
-        try {
-            if (jwt == null || jwt.split("\\.").length < 2) {
-                throw new IllegalArgumentException("JWT non valido: formato errato");
-            }
-            byte[] decodedBytes = Base64.getDecoder().decode(jwt.split("\\.")[1]);
-            String decodedJson = new String(decodedBytes, StandardCharsets.UTF_8);
-            Map<String, Object> payload = OBJECT_MAPPER.readValue(decodedJson, Map.class);
-            Object userId = payload.get("userId");
-            if (userId == null) {
-                throw new IllegalArgumentException("JWT non valido: userId mancante");
-            }
-            return Long.parseLong(userId.toString());
-        } catch (Exception e) {
-            logger.error("[PageBuilder] Errore nella decodifica del JWT: {}", e.getMessage());
-            return null;
         }
     }
 
@@ -236,6 +230,14 @@ public class PageBuilder {
         return new ArrayList<>(logicComponents); // Ritorna una copia per evitare modifiche esterne
     }
 
+    public void setLogicComponents(List<GenericLogicComponent> pageComponents) {
+        this.logicComponents.addAll(pageComponents);
+    }
+
+    public void setLogicComponents(GenericLogicComponent... components) {
+        this.logicComponents.addAll(Arrays.asList(components));
+    }
+
     public List<GenericObjectComponent> getObjectComponents() {
         return new ArrayList<>(objectComponents); // Ritorna una copia per evitare modifiche esterne
     }
@@ -246,14 +248,6 @@ public class PageBuilder {
 
     public void setObjectComponents(GenericObjectComponent... components) {
         this.objectComponents.addAll(Arrays.asList(components));
-    }
-
-    public void setLogicComponents(List<GenericLogicComponent> pageComponents) {
-        this.logicComponents.addAll(pageComponents);
-    }
-
-    public void setLogicComponents(GenericLogicComponent... components) {
-        this.logicComponents.addAll(Arrays.asList(components));
     }
 
     public List<String> getErrorCode() {

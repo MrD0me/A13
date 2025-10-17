@@ -1,7 +1,9 @@
 package com.example.db_setup.service;
 
-import java.util.List;
-
+import com.example.db_setup.model.UserFollow;
+import com.example.db_setup.model.UserProfile;
+import com.example.db_setup.model.repository.UserFollowRepository;
+import com.example.db_setup.model.repository.UserProfileRepository;
 import com.example.db_setup.service.exception.UserNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,19 +13,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.example.db_setup.model.repository.UserFollowRepository;
-import com.example.db_setup.model.repository.UserProfileRepository;
-import com.example.db_setup.model.UserFollow;
-import com.example.db_setup.model.UserProfile;
+import java.util.List;
 
 @Service
 public class UserSocialService {
 
+    private static final Logger logger = LoggerFactory.getLogger(UserSocialService.class);
     private final UserProfileRepository userProfileRepository;
     private final UserFollowRepository userFollowRepository;
     private final NotificationService notificationService;
-
-    private static final Logger logger = LoggerFactory.getLogger(UserSocialService.class);
 
     public UserSocialService(UserProfileRepository userProfileRepository, UserFollowRepository userFollowRepository,
                              NotificationService notificationService) {
@@ -68,7 +66,7 @@ public class UserSocialService {
             // Se non segue, aggiungilo (follow)
             userFollowRepository.save(new UserFollow(follower, following));
             /*
-             * Notifica 
+             * Notifica
              */
             String title = "Hai un nuovo follower";
             String message = "L'utente " + follower.getNickname() + " ha inizato a seguirti";

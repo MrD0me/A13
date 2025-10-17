@@ -18,12 +18,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
+import testrobotchallenge.commons.models.dto.auth.JwtValidationResponseDTO;
 import testrobotchallenge.commons.models.dto.score.EvosuiteCoverageDTO;
 import testrobotchallenge.commons.models.dto.score.JacocoCoverageDTO;
 import testrobotchallenge.commons.models.opponent.GameMode;
 import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
-import testrobotchallenge.commons.models.opponent.OpponentType;
-import testrobotchallenge.commons.models.dto.auth.JwtValidationResponseDTO;
+
 import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
@@ -36,18 +36,15 @@ import java.util.List;
 @Component
 public class ApiGatewayClient {
 
+    private final RestExchangeTemplateHelper exchangeHelper;
+    private final Logger logger = LoggerFactory.getLogger(ApiGatewayClient.class);
     @Value("${API_GATEWAY_ENDPOINT:api-gateway_controller}")
     private String apiGatewayHost;
-
     @Value("${API_GATEWAY_PORT:8090}")
     private int apiGatewayPort;
-
     private String userServiceUrl;
     private String jacocoCoverageServiceUrl;
     private String evosuiteCoverageServiceUrl;
-
-    private final RestExchangeTemplateHelper exchangeHelper;
-    private final Logger logger = LoggerFactory.getLogger(ApiGatewayClient.class);
 
     public ApiGatewayClient(RestExchangeTemplateHelper exchangeHelper) {
         this.exchangeHelper = exchangeHelper;
@@ -99,7 +96,7 @@ public class ApiGatewayClient {
         throw new RuntimeException("Invalid refresh token");
     }
 
-    public void callAddNewOpponent(String classUT, GameMode gameMode, OpponentType type, OpponentDifficulty difficulty) {
+    public void callAddNewOpponent(String classUT, GameMode gameMode, String type, OpponentDifficulty difficulty) {
         OpponentDTO requestBody = new OpponentDTO();
         requestBody.setClassUT(classUT);
         requestBody.setGameMode(gameMode);
@@ -164,7 +161,7 @@ public class ApiGatewayClient {
         return responseBody;
     }
 
-    public HttpResponse callOttieniStudentiDettagli (List<String> studentiIds, String jwt) throws IOException {
+    public HttpResponse callOttieniStudentiDettagli(List<String> studentiIds, String jwt) throws IOException {
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
 
             // 2. Prepara il corpo JSON

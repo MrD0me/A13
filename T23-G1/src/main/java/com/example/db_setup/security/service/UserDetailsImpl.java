@@ -1,15 +1,15 @@
 package com.example.db_setup.security.service;
 
-import java.io.Serial;
-import java.util.Collection;
-import java.util.LinkedHashSet;
-import java.util.Objects;
-
 import com.example.db_setup.model.Admin;
 import com.example.db_setup.model.Player;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+
+import java.io.Serial;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.Objects;
 
 public class UserDetailsImpl implements UserDetails {
     @Serial

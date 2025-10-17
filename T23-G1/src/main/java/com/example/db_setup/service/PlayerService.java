@@ -16,11 +16,11 @@
  */
 package com.example.db_setup.service;
 
-import java.util.*;
-import java.util.stream.Collectors;
-
 import com.example.db_setup.model.Player;
 import com.example.db_setup.model.Studies;
+import com.example.db_setup.model.UserProfile;
+import com.example.db_setup.model.repository.PlayerRepository;
+import com.example.db_setup.model.repository.UserProfileRepository;
 import com.example.db_setup.service.exception.UserNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,20 +29,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.example.db_setup.model.repository.UserProfileRepository;
-import com.example.db_setup.model.repository.PlayerRepository;
-import com.example.db_setup.model.UserProfile;
+import java.util.*;
 
 
 // Questa classe è un servizio che gestisce le operazioni relative agli utenti
 @Service
 public class PlayerService {
 
+    private static final Logger logger = LoggerFactory.getLogger(PlayerService.class);
     private final PlayerProgressService playerProgressService;
     private final PlayerRepository playerRepository;
     private final UserProfileRepository userProfileRepository;
-
-    private static final Logger logger = LoggerFactory.getLogger(PlayerService.class);
 
     public PlayerService(PlayerProgressService playerProgressService, PlayerRepository playerRepository, UserProfileRepository userProfileRepository) {
         this.playerProgressService = playerProgressService;
@@ -92,7 +89,6 @@ public class PlayerService {
         response.put("email", player.getEmail());
         return ResponseEntity.ok(response);
     }
-
 
 
     public UserProfile findProfileByEmail(String email) {

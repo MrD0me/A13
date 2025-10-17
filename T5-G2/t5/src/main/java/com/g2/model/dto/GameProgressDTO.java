@@ -6,7 +6,6 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import testrobotchallenge.commons.models.opponent.GameMode;
 import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
-import testrobotchallenge.commons.models.opponent.OpponentType;
 
 import java.util.Set;
 
@@ -17,7 +16,7 @@ import java.util.Set;
 public class GameProgressDTO {
     private GameMode gameMode;
     private String classUT;
-    private OpponentType type;
+    private String type;
     private OpponentDifficulty difficulty;
     private boolean isWon;
     private Set<String> achievements;

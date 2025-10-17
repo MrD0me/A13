@@ -16,12 +16,11 @@
  */
 package com.g2.interfaces;
 
-import java.util.*;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.g2.game.GameModes.Compile.CompileResult;
-import com.g2.model.*;
+import com.g2.game.gameMode.Compile.CompileResult;
+import com.g2.model.Game;
+import com.g2.model.PlayerResult;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.core.ParameterizedTypeReference;
@@ -34,7 +33,9 @@ import testrobotchallenge.commons.models.dto.score.basic.EvosuiteScoreDTO;
 import testrobotchallenge.commons.models.dto.score.basic.JacocoScoreDTO;
 import testrobotchallenge.commons.models.opponent.GameMode;
 import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
-import testrobotchallenge.commons.models.opponent.OpponentType;
+
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class T4Service extends BaseService {
@@ -53,12 +54,10 @@ public class T4Service extends BaseService {
         super(restTemplate, BASE_URL + "/" + SERVICE_PREFIX);
 
 
-
         registerAction("getGames", new ServiceActionDefinition(
                 params -> getGames((long) params[0]),
                 Long.class
         ));
-
 
 
         registerAction("CreateGame", new ServiceActionDefinition(
@@ -66,12 +65,12 @@ public class T4Service extends BaseService {
                 GameMode.class, Long.class));
 
         registerAction("CreateRound", new ServiceActionDefinition(
-                params -> CreateRound((long) params[0], (String) params[1], (OpponentType) params[2], (OpponentDifficulty) params[3]),
-                Long.class, String.class, OpponentType.class, OpponentDifficulty.class));
+                params -> CreateRound((long) params[0], (String) params[1], (String) params[2], (OpponentDifficulty) params[3], (int) params[4]),
+                Long.class, String.class, String.class, OpponentDifficulty.class, Integer.class));
 
         registerAction("CreateTurn", new ServiceActionDefinition(
-                params -> CreateTurn((long) params[0], (long) params[1]),
-                Long.class, Long.class));
+                params -> CreateTurn((long) params[0], (long) params[1], (int) params[2]),
+                Long.class, Long.class, Integer.class));
 
         registerAction("EndTurn", new ServiceActionDefinition(
                 params -> EndTurn((long) params[0], (Long) params[1], (int) params[2], (CompileResult) params[3]),
@@ -82,10 +81,8 @@ public class T4Service extends BaseService {
                 Long.class));
 
         registerAction("EndGame", new ServiceActionDefinition(
-                params -> EndGame((long) params[0], (Map<Long, PlayerResult>) params[1]),
-                Long.class, Map.class));
-
-
+                params -> EndGame((long) params[0], (Map<Long, PlayerResult>) params[1], (boolean) params[2]),
+                Long.class, Map.class, Boolean.class));
 
 
         registerAction("CreateScalata", new ServiceActionDefinition(
@@ -125,30 +122,34 @@ public class T4Service extends BaseService {
     }
 
 
-
-    private int CreateRound(long gameId, String ClasseUT, OpponentType type, OpponentDifficulty difficulty) {
+    private int CreateRound(long gameId, String ClasseUT, String type, OpponentDifficulty difficulty, int roundNumber) {
         final String endpoint = "/games/%s/rounds".formatted(gameId);
 
-        JSONObject obj = new JSONObject();
-        obj.put("classUT", ClasseUT);
-        obj.put("type", type);
-        obj.put("difficulty", difficulty);
+        JSONObject requestBody = new JSONObject();
+        requestBody.put("classUT", ClasseUT);
+        requestBody.put("type", type);
+        requestBody.put("difficulty", difficulty);
+        requestBody.put("roundNumber", roundNumber);
 
-        String respose = callRestPost(endpoint, obj, null, null, String.class);
+        String response = callRestPost(endpoint, requestBody, null, null, String.class);
         // Parsing della stringa JSON
-        JSONObject jsonObject = new JSONObject(respose);
+        JSONObject jsonObject = new JSONObject(response);
         // Estrazione del valore di id
         return jsonObject.getInt("roundNumber");
     }
 
-    private int CreateTurn(long gameId, long playerId) {
+    private int CreateTurn(long gameId, long playerId, int turnNumber) {
         final String endpoint = "/games/%s/rounds/last/turns".formatted(gameId);
 
-        JSONObject obj = new JSONObject();
-        obj.put("playerId", playerId);
+        JSONObject requestBody = new JSONObject();
+        requestBody.put("playerId", playerId);
+        requestBody.put("turnNumber", turnNumber);
 
-        Integer response = callRestPost(endpoint, obj, null, null, Integer.class);
-        return response;
+        String response = callRestPost(endpoint, requestBody, null, null, String.class);
+
+        JSONObject jsonObject = new JSONObject(response);
+        // Estrazione del valore di id
+        return jsonObject.getInt("turnNumber");
     }
 
     private String EndTurn(long gameId, long playerId, int turnNumber, CompileResult userCompileResult) {
@@ -212,7 +213,7 @@ public class T4Service extends BaseService {
             throw new RuntimeException(e);
         }
 
-        String response = callRestPut(endpoint, requestBody,null, null, String.class);
+        String response = callRestPut(endpoint, requestBody, null, null, String.class);
         return response;
     }
 
@@ -227,11 +228,11 @@ public class T4Service extends BaseService {
         }
     }
 
-    private String EndGame(long gameId, Map<Long, PlayerResult> scores) {
+    private String EndGame(long gameId, Map<Long, PlayerResult> scores, boolean isGameSurrendered) {
         final String endpoint = "/games/%s".formatted(gameId);
 
         JSONObject requestBody = new JSONObject();
-        JSONObject results = new JSONObject();
+        JSONObject results;
 
         try {
             results = new JSONObject(mapper.writeValueAsString(scores));
@@ -240,6 +241,7 @@ public class T4Service extends BaseService {
         }
 
         requestBody.put("results", results);
+        requestBody.put("isGameSurrendered", isGameSurrendered);
 
         String respose = callRestPut(endpoint, requestBody, null, null, String.class);
         return respose;

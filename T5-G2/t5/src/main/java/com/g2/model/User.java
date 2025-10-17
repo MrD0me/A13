@@ -49,7 +49,7 @@ public class User {
     private String nickname;
 
     public User(Long id, String email, String password,
-    boolean isRegisteredWithFacebook, String studies, UserProfile userProfile,String resetToken) {
+                boolean isRegisteredWithFacebook, String studies, UserProfile userProfile, String resetToken) {
         this.id = id;
         this.email = email;
         this.password = password;
@@ -59,7 +59,7 @@ public class User {
         this.resetToken = resetToken;
     }
 
-    public String toString(){
+    public String toString() {
         return "User{" +
                 "id=" + id +
                 ", email='" + email + '\'' +

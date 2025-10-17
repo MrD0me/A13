@@ -18,19 +18,19 @@
 // ServiceManager.java
 package com.g2.interfaces;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Service
 public class ServiceManager {
-    protected final Map<String, ServiceInterface> services = new HashMap<>();
     private static final Logger logger = LoggerFactory.getLogger(ServiceManager.class);
+    protected final Map<String, ServiceInterface> services = new HashMap<>();
     private final RestTemplate restTemplate;
 
     @Autowired
@@ -97,7 +97,7 @@ public class ServiceManager {
         } else {
             logger.error("[SERVICE MANAGER][HandleRequest] Tipo di ritorno incompatibile per il servizio: {}", serviceName);
             throw new ClassCastException("Il tipo di ritorno atteso è " + returnType.getName() +
-                                        ", ma è stato restituito " + (response != null ? response.getClass().getName() : "null"));
+                    ", ma è stato restituito " + (response != null ? response.getClass().getName() : "null"));
         }
     }
 

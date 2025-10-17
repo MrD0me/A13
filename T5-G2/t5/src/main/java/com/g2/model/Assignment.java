@@ -1,12 +1,8 @@
 package com.g2.model;
 
-import java.time.Instant;
+import com.fasterxml.jackson.annotation.*;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.time.Instant;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -14,30 +10,31 @@ public class Assignment {
 
     @JsonProperty("idAssignment")
     private String idAssignment;
-    
+
     @JsonProperty("teamId")
     private String teamId;
-    
+
     @JsonProperty("nomeTeam")
     private String nomeTeam;
-    
+
     @JsonProperty("titolo")
     private String titolo;
-    
+
     @JsonProperty("descrizione")
     private String descrizione;
-    
+
     @JsonProperty("dataCreazione")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX", timezone = "UTC")
     private Instant dataCreazione;
-    
+
     @JsonProperty("dataScadenza")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX", timezone = "UTC")
     private Instant dataScadenza;
-    
+
     // Costruttore senza argomenti
-    public Assignment() { }
-    
+    public Assignment() {
+    }
+
     // Costruttore con argomenti per Jackson
     @JsonCreator
     public Assignment(
@@ -56,7 +53,7 @@ public class Assignment {
         this.dataCreazione = dataCreazione;
         this.dataScadenza = dataScadenza;
     }
-    
+
     // Getters e Setters
     public String getIdAssignment() {
         return idAssignment;

@@ -30,8 +30,8 @@ public class VariableValidationLogicComponent extends GenericLogicComponent {
 
     public VariableValidationLogicComponent(String variableToCheck) {
         this.variableToCheck = variableToCheck;
-        this.allowedValues   = new ArrayList<>();
-        this.checkNull       = false;// Di default i controlli sono disattivati
+        this.allowedValues = new ArrayList<>();
+        this.checkNull = false;// Di default i controlli sono disattivati
         this.checkAllowedValues = false;
     }
 

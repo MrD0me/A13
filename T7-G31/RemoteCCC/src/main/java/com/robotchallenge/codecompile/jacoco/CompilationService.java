@@ -336,7 +336,7 @@ public class CompilationService {
     private void deleteFile(String path) throws IOException {
         File file = new File(path);
         if (file.exists()) {
-            if (Files.deleteIfExists(Paths.get(path))) { // !file.delete() restituiva una issue con SonarQube
+            if (!Files.deleteIfExists(Paths.get(path))) { // !file.delete() restituiva una issue con SonarQube
                 throw new IOException("[deleteFile] Impossibile eliminare il file: " + file.getAbsolutePath());
             }
         } else {
