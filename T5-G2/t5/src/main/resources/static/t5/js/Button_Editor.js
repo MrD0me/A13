@@ -337,7 +337,7 @@ function richiediSuggerimento() {
 
     // Effettua la richiesta a T1
     fetch("/api/suggerimenti/richiedi", {
-        method: "POST",
+        method: "GET",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody)
     })
