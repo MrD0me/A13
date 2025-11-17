@@ -1,4 +1,4 @@
-package com.groom.manvsclass.config;
+/*package com.groom.manvsclass.config;
 
 import com.groom.manvsclass.model.Suggestion;
 import com.groom.manvsclass.model.repository.SuggestionRepository;
@@ -46,3 +46,4 @@ public class SuggestionDataInitializer implements CommandLineRunner {
         logger.info("Initialized {} suggestions in the database.", seed.size());
     }
 }
+*/
