@@ -120,6 +120,8 @@ public class GuiController {
         return leaderboard.handlePageRequest();
     }
 
+    
+
     /* 
     @PostMapping("/save-scalata")
     public ResponseEntity<String> saveScalata(@RequestParam("playerID") int playerID,
