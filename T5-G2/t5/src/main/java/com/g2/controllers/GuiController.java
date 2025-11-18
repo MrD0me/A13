@@ -111,7 +111,7 @@ public class GuiController {
         editor.setObjectComponents(classeUT);
         return editor.handlePageRequest();
     }
-
+/*
     @GetMapping("/leaderboard")
     public String leaderboard(Model model, @CookieValue(name = "jwt", required = false) String jwt) {
         PageBuilder leaderboard = new PageBuilder(serviceManager, "leaderboard", model);
@@ -120,7 +120,7 @@ public class GuiController {
         return leaderboard.handlePageRequest();
     }
 
-    
+  */  
 
     /* 
     @PostMapping("/save-scalata")
