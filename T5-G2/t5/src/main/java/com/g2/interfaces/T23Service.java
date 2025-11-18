@@ -16,7 +16,6 @@ package com.g2.interfaces;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.g2.model.NotificationResponse;
 import com.g2.model.User;
-import com.g2.model.dto.PlayerDTO;
 import com.g2.model.dto.GameProgressDTO;
 import com.g2.model.dto.PlayerProgressDTO;
 import com.g2.model.dto.UpdateGameProgressDTO;
@@ -69,7 +68,6 @@ public class T23Service extends BaseService {
         registerGetUserActions();
         registerUserProfileActions();
         registerPlayerStatusActions();
-        registerPlayerActions();
     }
 
     /*
@@ -108,8 +106,8 @@ public class T23Service extends BaseService {
         ));
 
         registerAction("GetUser", new ServiceActionDefinition(
-                params -> getUser((Long) params[0]),
-                Long.class
+                params -> getUser((String) params[0]),
+                String.class
         ));
 
         registerAction("GetUsersByList", new ServiceActionDefinition(
@@ -177,16 +175,6 @@ public class T23Service extends BaseService {
         ));
     }
 
-    private void registerPlayerActions(){
-        registerAction("getAllPlayers", new ServiceActionDefinition(
-            params -> getAllPlayers()
-        ));
-    }
-
-    private List<PlayerDTO> getAllPlayers() {
-        final String endpoint = "/players";
-        return callRestGET(endpoint, null, new ParameterizedTypeReference<List<PlayerDTO>>(){});
-    }
 
     private GameProgressDTO createPlayerProgressAgainstOpponent(long playerId, GameMode gameMode, String classUT, String type, OpponentDifficulty difficulty) {
         final String endpoint = "/players/%s/progression/against".formatted(playerId);
@@ -254,20 +242,20 @@ public class T23Service extends BaseService {
 
     // Metodo per ottenere la lista degli utenti
     private List<User> getUsers() {
-        final String endpoint = "/players/students_list";
+        final String endpoint = "/student/students_list";
         return callRestGET(endpoint, null, new ParameterizedTypeReference<List<User>>() {
         });
     }
 
-    private User getUser(long userId) {
-        final String endpoint = "/players/students_list/" + userId;
+    private User getUser(String userId) {
+        final String endpoint = "/student/students_list/" + userId;
         return callRestGET(endpoint, null, User.class);
     }
 
     //Do una lista di ID e mi ritorna una lista di User
     // Implementata a mano perchè un po' strana è una POST che ottiene dati come una GET
     private List<User> getUserByList(List<String> idsStudenti) {
-        final String endpoint = "/players/getStudentiTeam";
+        final String endpoint = "/student/getStudentiTeam";
         // Crea un oggetto HttpEntity con i dati che vogliamo inviare (la lista degli ID)
         HttpEntity<List<String>> requestEntity = new HttpEntity<>(idsStudenti);
         // Esegui la chiamata POST all'endpoint

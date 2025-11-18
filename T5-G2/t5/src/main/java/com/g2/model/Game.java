@@ -13,6 +13,7 @@ public class Game {
     private String classe;
     private String username;
     private double score;
+    private int suggestionsAvailable; // Numero di suggerimenti disponibili per la partita
 
     public Game(int playerId, String description, String name, String difficulty, String username) {
         this.playerId = playerId;
@@ -21,6 +22,7 @@ public class Game {
         this.difficulty = difficulty;
         this.classe = "";
         this.username = username;
+        this.suggestionsAvailable = initSuggestionsCount(difficulty); // Inizializza in base alla difficoltà
     }
 
     public Game() {
@@ -107,6 +109,48 @@ public class Game {
         this.username = username;
     }
 
+    public int getSuggestionsAvailable() {
+        return suggestionsAvailable;
+    }
+
+    public void setSuggestionsAvailable(int suggestionsAvailable) {
+        this.suggestionsAvailable = suggestionsAvailable;
+    }
+
+    /**
+     * Decrementa il numero di suggerimenti disponibili
+     * @return il numero di suggerimenti rimasti dopo il decremento
+     */
+    public int decrementSuggestions() {
+        if (suggestionsAvailable > 0) {
+            suggestionsAvailable--;
+        }
+        return suggestionsAvailable;
+    }
+
+    /**
+     * Inizializza il numero di suggerimenti in base alla difficoltà
+     * - HARD: 0 suggerimenti
+     * - MEDIUM: 3 suggerimenti
+     * - EASY: 5 suggerimenti
+     * @param difficulty la difficoltà della partita
+     * @return il numero di suggerimenti
+     */
+    private int initSuggestionsCount(String difficulty) {
+        if (difficulty == null) return 0;
+
+        switch (difficulty.toUpperCase()) {
+            case "HARD":
+                return 0;
+            case "MEDIUM":
+                return 3;
+            case "EASY":
+                return 5;
+            default:
+                return 0;
+        }
+    }
+
     @Override
     public String toString() {
         return "Game{" +
@@ -119,6 +163,7 @@ public class Game {
                 ", ora_creazione='" + ora_creazione + '\'' +
                 ", classe='" + classe + '\'' +
                 ", username='" + username + '\'' +
+                ", suggestionsAvailable=" + suggestionsAvailable +
                 '}';
     }
 }
