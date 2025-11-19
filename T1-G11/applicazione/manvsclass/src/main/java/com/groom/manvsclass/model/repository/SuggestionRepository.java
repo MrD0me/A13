@@ -8,17 +8,14 @@ import java.util.List;
 
 @Repository
 public interface SuggestionRepository extends MongoRepository<Suggestion, String> {
-    /**
-     * Restituisce tutti i suggerimenti di una determinata categoria
-     * @param category la categoria dei suggerimenti
-     * @return lista di suggerimenti
-     */
+
     List<Suggestion> findByCategory(String category);
 
-    /**
-     * Restituisce tutti i suggerimenti di una determinata difficoltà
-     * @param difficulty la difficoltà (EASY, MEDIUM, HARD)
-     * @return lista di suggerimenti
-     */
     List<Suggestion> findByDifficulty(String difficulty);
+
+    List<Suggestion> findByClassNameIgnoreCase(String className);
+
+    List<Suggestion> findByClassNameIgnoreCaseAndDifficulty(String className, String difficulty);
+
+    void deleteByClassNameIgnoreCase(String className);
 }
