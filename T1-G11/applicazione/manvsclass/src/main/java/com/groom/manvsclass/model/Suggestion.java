@@ -11,7 +11,6 @@ public class Suggestion {
     private String text;
     private String category;
     private String difficulty; // EASY, MEDIUM, HARD
-    private String className;
 
     // Costruttori
     public Suggestion() {
@@ -61,14 +60,6 @@ public class Suggestion {
         this.difficulty = difficulty;
     }
 
-    public String getClassName() {
-        return className;
-    }
-
-    public void setClassName(String className) {
-        this.className = className;
-    }
-
     @Override
     public String toString() {
         return "Suggestion{" +
@@ -76,7 +67,6 @@ public class Suggestion {
                 ", text='" + text + '\'' +
                 ", category='" + category + '\'' +
                 ", difficulty='" + difficulty + '\'' +
-                ", className='" + className + '\'' +
                 '}';
     }
 }

@@ -12,10 +12,4 @@ public interface SuggestionRepository extends MongoRepository<Suggestion, String
     List<Suggestion> findByCategory(String category);
 
     List<Suggestion> findByDifficulty(String difficulty);
-
-    List<Suggestion> findByClassNameIgnoreCase(String className);
-
-    List<Suggestion> findByClassNameIgnoreCaseAndDifficulty(String className, String difficulty);
-
-    void deleteByClassNameIgnoreCase(String className);
 }
