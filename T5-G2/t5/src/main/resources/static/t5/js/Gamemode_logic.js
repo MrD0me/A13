@@ -252,15 +252,23 @@ async function startGame() {
                 if (mode === "PartitaSingola")
                     timer_remainingTime = remainingTime;
 
-                // Salva la difficoltà e i suggerimenti sul localStorage per l'editor
+                // Salva la difficolta e la classe sul localStorage per l'editor
                 localStorage.setItem("difficulty", difficulty);
-                // Imposta il numero massimo di suggerimenti in base alla difficoltà
-                let maxSuggestions = 0;
+                localStorage.setItem("underTestClassName", underTestClassName);
+                // Imposta il numero massimo di suggerimenti in base alla difficolta
+                let maxSuggestions;
                 switch ((difficulty + "").toUpperCase()) {
-                    case 'HARD': maxSuggestions = 0; break;
-                    case 'MEDIUM': maxSuggestions = 3; break;
-                    case 'EASY': maxSuggestions = 5; break;
-                    default: maxSuggestions = 0;
+                    case 'EASY':
+                        maxSuggestions = 10;
+                        break;
+                    case 'MEDIUM':
+                        maxSuggestions = 5;
+                        break;
+                    case 'HARD':
+                        maxSuggestions = 2;
+                        break;
+                    default:
+                        maxSuggestions = 0;
                 }
                 localStorage.setItem("suggestionsMax", String(maxSuggestions));
                 localStorage.setItem("suggestionsAvailable", String(maxSuggestions));
@@ -480,3 +488,4 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 });
+

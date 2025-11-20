@@ -282,9 +282,9 @@ document.addEventListener("DOMContentLoaded", function() {
 function suggestionsMaxForDifficulty(difficulty){
     if(!difficulty) return 0;
     switch((difficulty + "").toUpperCase()){
-        case 'HARD': return 0;
-        case 'MEDIUM': return 3;
-        case 'EASY': return 5;
+        case 'EASY': return 10;
+        case 'MEDIUM': return 5;
+        case 'HARD': return 2;
         default: return 0;
     }
 }
@@ -292,13 +292,13 @@ function suggestionsMaxForDifficulty(difficulty){
 function initSuggestionCounters(){
     var difficulty = localStorage.getItem("difficulty") || "EASY";
     var max = parseInt(localStorage.getItem("suggestionsMax"), 10);
-    if(isNaN(max)){
+    if(isNaN(max) || max <= 0){
         max = suggestionsMaxForDifficulty(difficulty);
         localStorage.setItem("suggestionsMax", max);
     }
 
     var available = parseInt(localStorage.getItem("suggestionsAvailable"), 10);
-    if(isNaN(available)){
+    if(isNaN(available) || available < 0 || available > max){
         available = max;
         localStorage.setItem("suggestionsAvailable", available);
     }
@@ -327,21 +327,38 @@ function richiediSuggerimento() {
     var difficulty = localStorage.getItem("difficulty") || "EASY";
     var remainingSuggestions = parseInt(localStorage.getItem("suggestionsAvailable")) || 0;
     var gameId = localStorage.getItem("roundId") || 0;
+    var className = localStorage.getItem("underTestClassName") || "";
+
+    if (remainingSuggestions <= 0) {
+        alert("Non hai più suggerimenti disponibili per questa partita!");
+        return;
+    }
+
+    if(!className){
+        alert("Impossibile determinare la classe in gioco. Ricarica la pagina o avvia nuovamente la partita.");
+        return;
+    }
 
     // Prepara il payload per la richiesta
     var requestBody = {
         gameId: gameId,
         difficulty: difficulty,
-        remainingSuggestions: remainingSuggestions
+        remainingSuggestions: remainingSuggestions,
+        className: className
     };
 
-    // Effettua la richiesta a T1
+    // Effettua la richiesta ai servizi T23 passando per l'API Gateway
     fetch("/api/suggerimenti/richiedi", {
-        method: "GET",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody)
     })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Risposta non valida dal server (" + response.status + ")");
+            }
+            return response.json();
+        })
         .then(data => {
             // Aggiorna il numero di suggerimenti nel localStorage
             localStorage.setItem("suggestionsAvailable", data.remainingSuggestions);
@@ -356,21 +373,10 @@ function richiediSuggerimento() {
 
             // Mostra i suggerimenti in una modale
             mostraSuggerimenti(data);
-
-            // Se è l'ultimo suggerimento o sono finiti, mostra un avviso
-            if (data.noMoreSuggestions) {
-                // Mostra un alert se sono finiti
-                if (data.remainingSuggestions === 0) {
-                    alert("Non hai più suggerimenti disponibili per questa partita!");
-                } else if (data.message) {
-                    // Mostra il messaggio di avviso se è l'ultimo
-                    console.warn(data.message);
-                }
-            }
         })
         .catch(error => {
             console.error("Errore nella richiesta dei suggerimenti:", error);
-            alert("Errore nel caricamento dei suggerimenti");
+            alert("Non sono disponibili suggerimenti");
         });
 }
 
@@ -429,22 +435,15 @@ function mostraSuggerimenti(data) {
     htmlContent += "</ul>";
 
     // Aggiungi il contatore e il messaggio se necessario
-    var messageHtml = "";
-    if (data.noMoreSuggestions && data.message) {
-        messageHtml = `<div class="alert alert-info mt-3" role="alert"><strong>Avviso:</strong> ${data.message}</div>`;
-    }
-
     modal.innerHTML = `
 		<div class="modal-dialog modal-lg">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h1 class="modal-title fs-5" id="suggerimentiLabel">Suggerimenti</h1>
-						<small class="text-muted">Suggerimenti rimasti: ${data.remainingSuggestions}/${localStorage.getItem('suggestionsMax') || 0}</small>
+					<h1 class="modal-title fs-5" id="suggerimentiLabel">Suggerimenti rimasti: ${data.remainingSuggestions}/${localStorage.getItem('suggestionsMax') || 0}</h1>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body">
 					${htmlContent}
-					${messageHtml}
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
