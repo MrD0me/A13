@@ -439,8 +439,7 @@ function mostraSuggerimenti(data) {
 		<div class="modal-dialog modal-lg">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h1 class="modal-title fs-5" id="suggerimentiLabel">Suggerimenti</h1>
-						<small class="text-muted">Suggerimenti rimasti: ${data.remainingSuggestions}/${localStorage.getItem('suggestionsMax') || 0}</small>
+					<h1 class="modal-title fs-5" id="suggerimentiLabel">Suggerimenti rimasti: ${data.remainingSuggestions}/${localStorage.getItem('suggestionsMax') || 0}</h1>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body">
