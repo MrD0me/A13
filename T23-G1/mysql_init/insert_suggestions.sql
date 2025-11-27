@@ -7,7 +7,8 @@ INSERT INTO suggestions (text, class_name, difficulty, language, created_at, upd
 ('Testa le operazioni di moltiplicazione con numeri positivi e negativi', 'Calcolatrice', 'MEDIUM', 'it', NOW(), NOW()),
 ('Controlla il comportamento con numeri decimali molto piccoli', 'Calcolatrice', 'MEDIUM', 'it', NOW(), NOW()),
 ('Verifica la precisione dei calcoli con numeri molto grandi', 'Calcolatrice', 'HARD', 'it', NOW(), NOW()),
-('Testa casi limite come overflow e underflow numerici', 'Calcolatrice', 'HARD', 'it', NOW(), NOW());
+('Testa casi limite come overflow e underflow numerici', 'Calcolatrice', 'HARD', 'it', NOW(), NOW()),
+('//SUGGESTIONS\n@Test\npublic void testDivision() {\n    Calcolatrice calc = new Calcolatrice();\n    int result = calc.divide(10, 2);\n    System.out.println(""Result: "" + result);\n}', 'Calcolatrice', 'EASY', 'EN', NOW(), NOW());
 
 -- Suggerimenti per FTPFile
 INSERT INTO suggestions (text, class_name, difficulty, language, created_at, updated_at) VALUES

@@ -493,6 +493,17 @@ function richiediSuggerimento() {
         className: className
     };
 
+function inserisciSuggerimentoNelCodice(suggerimento) {
+    // Inserisce il suggerimento come commento all'inizio del codice
+    var currentCode = editor_utente.getValue();
+    var suggestionComment = "// SUGGERIMENTO: " + suggerimento + "\n";
+    var newCode = suggestionComment + currentCode;
+    editor_utente.setValue(newCode);
+    
+    // Mostra notifica di successo
+    alert("Suggerimento inserito nel codice come commento!");
+}
+
     // Effettua la richiesta ai servizi T23 passando per l'API Gateway
     fetch("/api/suggerimenti/richiedi", {
         method: "POST",
@@ -547,6 +558,7 @@ function mostraSuggerimenti(data) {
 						<h1 class="modal-title fs-5" id="suggerimentiLabel">Suggerimenti</h1>
 						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 					</div>
+                    
 					<div class="modal-body">
 						<div class="alert alert-warning" role="alert">
 							${noMoreMessage}
@@ -578,13 +590,28 @@ function mostraSuggerimenti(data) {
     modal.setAttribute("aria-hidden", "true");
 
     // Crea il contenuto HTML con i suggerimenti
-    var htmlContent = "<ul class='list-group'>";
-    suggestions.forEach(function(suggerimento) {
-        htmlContent += "<li class='list-group-item'>" + suggerimento + "</li>";
-    });
-    htmlContent += "</ul>";
-
-    // Aggiungi il contatore e il messaggio se necessario
+            var htmlContent = "<ul class='list-group' id='suggerimentiList'>";
+            suggestions.forEach(function(suggerimento) {
+                htmlContent += `<li class='list-group-item d-flex justify-content-between align-items-center'>
+                    <span>${suggerimento}</span>
+                    <button class='btn btn-sm btn-primary insertaSuggerimentoBtn' data-suggerimento='${suggerimento.replace(/'/g, "&apos;")}'>
+                        Inserisci
+                    </button>
+                </li>`;
+            });
+            htmlContent += "</ul>";
+            
+            // Aggiungi event listener ai bottoni dopo che sono nel DOM
+            setTimeout(function() {
+                var buttons = document.querySelectorAll('.insertaSuggerimentoBtn');
+                buttons.forEach(function(button) {
+                    button.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        var testo = this.getAttribute('data-suggerimento');
+                        inserisciSuggerimentoNelCodice(testo);
+                    });
+                });
+            }, 100);    // Aggiungi il contatore e il messaggio se necessario
     modal.innerHTML = `
 		<div class="modal-dialog modal-lg">
 			<div class="modal-content">
