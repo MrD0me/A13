@@ -267,7 +267,7 @@ editor_utente.on('change', saveToLocalStorage);
 
 // BOTTONE SUGGERIMENTI
 document.addEventListener("DOMContentLoaded", function () {
-    var newButton = document.getElementById("newButton");
+    var newButton = document.getElementById("suggerimento");
     newButton.addEventListener("click", function () {
         // Richiedi un suggerimento a T1
         richiediSuggerimento();
