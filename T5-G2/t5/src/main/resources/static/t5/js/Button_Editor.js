@@ -1,4 +1,4 @@
-/*
+﻿/*
  *   Copyright (c) 2024 Stefano Marano https://github.com/StefanoMarano80017
  *   All rights reserved.
 
@@ -17,7 +17,7 @@
 
 
 /*
-* 	Qui c'è tutta la logica dei bottoni e della GUI
+* 	Qui c'Ã¨ tutta la logica dei bottoni e della GUI
 */
 
 //TASTO CERCA
@@ -213,14 +213,14 @@ document.addEventListener("DOMContentLoaded", function() {
     ];
 
     // Imposta la dimensione del font iniziale
-    let fontSize = parseInt(fontSizeInput.value, 10) || 16; // Valore predefinito se non è impostato
+    let fontSize = parseInt(fontSizeInput.value, 10) || 16; // Valore predefinito se non Ã¨ impostato
 
     // Funzione per aggiornare la dimensione del font per tutti gli editor
     function aggiornaFontSize() {
         editors.forEach(editor => {
             const wrapper = editor.getWrapperElement();
             wrapper.style.fontSize = fontSize + "px"; // Imposta la dimensione del font
-            wrapper.style.lineHeight = (fontSize * 1.5) + "px"; // Imposta l'altezza della linea (1.5 è un esempio di fattore)
+            wrapper.style.lineHeight = (fontSize * 1.5) + "px"; // Imposta l'altezza della linea (1.5 Ã¨ un esempio di fattore)
             editor.refresh(); // Ricarica l'editor per applicare le modifiche
         });
     }
@@ -272,11 +272,18 @@ document.addEventListener("DOMContentLoaded", function () {
         // Richiedi un suggerimento a T1
         richiediSuggerimento();
     });
+    var historyButton = document.getElementById("showSuggestionHistory");
+    if (historyButton) {
+        historyButton.addEventListener("click", function () {
+            mostraStoricoSuggerimenti();
+        });
+    }
 });
 
 // Inizializza il contatore dei suggerimenti e mostra nell'interfaccia
 document.addEventListener("DOMContentLoaded", function() {
     initSuggestionCounters();
+    renderSuggestionHistory();
 });
 
 function suggestionsMaxForDifficulty(difficulty){
@@ -322,6 +329,110 @@ function updateSuggestionCounter(){
     }
 }
 
+function getSuggestionHistory() {
+    try {
+        var stored = localStorage.getItem("suggestionHistory");
+        return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+        console.warn("Impossibile leggere la cronologia suggerimenti:", e);
+        return [];
+    }
+}
+
+function saveSuggestionHistory(history) {
+    localStorage.setItem("suggestionHistory", JSON.stringify(history));
+}
+
+function addSuggestionsToHistory(suggestions) {
+    if (!suggestions || suggestions.length === 0) return;
+    var history = getSuggestionHistory();
+    suggestions.forEach(function (suggerimento) {
+        history.push(suggerimento);
+    });
+    saveSuggestionHistory(history);
+    renderSuggestionHistory();
+}
+
+function renderSuggestionHistory() {
+    var list = document.getElementById("suggestion-history-list");
+    if (!list) return;
+    var history = getSuggestionHistory();
+    list.innerHTML = "";
+
+    if (history.length === 0) {
+        var emptyItem = document.createElement("li");
+        emptyItem.className = "list-group-item";
+        emptyItem.textContent = "Nessun suggerimento ricevuto.";
+        list.appendChild(emptyItem);
+        return;
+    }
+
+    history.forEach(function (text, index) {
+        var item = document.createElement("li");
+        item.className = "list-group-item d-flex justify-content-between align-items-start";
+
+        var content = document.createElement("div");
+        content.className = "ms-2 me-auto";
+
+        var title = document.createElement("div");
+        title.className = "fw-bold";
+        title.textContent = "Suggerimento " + (index + 1);
+
+        var body = document.createElement("small");
+        body.textContent = text;
+
+        content.appendChild(title);
+        content.appendChild(body);
+        item.appendChild(content);
+        list.appendChild(item);
+    });
+}
+
+function mostraStoricoSuggerimenti() {
+    var history = getSuggestionHistory();
+    var modal = document.createElement("div");
+    modal.className = "modal fade";
+    modal.id = "storicoSuggerimentiModal";
+    modal.setAttribute("tabindex", "-1");
+    modal.setAttribute("aria-labelledby", "storicoSuggerimentiLabel");
+    modal.setAttribute("aria-hidden", "true");
+
+    var bodyContent = "";
+    if (history.length === 0) {
+        bodyContent = "<p class='mb-0'>Nessun suggerimento ricevuto.</p>";
+    } else {
+        bodyContent = "<ul class='list-group'>";
+        history.forEach(function (suggerimento, index) {
+            bodyContent += "<li class='list-group-item'><strong>#"+ (index+1) +":</strong> " + suggerimento + "</li>";
+        });
+        bodyContent += "</ul>";
+    }
+
+    modal.innerHTML = `
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="storicoSuggerimentiLabel">Cronologia suggerimenti</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    ${bodyContent}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    var bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+    modal.addEventListener("hidden.bs.modal", function () {
+        modal.remove();
+    });
+}
+
 function richiediSuggerimento() {
     // Recupera i dati dalla sessione/localStorage
     var difficulty = localStorage.getItem("difficulty") || "EASY";
@@ -330,7 +441,7 @@ function richiediSuggerimento() {
     var className = localStorage.getItem("underTestClassName") || "";
 
     if (remainingSuggestions <= 0) {
-        alert("Non hai più suggerimenti disponibili per questa partita!");
+        alert("Non sono piu disponibili suggerimenti per questa partita!");
         return;
     }
 
@@ -370,6 +481,7 @@ function richiediSuggerimento() {
             }
 
             updateSuggestionCounter();
+            addSuggestionsToHistory(data.suggestions);
 
             // Mostra i suggerimenti in una modale
             mostraSuggerimenti(data);
@@ -381,8 +493,11 @@ function richiediSuggerimento() {
 }
 
 function mostraSuggerimenti(data) {
+    var suggestions = data.suggestions || [];
+    var noMoreMessage = data.message || "Non sono piu disponibili suggerimenti per questa partita.";
+
     // Se non ci sono suggerimenti, mostra un messaggio di errore
-    if (!data.suggestions || data.suggestions.length === 0) {
+    if (suggestions.length === 0) {
         var modal = document.createElement("div");
         modal.className = "modal fade";
         modal.id = "suggerimentiModal";
@@ -399,7 +514,7 @@ function mostraSuggerimenti(data) {
 					</div>
 					<div class="modal-body">
 						<div class="alert alert-warning" role="alert">
-							<strong>Attenzione!</strong> Non hai più suggerimenti disponibili per questa partita.
+							${noMoreMessage}
 						</div>
 					</div>
 					<div class="modal-footer">
@@ -429,7 +544,7 @@ function mostraSuggerimenti(data) {
 
     // Crea il contenuto HTML con i suggerimenti
     var htmlContent = "<ul class='list-group'>";
-    data.suggestions.forEach(function(suggerimento) {
+    suggestions.forEach(function(suggerimento) {
         htmlContent += "<li class='list-group-item'>" + suggerimento + "</li>";
     });
     htmlContent += "</ul>";
@@ -444,6 +559,7 @@ function mostraSuggerimenti(data) {
 				</div>
 				<div class="modal-body">
 					${htmlContent}
+                    ${data.noMoreSuggestions ? `<div class="alert alert-warning mt-3" role="alert">${noMoreMessage}</div>` : ""}
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
@@ -464,7 +580,6 @@ function mostraSuggerimenti(data) {
         modal.remove();
     });
 }
-
 //pulizia local storage a fine partita
 function flush_localStorage(){
     //Pulisco i dati locali
@@ -477,4 +592,9 @@ function flush_localStorage(){
     pulisciLocalStorage("username");
     pulisciLocalStorage("storico");
     pulisciLocalStorage("codeMirrorContent");
+    pulisciLocalStorage("suggestionsAvailable");
+    pulisciLocalStorage("suggestionsMax");
+    pulisciLocalStorage("suggestionHistory");
 }
+
+

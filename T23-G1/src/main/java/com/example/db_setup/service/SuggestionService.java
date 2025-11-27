@@ -16,7 +16,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -27,22 +29,43 @@ import java.util.stream.Collectors;
 public class SuggestionService {
 
     private final SuggestionRepository suggestionRepository;
+    /**
+     * Traccia gli ID dei suggerimenti gi� mostrati per partita/classe/difficolt� cos� da non ripeterli.
+     */
+    private final ConcurrentHashMap<String, Set<Long>> deliveredSuggestions = new ConcurrentHashMap<>();
 
     @Transactional(readOnly = true)
     public SuggestionResponseDTO requestSuggestions(SuggestionRequestDTO request) {
         SuggestionDifficulty difficulty = mapDifficulty(request.getDifficulty());
         String className = normalizeClassName(request.getClassName());
+        String sessionKey = buildSessionKey(request.getGameId(), className, difficulty);
+        maybeResetSession(request.getRemainingSuggestions(), difficulty, sessionKey);
+        Set<Long> alreadyDelivered = deliveredSuggestions.computeIfAbsent(sessionKey, key -> ConcurrentHashMap.newKeySet());
         List<Suggestion> available = fetchSuggestions(difficulty, className);
 
-        Suggestion chosen = pickRandomSuggestion(available);
+        List<Suggestion> notServed = available.stream()
+                .filter(suggestion -> !alreadyDelivered.contains(suggestion.getId()))
+                .collect(Collectors.toList());
+
+        if (notServed.isEmpty()) {
+            return SuggestionResponseDTO.builder()
+                    .suggestions(Collections.emptyList())
+                    .remainingSuggestions(normalizeRemaining(request.getRemainingSuggestions()))
+                    .noMoreSuggestions(true)
+                    .message("Non sono piu disponibili suggerimenti per questa partita.")
+                    .build();
+        }
+
+        Suggestion chosen = pickRandomSuggestion(notServed);
+        alreadyDelivered.add(chosen.getId());
         int remaining = computeRemainingSuggestions(request.getRemainingSuggestions());
-        boolean noMore = remaining == 0;
+        boolean noMore = false;
 
         return SuggestionResponseDTO.builder()
                 .suggestions(Collections.singletonList(chosen.getText()))
                 .remainingSuggestions(remaining)
                 .noMoreSuggestions(noMore)
-                .message(noMore ? "Non hai piu suggerimenti disponibili per questa partita." : null)
+                .message(noMore ? "Non sono piu disponibili suggerimenti per questa partita." : null)
                 .build();
     }
 
@@ -119,7 +142,29 @@ public class SuggestionService {
         if (clientRemaining == null || clientRemaining <= 0) {
             return 0;
         }
-        int updatedValue = clientRemaining - 1;
-        return Math.max(updatedValue, 0);
+        return Math.max(clientRemaining - 1, 0);
+    }
+
+    private String buildSessionKey(Long gameId, String className, SuggestionDifficulty difficulty) {
+        String base = (gameId != null && gameId > 0) ? "game-" + gameId : "nogame";
+        return base + "|" + className.toLowerCase() + "|" + difficulty.name();
+    }
+
+    private void maybeResetSession(Integer remainingClient, SuggestionDifficulty difficulty, String sessionKey) {
+        int maxForDifficulty = switch (difficulty) {
+            case EASY -> 10;
+            case MEDIUM -> 5;
+            case HARD -> 2;
+        };
+        if (remainingClient != null && remainingClient >= maxForDifficulty) {
+            deliveredSuggestions.remove(sessionKey);
+        }
+    }
+
+    private int normalizeRemaining(Integer clientRemaining) {
+        if (clientRemaining == null || clientRemaining < 0) {
+            return 0;
+        }
+        return clientRemaining;
     }
 }

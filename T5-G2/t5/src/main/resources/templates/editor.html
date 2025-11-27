@@ -228,6 +228,9 @@
                     <i class="bi bi-stars">suggerimento</i>
                 </button>
                 <span id="suggestion-counter" class="badge bg-light text-dark ms-2">0/0</span>
+                <button type="button" class="btn btn-outline-light btn-sm ms-1" id="showSuggestionHistory" title="Cronologia suggerimenti">
+                    <i class="bi bi-list-check"></i>
+                </button>
                 <div class="">
                     <!-- UNDO e REDO -->
                     <button type="button" class="btn" id="undo-button">
@@ -306,6 +309,13 @@
                                         </button>
                                         <button
                                                 type="button"
+                                                onclick="showTabPane('paneSuggerimenti')"
+                                                class="list-group-item list-group-item-action"
+                                        >
+                                            <i class="bi bi-card-checklist"></i> Suggerimenti ricevuti
+                                        </button>
+                                        <button
+                                                type="button"
                                                 onclick="showTabPane('paneC')"
                                                 class="list-group-item list-group-item-action"
                                         >
@@ -365,6 +375,41 @@
                                                 <div class="fw-bold" th:text="#{no_turni}">
                                                 </div>
                                             </div>
+                                        </li>
+                                    </ol>
+                                </div>
+                                <!-- SUGGERIMENTI -->
+                                <div
+                                        class="tab-pane fade overflow-y-auto"
+                                        id="paneSuggerimenti"
+                                        role="tabpanel"
+                                        aria-labelledby="pane-Suggerimenti"
+                                >
+                                    <div class="d-flex">
+                                        <button
+                                                type="button"
+                                                onclick="showTabPane('paneA')"
+                                                class="list-group-item mb-2 mx-2"
+                                        >
+                                            <i class="bi bi-arrow-left"></i>
+                                        </button>
+                                        <ol class="breadcrumb m-0 px-2">
+                                            <li class="breadcrumb-item">Menu</li>
+                                            <li
+                                                    class="breadcrumb-item active"
+                                                    aria-current="page"
+                                            >
+                                                Suggerimenti ricevuti
+                                            </li>
+                                        </ol>
+                                    </div>
+                                    <ol
+                                            id="suggestion-history-list"
+                                            class="list-group list-group-flush list-group-numbered overflow-auto border-top"
+                                            style="max-height: 150px"
+                                    >
+                                        <li class="list-group-item">
+                                            Nessun suggerimento ricevuto.
                                         </li>
                                     </ol>
                                 </div>
