@@ -120,7 +120,7 @@ public class GuiController {
         return leaderboard.handlePageRequest();
     }
 
-  */  
+    
 
     /* 
     @PostMapping("/save-scalata")
