@@ -433,6 +433,41 @@ function mostraStoricoSuggerimenti() {
     });
 }
 
+function mostraAlertSuggerimenti(message) {
+    var modal = document.createElement("div");
+    modal.className = "modal fade";
+    modal.id = "alertSuggerimentiModal";
+    modal.setAttribute("tabindex", "-1");
+    modal.setAttribute("aria-labelledby", "alertSuggerimentiLabel");
+    modal.setAttribute("aria-hidden", "true");
+
+    modal.innerHTML = `
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="alertSuggerimentiLabel">Suggerimenti</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning" role="alert">
+                        <strong>Attenzione!</strong> ${message}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    var bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+    modal.addEventListener("hidden.bs.modal", function () {
+        modal.remove();
+    });
+}
+
 function richiediSuggerimento() {
     // Recupera i dati dalla sessione/localStorage
     var difficulty = localStorage.getItem("difficulty") || "EASY";
@@ -441,7 +476,7 @@ function richiediSuggerimento() {
     var className = localStorage.getItem("underTestClassName") || "";
 
     if (remainingSuggestions <= 0) {
-        alert("Non sono piu disponibili suggerimenti per questa partita!");
+        mostraAlertSuggerimenti("Non sono piu disponibili suggerimenti per questa partita.");
         return;
     }
 
@@ -488,7 +523,7 @@ function richiediSuggerimento() {
         })
         .catch(error => {
             console.error("Errore nella richiesta dei suggerimenti:", error);
-            alert("Non sono disponibili suggerimenti");
+            mostraAlertSuggerimenti("Non sono disponibili suggerimenti");
         });
 }
 
