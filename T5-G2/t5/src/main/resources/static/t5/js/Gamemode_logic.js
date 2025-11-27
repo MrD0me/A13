@@ -255,6 +255,7 @@ async function startGame() {
                 // Salva la difficolta e la classe sul localStorage per l'editor
                 localStorage.setItem("difficulty", difficulty);
                 localStorage.setItem("underTestClassName", underTestClassName);
+                localStorage.removeItem("suggestionHistory");
                 // Imposta il numero massimo di suggerimenti in base alla difficolta
                 let maxSuggestions;
                 switch ((difficulty + "").toUpperCase()) {
