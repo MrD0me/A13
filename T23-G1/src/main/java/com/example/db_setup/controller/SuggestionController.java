@@ -3,6 +3,8 @@ package com.example.db_setup.controller;
 import com.example.db_setup.model.dto.suggestion.SuggestionImportRequestDTO;
 import com.example.db_setup.model.dto.suggestion.SuggestionRequestDTO;
 import com.example.db_setup.model.dto.suggestion.SuggestionResponseDTO;
+import com.example.db_setup.model.dto.suggestion.SuggestionAvailabilityRequestDTO;
+import com.example.db_setup.model.dto.suggestion.SuggestionAvailabilityResponseDTO;
 import com.example.db_setup.service.SuggestionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -39,6 +41,21 @@ public class SuggestionController {
     public ResponseEntity<SuggestionResponseDTO> requestSuggestion(@Valid @RequestBody SuggestionRequestDTO request) {
         log.info("[POST /suggerimenti/richiedi] request: {}", request);
         SuggestionResponseDTO response = suggestionService.requestSuggestions(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+            summary = "Recupera la disponibilita dei suggerimenti senza consumarli",
+            description = "Ritorna quanti suggerimenti distinti sono realmente disponibili per classe e difficolta."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Disponibilita calcolata"),
+            @ApiResponse(responseCode = "404", description = "Nessun suggerimento disponibile")
+    })
+    @PostMapping("/disponibilita")
+    public ResponseEntity<SuggestionAvailabilityResponseDTO> getAvailability(@Valid @RequestBody SuggestionAvailabilityRequestDTO request) {
+        log.info("[POST /suggerimenti/disponibilita] className={} difficulty={}", request.getClassName(), request.getDifficulty());
+        SuggestionAvailabilityResponseDTO response = suggestionService.getAvailability(request.getDifficulty(), request.getClassName());
         return ResponseEntity.ok(response);
     }
 

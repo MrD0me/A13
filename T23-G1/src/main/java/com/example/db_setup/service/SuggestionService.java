@@ -6,6 +6,7 @@ import com.example.db_setup.model.dto.suggestion.SuggestionImportItemDTO;
 import com.example.db_setup.model.dto.suggestion.SuggestionImportRequestDTO;
 import com.example.db_setup.model.dto.suggestion.SuggestionRequestDTO;
 import com.example.db_setup.model.dto.suggestion.SuggestionResponseDTO;
+import com.example.db_setup.model.dto.suggestion.SuggestionAvailabilityResponseDTO;
 import com.example.db_setup.model.repository.SuggestionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -35,13 +36,52 @@ public class SuggestionService {
     private final ConcurrentHashMap<String, Set<Long>> deliveredSuggestions = new ConcurrentHashMap<>();
 
     @Transactional(readOnly = true)
+    public SuggestionAvailabilityResponseDTO getAvailability(String difficultyRaw, String classNameRaw) {
+        SuggestionDifficulty difficulty = mapDifficulty(difficultyRaw);
+        String className = normalizeClassName(classNameRaw);
+        List<Suggestion> available = fetchSuggestions(difficulty, className);
+        int difficultyCap = maxForDifficulty(difficulty);
+        int effectiveCap = Math.min(difficultyCap, available.size());
+        // Finché nessun suggerimento è stato consumato, quelli disponibili coincidono con l'effettivo cap.
+        return SuggestionAvailabilityResponseDTO.builder()
+                .availableSuggestions(effectiveCap)
+                .suggestionsMax(effectiveCap)
+                .totalAvailableSuggestions(effectiveCap)
+                .build();
+    }
+
+    @Transactional(readOnly = true)
     public SuggestionResponseDTO requestSuggestions(SuggestionRequestDTO request) {
         SuggestionDifficulty difficulty = mapDifficulty(request.getDifficulty());
         String className = normalizeClassName(request.getClassName());
-        String sessionKey = buildSessionKey(request.getGameId(), className, difficulty);
-        maybeResetSession(request.getRemainingSuggestions(), difficulty, sessionKey);
-        Set<Long> alreadyDelivered = deliveredSuggestions.computeIfAbsent(sessionKey, key -> ConcurrentHashMap.newKeySet());
         List<Suggestion> available = fetchSuggestions(difficulty, className);
+
+        int difficultyCap = maxForDifficulty(difficulty);
+        // Limite massimo di suggerimenti considerando sia la difficoltà sia quante entry esistono davvero.
+        int effectiveCap = Math.min(difficultyCap, available.size());
+
+        String sessionKey = buildSessionKey(request.getGameId(), className, difficulty);
+        // Se il client segnala un reset (es. nuova partita) azzeriamo la memoria dei suggerimenti già mostrati.
+        maybeResetSession(request.getRemainingSuggestions(), effectiveCap, sessionKey);
+        Set<Long> alreadyDelivered = deliveredSuggestions.computeIfAbsent(sessionKey, key -> ConcurrentHashMap.newKeySet());
+        // Allineiamo il set alle entry ancora presenti nel database per evitare contatori sballati dopo un import.
+        Set<Long> validSuggestionIds = available.stream()
+                .map(Suggestion::getId)
+                .collect(Collectors.toSet());
+        alreadyDelivered.retainAll(validSuggestionIds);
+
+        // Se abbiamo già erogato tutti i suggerimenti disponibili per questa difficoltà/classe mostriamo che siamo a zero.
+        if (alreadyDelivered.size() >= effectiveCap) {
+            return SuggestionResponseDTO.builder()
+                    .suggestions(Collections.emptyList())
+                    .remainingSuggestions(0)
+                    .suggestionsAvailable(0)
+                    .suggestionsMax(effectiveCap)
+                    .totalAvailableSuggestions(effectiveCap)
+                    .noMoreSuggestions(true)
+                    .message("Non sono piu disponibili suggerimenti per questa partita.")
+                    .build();
+        }
 
         List<Suggestion> notServed = available.stream()
                 .filter(suggestion -> !alreadyDelivered.contains(suggestion.getId()))
@@ -50,7 +90,10 @@ public class SuggestionService {
         if (notServed.isEmpty()) {
             return SuggestionResponseDTO.builder()
                     .suggestions(Collections.emptyList())
-                    .remainingSuggestions(normalizeRemaining(request.getRemainingSuggestions()))
+                    .remainingSuggestions(Math.max(effectiveCap - alreadyDelivered.size(), 0))
+                    .suggestionsAvailable(Math.max(effectiveCap - alreadyDelivered.size(), 0))
+                    .suggestionsMax(effectiveCap)
+                    .totalAvailableSuggestions(effectiveCap)
                     .noMoreSuggestions(true)
                     .message("Non sono piu disponibili suggerimenti per questa partita.")
                     .build();
@@ -58,12 +101,16 @@ public class SuggestionService {
 
         Suggestion chosen = pickRandomSuggestion(notServed);
         alreadyDelivered.add(chosen.getId());
-        int remaining = computeRemainingSuggestions(request.getRemainingSuggestions());
-        boolean noMore = false;
+        int deliveredCount = Math.min(alreadyDelivered.size(), effectiveCap);
+        int remaining = Math.max(effectiveCap - deliveredCount, 0);
+        boolean noMore = remaining == 0;
 
         return SuggestionResponseDTO.builder()
                 .suggestions(Collections.singletonList(chosen.getText()))
                 .remainingSuggestions(remaining)
+                .suggestionsAvailable(remaining)
+                .suggestionsMax(effectiveCap)
+                .totalAvailableSuggestions(effectiveCap)
                 .noMoreSuggestions(noMore)
                 .message(noMore ? "Non sono piu disponibili suggerimenti per questa partita." : null)
                 .build();
@@ -138,33 +185,23 @@ public class SuggestionService {
         return suggestions.get(index);
     }
 
-    private int computeRemainingSuggestions(Integer clientRemaining) {
-        if (clientRemaining == null || clientRemaining <= 0) {
-            return 0;
-        }
-        return Math.max(clientRemaining - 1, 0);
-    }
-
     private String buildSessionKey(Long gameId, String className, SuggestionDifficulty difficulty) {
         String base = (gameId != null && gameId > 0) ? "game-" + gameId : "nogame";
         return base + "|" + className.toLowerCase() + "|" + difficulty.name();
     }
 
-    private void maybeResetSession(Integer remainingClient, SuggestionDifficulty difficulty, String sessionKey) {
-        int maxForDifficulty = switch (difficulty) {
-            case EASY -> 10;
-            case MEDIUM -> 5;
-            case HARD -> 2;
-        };
-        if (remainingClient != null && remainingClient >= maxForDifficulty) {
+    private void maybeResetSession(Integer remainingClient, int effectiveCap, String sessionKey) {
+        if (remainingClient != null && remainingClient >= effectiveCap) {
             deliveredSuggestions.remove(sessionKey);
         }
     }
 
-    private int normalizeRemaining(Integer clientRemaining) {
-        if (clientRemaining == null || clientRemaining < 0) {
-            return 0;
-        }
-        return clientRemaining;
+    private int maxForDifficulty(SuggestionDifficulty difficulty) {
+        // Numero massimo teorico per difficoltà; l'effettivo viene poi limitato dal numero reale di suggerimenti presenti.
+        return switch (difficulty) {
+            case EASY -> 10;
+            case MEDIUM -> 5;
+            case HARD -> 2;
+        };
     }
 }

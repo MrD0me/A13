@@ -224,13 +224,55 @@
         <div class="card-header p-0">
             <nav class="navbar bg-body-tertiary p-2">
                 <span class="navbar-brand lead my-0 py-0" th:text="#{modifica}"></span>
-                <button type="button" class="btn btn-secondary mx-2" id="newButton">
-                    <i class="bi bi-stars">suggerimento</i>
-                </button>
-                <span id="suggestion-counter" class="badge bg-light text-dark ms-2">0/0</span>
-                <button type="button" class="btn btn-outline-light btn-sm ms-1" id="showSuggestionHistory" title="Cronologia suggerimenti">
-                    <i class="bi bi-list-check"></i>
-                </button>
+                <!-- MENU SUGGERIMENTI -->
+                <div class="dropdown mx-2">
+                    <button type="button" class="btn btn-sm btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                        <i class="bi bi-stars"></i> <small>Suggerimenti</small> <!-- <span id="suggestion-counter-badge" class="badge bg-light text-dark ms-1" style="font-size: 0.7rem;">0/0</span> -->
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-start p-0" style="width: 320px; font-size: 0.85rem;">
+                        <div class="container-fluid p-0">
+                            <!-- Tab Navigation -->
+                            <ul class="nav nav-tabs nav-tabs-sm" id="suggestionTabs" role="tablist" style="font-size: 0.8rem;">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active py-1 px-2" id="base-tab" data-bs-toggle="tab" data-bs-target="#base-panel" type="button" role="tab" aria-controls="base-panel" aria-selected="true">
+                                        <small>Base</small>
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link py-1 px-2" id="advanced-tab" data-bs-toggle="tab" data-bs-target="#advanced-panel" type="button" role="tab" aria-controls="advanced-panel" aria-selected="false">
+                                        <small>Avanzato</small>
+                                    </button>
+                                </li>
+                            </ul>
+                            <!-- Tab Content -->
+                            <div class="tab-content p-2" id="suggestionTabContent">
+                                <!-- TAB BASE -->
+                                <div class="tab-pane fade show active" id="base-panel" role="tabpanel" aria-labelledby="base-tab">
+                                    <!-- Contatore -->
+                                    <div class="mb-2 py-1 px-2 text-center">
+                                        <small><strong>Disponibili:</strong> <span id="suggestion-counter" class="badge bg-light text-dark rounded-pill px-2">0/0</span></small>
+                                    </div>
+                                    <!-- Pulsante Richiedi Suggerimento -->
+                                    <div class="text-center mb-2">
+                                        <button type="button" class="btn btn-sm btn-warning mb-2" id="suggerimento">
+                                            <i class="bi bi-stars"></i> <small>Richiedi Suggerimento</small>
+                                        </button>
+                                    </div>
+                                    <!-- Pulsante Mostra Storico -->
+                                    <div class="text-center mb-2">
+                                        <button type="button" class="btn btn-sm btn-info mb-2" id="showSuggestionHistory">
+                                            <i class="bi bi-clock-history"></i> <small>Suggerimenti ottenuti</small>
+                                        </button>
+                                    </div>
+                                </div>
+                                <!-- TAB AVANZATO -->
+                                <div class="tab-pane fade" id="advanced-panel" role="tabpanel" aria-labelledby="advanced-tab">
+                                    <p class="text-muted mb-0"><small>Contenuto avanzato, basato su crediti, da implementare in versioni future</small></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="">
                     <!-- UNDO e REDO -->
                     <button type="button" class="btn" id="undo-button">

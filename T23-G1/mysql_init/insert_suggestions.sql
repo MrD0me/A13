@@ -2,8 +2,14 @@
 
 -- Suggerimenti per Calcolatrice
 INSERT INTO suggestions (text, class_name, difficulty, language, created_at, updated_at) VALUES
-('Inizia testando le operazioni base: addizione e sottrazione', 'Calcolatrice', 'EASY', 'it', NOW(), NOW()),
-('Verifica che la divisione per zero sollevi un''eccezione', 'Calcolatrice', 'EASY', 'it', NOW(), NOW()),
+('Testa la moltiplicazione con uno e con zero', 'Calcolatrice', 'EASY', 'it', NOW(), NOW()),
+('Assicurati che la divisione tra pari produca interi senza resto', 'Calcolatrice', 'EASY', 'it', NOW(), NOW()),
+('Verifica che la radice quadrata di numeri perfetti sia corretta', 'Calcolatrice', 'EASY', 'it', NOW(), NOW()),
+('Controlla la potenza con esponente 0 e 1', 'Calcolatrice', 'EASY', 'it', NOW(), NOW()),
+('Testa la gestione di spazi o input vuoti come numeri', 'Calcolatrice', 'EASY', 'it', NOW(), NOW()),
+('Verifica che il cambio di segno funzioni per positivi e negativi', 'Calcolatrice', 'EASY', 'it', NOW(), NOW()),
+('Testa l''inserimento di numeri con virgola e il loro parsing', 'Calcolatrice', 'EASY', 'it', NOW(), NOW()),
+('Controlla che la percentuale calcoli correttamente frazioni semplici', 'Calcolatrice', 'EASY', 'it', NOW(), NOW()),
 ('Testa le operazioni di moltiplicazione con numeri positivi e negativi', 'Calcolatrice', 'MEDIUM', 'it', NOW(), NOW()),
 ('Controlla il comportamento con numeri decimali molto piccoli', 'Calcolatrice', 'MEDIUM', 'it', NOW(), NOW()),
 ('Verifica la precisione dei calcoli con numeri molto grandi', 'Calcolatrice', 'HARD', 'it', NOW(), NOW()),

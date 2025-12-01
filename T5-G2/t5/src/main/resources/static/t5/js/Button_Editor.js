@@ -267,7 +267,7 @@ editor_utente.on('change', saveToLocalStorage);
 
 // BOTTONE SUGGERIMENTI
 document.addEventListener("DOMContentLoaded", function () {
-    var newButton = document.getElementById("newButton");
+    var newButton = document.getElementById("suggerimento");
     newButton.addEventListener("click", function () {
         // Richiedi un suggerimento a T1
         richiediSuggerimento();
@@ -298,7 +298,9 @@ function suggestionsMaxForDifficulty(difficulty){
 
 function initSuggestionCounters(){
     var difficulty = localStorage.getItem("difficulty") || "EASY";
+    var className = localStorage.getItem("underTestClassName") || "";
     var max = parseInt(localStorage.getItem("suggestionsMax"), 10);
+    // All'avvio usiamo il limite per difficoltà, ma appena possibile lo sostituiamo col cap reale da backend.
     if(isNaN(max) || max <= 0){
         max = suggestionsMaxForDifficulty(difficulty);
         localStorage.setItem("suggestionsMax", max);
@@ -310,7 +312,38 @@ function initSuggestionCounters(){
         localStorage.setItem("suggestionsAvailable", available);
     }
 
-    updateSuggestionCounter();
+    // Se abbiamo la classe, chiediamo subito al backend il cap reale senza consumare suggerimenti.
+    if(className){
+        fetch("/api/suggerimenti/disponibilita", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                className: className,
+                difficulty: difficulty
+            })
+        })
+        .then(resp => {
+            if(!resp.ok) throw new Error("Errore disponibilita suggerimenti (" + resp.status + ")");
+            return resp.json();
+        })
+        .then(data => {
+            var maxFromServer = parseInt(data.suggestionsMax || data.totalAvailableSuggestions, 10);
+            var availableFromServer = parseInt(data.availableSuggestions || data.totalAvailableSuggestions, 10);
+            if(maxFromServer && maxFromServer > 0){
+                localStorage.setItem("suggestionsMax", maxFromServer);
+            }
+            if(!isNaN(availableFromServer) && availableFromServer >= 0){
+                localStorage.setItem("suggestionsAvailable", availableFromServer);
+            }
+            updateSuggestionCounter();
+        })
+        .catch(err => {
+            console.warn("Impossibile recuperare disponibilita suggerimenti, uso fallback locale:", err);
+            updateSuggestionCounter();
+        });
+    } else {
+        updateSuggestionCounter();
+    }
 }
 
 function updateSuggestionCounter(){
@@ -517,13 +550,17 @@ function inserisciSuggerimentoNelCodice(suggerimento) {
             return response.json();
         })
         .then(data => {
-            // Aggiorna il numero di suggerimenti nel localStorage
-            localStorage.setItem("suggestionsAvailable", data.remainingSuggestions);
-
-            // Assicura che suggestionsMax sia impostato
-            var max = localStorage.getItem("suggestionsMax");
-            if(!max){
-                localStorage.setItem("suggestionsMax", suggestionsMaxForDifficulty(difficulty));
+            // Aggiorna il numero di suggerimenti nel localStorage usando i valori reali restituiti dal backend.
+            var availableRaw = (typeof data.suggestionsAvailable === "number") ? data.suggestionsAvailable : data.remainingSuggestions;
+            var available = parseInt(availableRaw, 10);
+            var maxFromServer = parseInt(data.suggestionsMax || data.totalAvailableSuggestions, 10);
+            localStorage.setItem("suggestionsAvailable", isNaN(available) ? 0 : available);
+            if(maxFromServer && maxFromServer > 0){
+                localStorage.setItem("suggestionsMax", maxFromServer);
+            } else {
+                // Fallback per compatibilità se il backend non fornisse il cap.
+                var fallbackMax = suggestionsMaxForDifficulty(difficulty);
+                localStorage.setItem("suggestionsMax", fallbackMax);
             }
 
             updateSuggestionCounter();
@@ -541,6 +578,9 @@ function inserisciSuggerimentoNelCodice(suggerimento) {
 function mostraSuggerimenti(data) {
     var suggestions = data.suggestions || [];
     var noMoreMessage = data.message || "Non sono piu disponibili suggerimenti per questa partita.";
+    // Usa i valori forniti dal backend per mostrare un contatore coerente (es. 3/3 anziché 10/10).
+    var remaining = (typeof data.suggestionsAvailable === "number") ? data.suggestionsAvailable : data.remainingSuggestions;
+    var max = data.suggestionsMax || data.totalAvailableSuggestions || localStorage.getItem('suggestionsMax') || 0;
 
     // Se non ci sono suggerimenti, mostra un messaggio di errore
     if (suggestions.length === 0) {
@@ -616,7 +656,7 @@ function mostraSuggerimenti(data) {
 		<div class="modal-dialog modal-lg">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h1 class="modal-title fs-5" id="suggerimentiLabel">Suggerimenti rimasti: ${data.remainingSuggestions}/${localStorage.getItem('suggestionsMax') || 0}</h1>
+                    <h1 class="modal-title fs-5" id="suggerimentiLabel">Suggerimenti rimasti: ${remaining}/${max}</h1>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body">
