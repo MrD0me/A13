@@ -300,6 +300,8 @@ function initSuggestionCounters(){
     var difficulty = localStorage.getItem("difficulty") || "EASY";
     var className = localStorage.getItem("underTestClassName") || "";
     var max = parseInt(localStorage.getItem("suggestionsMax"), 10);
+
+    //Fallback front-end (utilizzando suggestionsMaxForDifficulty) nel caso di errore lato backend.
     // All'avvio usiamo il limite per difficoltà, ma appena possibile lo sostituiamo col cap reale da backend.
     if(isNaN(max) || max <= 0){
         max = suggestionsMaxForDifficulty(difficulty);
@@ -339,6 +341,9 @@ function initSuggestionCounters(){
         })
         .catch(err => {
             console.warn("Impossibile recuperare disponibilita suggerimenti, uso fallback locale:", err);
+            try {
+                document.getElementById("suggerimento").disabled = true;
+            } catch (e) { /* ignore */ }
             updateSuggestionCounter();
         });
     } else {
