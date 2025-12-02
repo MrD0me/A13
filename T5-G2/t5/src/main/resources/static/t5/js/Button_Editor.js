@@ -526,17 +526,6 @@ function richiediSuggerimento() {
         className: className
     };
 
-function inserisciSuggerimentoNelCodice(suggerimento) {
-    // Inserisce il suggerimento come commento all'inizio del codice
-    var currentCode = editor_utente.getValue();
-    var suggestionComment = "// SUGGERIMENTO: " + suggerimento + "\n";
-    var newCode = suggestionComment + currentCode;
-    editor_utente.setValue(newCode);
-    
-    // Mostra notifica di successo
-    alert("Suggerimento inserito nel codice come commento!");
-}
-
     // Effettua la richiesta ai servizi T23 passando per l'API Gateway
     fetch("/api/suggerimenti/richiedi", {
         method: "POST",
@@ -632,9 +621,10 @@ function mostraSuggerimenti(data) {
     // Crea il contenuto HTML con i suggerimenti
             var htmlContent = "<ul class='list-group' id='suggerimentiList'>";
             suggestions.forEach(function(suggerimento) {
+                var encoded = encodeURIComponent(suggerimento);
                 htmlContent += `<li class='list-group-item d-flex justify-content-between align-items-center'>
                     <span>${suggerimento}</span>
-                    <button class='btn btn-sm btn-primary insertaSuggerimentoBtn' data-suggerimento='${suggerimento.replace(/'/g, "&apos;")}'>
+                    <button class='btn btn-sm btn-primary insertaSuggerimentoBtn' data-suggerimento='${encoded}'>
                         Inserisci
                     </button>
                 </li>`;
@@ -648,6 +638,11 @@ function mostraSuggerimenti(data) {
                     button.addEventListener('click', function(e) {
                         e.preventDefault();
                         var testo = this.getAttribute('data-suggerimento');
+                    try {
+                        testo = decodeURIComponent(testo);
+                    } catch (err) {
+                        console.warn('Impossibile decodificare il suggerimento:', err);
+                    }
                         inserisciSuggerimentoNelCodice(testo);
                     });
                 });
@@ -681,6 +676,31 @@ function mostraSuggerimenti(data) {
     modal.addEventListener("hidden.bs.modal", function () {
         modal.remove();
     });
+}
+
+function inserisciSuggerimentoNelCodice(suggerimento) {
+    // Inserisce il suggerimento alla fine del codice, dentro le parentesi graffe
+    var currentCode = editor_utente.getValue();
+    var commentLines = suggerimento.split("\n").map(function(line) {
+        return " * " + line;
+    }).join("\n");
+    var suggestionComment = "\n/* SUGGERIMENTO:\n" + commentLines + "\n */\n";
+
+    // Trova l'ultima parentesi graffa chiusa
+    var lastBraceIndex = currentCode.lastIndexOf("}");
+
+    if (lastBraceIndex !== -1) {
+        // Inserisci il commento prima dell'ultima parentesi graffa
+        var newCode = currentCode.slice(0, lastBraceIndex) + suggestionComment + "\n" + currentCode.slice(lastBraceIndex);
+        editor_utente.setValue(newCode);
+    } else {
+        // Se non trova parentesi graffe, aggiunge in fondo
+        var newCode = currentCode + suggestionComment;
+        editor_utente.setValue(newCode);
+    }
+
+    // Mostra notifica di successo
+    alert("Suggerimento inserito nel codice!");
 }
 //pulizia local storage a fine partita
 function flush_localStorage(){
