@@ -64,6 +64,27 @@ document.addEventListener("DOMContentLoaded", function () {
     timeLimitField.style.display = (GetMode() === "PartitaSingola") ? "block" : "none";
 });
 
+const defaultSuggestionCaps = {
+    EASY: 10,
+    MEDIUM: 5,
+    HARD: 2
+};
+
+async function loadSuggestionCaps() {
+    try {
+        const resp = await fetch("/api/suggerimenti/config", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" }
+        });
+        if (!resp.ok) throw new Error("config status " + resp.status);
+        const data = await resp.json();
+        return Object.assign({}, defaultSuggestionCaps, data || {});
+    } catch (e) {
+        console.warn("Impossibile recuperare config suggerimenti, uso fallback locale:", e);
+        return defaultSuggestionCaps; //Fallback nel caso di errore nella richiesta
+    }
+}
+
 // ------------------------------
 // FUNZIONI PER GESTIRE LA SESSIONE CON REDIS
 // ------------------------------
@@ -247,6 +268,9 @@ async function startGame() {
 
         console.log("requestData: ", requestData);
 
+        const caps = await loadSuggestionCaps();
+        const maxSuggestions = caps[(difficulty + "").toUpperCase()] || defaultSuggestionCaps[(difficulty + "").toUpperCase()] || 0;
+
         startGameRequest(requestData)
             .then((response) => {
                 if (mode === "PartitaSingola")
@@ -256,21 +280,6 @@ async function startGame() {
                 localStorage.setItem("difficulty", difficulty);
                 localStorage.setItem("underTestClassName", underTestClassName);
                 localStorage.removeItem("suggestionHistory");
-                // Imposta il numero massimo di suggerimenti in base alla difficolta
-                let maxSuggestions;
-                switch ((difficulty + "").toUpperCase()) {
-                    case 'EASY':
-                        maxSuggestions = 10;
-                        break;
-                    case 'MEDIUM':
-                        maxSuggestions = 5;
-                        break;
-                    case 'HARD':
-                        maxSuggestions = 2;
-                        break;
-                    default:
-                        maxSuggestions = 0;
-                }
                 localStorage.setItem("suggestionsMax", String(maxSuggestions));
                 localStorage.setItem("suggestionsAvailable", String(maxSuggestions));
 

@@ -205,4 +205,13 @@ public class SuggestionService {
             case HARD -> 2;
         };
     }
+
+    @Transactional(readOnly = true)
+    public java.util.Map<String, Integer> getCaps() {
+        return java.util.Map.of(
+                SuggestionDifficulty.EASY.name(), maxForDifficulty(SuggestionDifficulty.EASY),
+                SuggestionDifficulty.MEDIUM.name(), maxForDifficulty(SuggestionDifficulty.MEDIUM),
+                SuggestionDifficulty.HARD.name(), maxForDifficulty(SuggestionDifficulty.HARD)
+        );
+    }
 }

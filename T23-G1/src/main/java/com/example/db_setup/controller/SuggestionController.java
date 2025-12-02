@@ -7,6 +7,8 @@ import com.example.db_setup.model.dto.suggestion.SuggestionAvailabilityRequestDT
 import com.example.db_setup.model.dto.suggestion.SuggestionAvailabilityResponseDTO;
 import com.example.db_setup.service.SuggestionService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
@@ -70,5 +72,19 @@ public class SuggestionController {
         log.info("[POST /suggerimenti/import] className={}", request.getClassName());
         suggestionService.replaceSuggestions(request);
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(
+            summary = "Espone i limiti massimi di suggerimenti per difficolta",
+            description = "Restituisce una mappa difficulty -> max suggerimenti per configurare il client."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Configurazione restituita",
+                    content = @Content(schema = @Schema(implementation = java.util.Map.class)))
+    })
+    @PostMapping("/config")
+    public ResponseEntity<java.util.Map<String, Integer>> getCaps() {
+        log.info("[POST /suggerimenti/config] richiesta configurazione caps");
+        return ResponseEntity.ok(suggestionService.getCaps());
     }
 }
