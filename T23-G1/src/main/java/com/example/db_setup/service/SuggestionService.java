@@ -42,7 +42,8 @@ public class SuggestionService {
         List<Suggestion> available = fetchSuggestions(difficulty, className);
         int difficultyCap = maxForDifficulty(difficulty);
         int effectiveCap = Math.min(difficultyCap, available.size());
-        // Finché nessun suggerimento è stato consumato, quelli disponibili coincidono con l'effettivo cap.
+        // Il numero di suggerimenti inizialmente disponibili coincide con il 
+        // numero di suggerimenti realmente utilizzabili, avente come limite superiore il numero dato dalla difficoltà.
         return SuggestionAvailabilityResponseDTO.builder()
                 .availableSuggestions(effectiveCap)
                 .suggestionsMax(effectiveCap)

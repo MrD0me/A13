@@ -59,6 +59,7 @@ public class SuggestionController {
         return ResponseEntity.ok(response);
     }
 
+    //Chiamata REST per consentire all'admin di importare i suggerimenti
     @Operation(summary = "Importa i suggerimenti per una classe")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Suggerimenti salvati correttamente"),
