@@ -512,6 +512,10 @@ function initAdvancedSuggestionCounters() {
     var className = localStorage.getItem("underTestClassName") || "";
     var max = parseInt(localStorage.getItem("advancedSuggestionsMax"), 10);
     var available = parseInt(localStorage.getItem("advancedSuggestionsAvailable"), 10);
+    var history = [];
+    try { history = (typeof getAdvancedSuggestionHistory === "function") ? getAdvancedSuggestionHistory() : []; } catch (e) { history = []; }
+    var historyEmpty = !history || history.length === 0;
+    var existingAvailable = (historyEmpty || isNaN(available)) ? null : available;
 
     if (isNaN(max) || max < 0) {
         max = 0;
@@ -544,7 +548,12 @@ function initAdvancedSuggestionCounters() {
                     localStorage.setItem("advancedSuggestionsMax", max);
                 }
                 if (!isNaN(availableFromServer)) {
-                    available = availableFromServer;
+                    if (existingAvailable === null) {
+                        available = availableFromServer;
+                    } else {
+                        available = Math.min(existingAvailable, availableFromServer);
+                    }
+                    available = Math.min(available, max);
                     localStorage.setItem("advancedSuggestionsAvailable", available);
                 }
                 updateAdvancedSuggestionCounter();
@@ -864,7 +873,8 @@ function richiediSuggerimentoAvanzato() {
 
             mostraSuggerimenti(data, {
                 title: "Suggerimenti avanzati",
-                subtitleHtml: subtitle
+                subtitleHtml: subtitle,
+                noMoreMessage: "Non sono piu disponibili suggerimenti avanzati per questa partita."
             });
         })
         .catch(error => {
@@ -878,7 +888,7 @@ function mostraSuggerimenti(data, options) {
     var titleLabel = options.title || "Suggerimenti";
     var subtitleHtml = options.subtitleHtml || "";
     var suggestions = data.suggestions || [];
-    var noMoreMessage = data.message || "Non sono piu disponibili suggerimenti per questa partita.";
+    var noMoreMessage = (options.noMoreMessage || data.message || "Non sono piu disponibili suggerimenti per questa partita.");
     // Usa i valori forniti dal backend per mostrare un contatore coerente (es. 3/3 anziche 10/10).
     var remaining = (typeof data.suggestionsAvailable === "number") ? data.suggestionsAvailable : data.remainingSuggestions;
     var max = data.suggestionsMax || data.totalAvailableSuggestions || localStorage.getItem('suggestionsMax') || 0;
@@ -1030,7 +1040,20 @@ function flush_localStorage(){
     pulisciLocalStorage("suggestionsAvailable");
     pulisciLocalStorage("suggestionsMax");
     pulisciLocalStorage("suggestionHistory");
+    pulisciLocalStorage("advancedSuggestionHistory");
+    pulisciLocalStorage("advancedSuggestionsAvailable");
+    pulisciLocalStorage("advancedSuggestionsMax");
 }
+
+
+
+
+
+
+
+
+
+
 
 
 
