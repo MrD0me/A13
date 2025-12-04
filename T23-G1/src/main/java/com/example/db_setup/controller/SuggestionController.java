@@ -1,10 +1,11 @@
 package com.example.db_setup.controller;
 
+import com.example.db_setup.model.dto.suggestion.AdvancedSuggestionRequestDTO;
+import com.example.db_setup.model.dto.suggestion.SuggestionAvailabilityRequestDTO;
+import com.example.db_setup.model.dto.suggestion.SuggestionAvailabilityResponseDTO;
 import com.example.db_setup.model.dto.suggestion.SuggestionImportRequestDTO;
 import com.example.db_setup.model.dto.suggestion.SuggestionRequestDTO;
 import com.example.db_setup.model.dto.suggestion.SuggestionResponseDTO;
-import com.example.db_setup.model.dto.suggestion.SuggestionAvailabilityRequestDTO;
-import com.example.db_setup.model.dto.suggestion.SuggestionAvailabilityResponseDTO;
 import com.example.db_setup.service.SuggestionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -47,6 +48,22 @@ public class SuggestionController {
     }
 
     @Operation(
+            summary = "Recupera un suggerimento avanzato (a pagamento)",
+            description = "Restituisce un suggerimento avanzato se il giocatore ha crediti disponibili"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Suggerimento avanzato restituito correttamente"),
+            @ApiResponse(responseCode = "402", description = "Crediti insufficienti"),
+            @ApiResponse(responseCode = "404", description = "Nessun suggerimento disponibile")
+    })
+    @PostMapping("/avanzati/richiedi")
+    public ResponseEntity<SuggestionResponseDTO> requestAdvancedSuggestion(@Valid @RequestBody AdvancedSuggestionRequestDTO request) {
+        log.info("[POST /suggerimenti/avanzati/richiedi] request: {}", request);
+        SuggestionResponseDTO response = suggestionService.requestAdvancedSuggestions(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
             summary = "Recupera la disponibilita dei suggerimenti senza consumarli",
             description = "Ritorna quanti suggerimenti distinti sono realmente disponibili per classe e difficolta."
     )
@@ -56,8 +73,8 @@ public class SuggestionController {
     })
     @PostMapping("/disponibilita")
     public ResponseEntity<SuggestionAvailabilityResponseDTO> getAvailability(@Valid @RequestBody SuggestionAvailabilityRequestDTO request) {
-        log.info("[POST /suggerimenti/disponibilita] className={} difficulty={}", request.getClassName(), request.getDifficulty());
-        SuggestionAvailabilityResponseDTO response = suggestionService.getAvailability(request.getDifficulty(), request.getClassName());
+        log.info("[POST /suggerimenti/disponibilita] className={} difficulty={} tier={}", request.getClassName(), request.getDifficulty(), request.getTier());
+        SuggestionAvailabilityResponseDTO response = suggestionService.getAvailability(request.getDifficulty(), request.getClassName(), request.getTier());
         return ResponseEntity.ok(response);
     }
 

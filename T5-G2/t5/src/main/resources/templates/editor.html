@@ -267,7 +267,22 @@
                                 </div>
                                 <!-- TAB AVANZATO -->
                                 <div class="tab-pane fade" id="advanced-panel" role="tabpanel" aria-labelledby="advanced-tab">
-                                    <p class="text-muted mb-0"><small>Contenuto avanzato, basato su crediti, da implementare in versioni future</small></p>
+                                    <div class="mb-2 py-1 px-2 text-center">
+                                        <small><strong>Crediti:</strong> <span id="advanced-credits-badge" class="badge bg-success rounded-pill px-2">0</span></small>
+                                    </div>
+                                    <div class="mb-2 py-1 px-2 text-center">
+                                        <small><strong>Disponibili:</strong> <span id="advanced-suggestion-counter" class="badge bg-light text-dark rounded-pill px-2">0/0</span></small>
+                                        <div class="text-muted"><small>Costo per suggerimento: <span id="advanced-suggestion-cost" class="badge bg-info text-dark">0</span> crediti</small></div>
+                                    </div>
+                                    <div class="text-center mb-2">
+                                        <button type="button" class="btn btn-sm btn-primary mb-2" id="advancedSuggestionBtn">
+                                            <i class="bi bi-lightning-charge-fill"></i> <small>Acquista suggerimento</small>
+                                        </button>
+                                    </div>
+                                    <div class="mb-2">
+        <small class="d-block fw-semibold">Suggerimenti avanzati ricevuti</small>
+        <ul class="list-group list-group-flush" id="advanced-suggestion-history-list"></ul>
+    </div>
                                 </div>
                             </div>
                         </div>

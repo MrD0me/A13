@@ -16,6 +16,7 @@ import java.util.Set;
 @AllArgsConstructor
 public class PlayerProgressDTO {
     private int experiencePoints;
+    private int hintCredits;
     private Set<String> globalAchievements;
     private List<GameProgressDTO> gameProgressesDTO = new ArrayList<>();
 }

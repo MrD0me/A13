@@ -51,6 +51,12 @@ public class PlayerProgress {
     private int experiencePoints;
 
     /**
+     * Crediti utilizzabili per acquistare suggerimenti avanzati.
+     */
+    @Column(nullable = false, columnDefinition = "int default 0")
+    private int hintCredits = 0;
+
+    /**
      * Insieme degli achievement globali sbloccati dal giocatore.
      */
     @ElementCollection
@@ -73,6 +79,7 @@ public class PlayerProgress {
     public PlayerProgress(Player player) {
         this.player = player;
         this.experiencePoints = 0;
+        this.hintCredits = 0;
         this.globalAchievements = new HashSet<>();
     }
 
@@ -81,6 +88,7 @@ public class PlayerProgress {
         return "PlayerProgress{" +
                 "id=" + id +
                 ", experiencePoints=" + experiencePoints +
+                ", hintCredits=" + hintCredits +
                 ", globalAchievements=" + globalAchievements +
                 ", progresses=" + progresses +
                 '}';

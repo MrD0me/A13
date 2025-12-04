@@ -81,6 +81,13 @@
 											</h4>
 											<p class="mb-0 fs-5">Following</p>
 										</div>
+										<div class="text-center">
+											<i class="bi bi-stars fs-6 d-block mb-2"></i>
+											<h4 class="mb-0 fw-semibold lh-1">
+												<span th:text="${hintCredits}" class="badge bg-info text-dark px-3 py-2 rounded-pill">0</span>
+											</h4>
+											<p class="mb-0 fs-6">Crediti suggerimenti</p>
+										</div>
 									</div>
 								</div>
 								<!-- Button-->
@@ -559,8 +566,8 @@
 							followButton.disabled = false; // Riabilita il pulsante
 						}
 					});
-				});
-			</script>
-		</div>
-	</body>
+			});
+		</script>
+	</div>
+</body>
 </html>

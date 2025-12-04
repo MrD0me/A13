@@ -24,6 +24,8 @@ public class EndGameResponseDTO {
     private Boolean isWinner;
     @JsonProperty("expGained")
     private int expGained;
+    @JsonProperty("hintCreditsEarned")
+    private int hintCreditsEarned;
 
     public EndGameResponseDTO(int robotScore, int userScore, Boolean isWinner, int expGained,
                               RunGameResponseDTO runGameResponse) {
@@ -31,6 +33,7 @@ public class EndGameResponseDTO {
         this.userScore = userScore;
         this.isWinner = isWinner;
         this.expGained = expGained;
+        this.hintCreditsEarned = 0;
         this.achievementsUnlocked = new HashSet<>();
         this.runGameResponse = runGameResponse;
     }
@@ -41,6 +44,7 @@ public class EndGameResponseDTO {
         this.userScore = userScore;
         this.isWinner = isWinner;
         this.expGained = expGained;
+        this.hintCreditsEarned = 0;
         this.achievementsUnlocked = achievementsUnlocked;
         this.runGameResponse = runGameResponse;
     }
@@ -53,6 +57,7 @@ public class EndGameResponseDTO {
                 ", userScore=" + userScore +
                 ", isWinner=" + isWinner +
                 ", expGained=" + expGained +
+                ", hintCreditsEarned=" + hintCreditsEarned +
                 ", achievementsUnlocked=" + achievementsUnlocked +
                 '}';
     }

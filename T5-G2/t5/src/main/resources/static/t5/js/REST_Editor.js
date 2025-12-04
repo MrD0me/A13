@@ -162,10 +162,10 @@ function handleServerInternalError(error, loadingKey, buttonKey) {
 
 
 function handleGameEnd(response) {
-    let {userScore, robotScore, isWinner, expGained, achievementsUnlocked} = response;
+    let {userScore, robotScore, isWinner, expGained, achievementsUnlocked, hintCreditsEarned} = response;
     console.log("achievementsUnlocked", achievementsUnlocked);
 
-    generateEndGameMessage(userScore, robotScore, isWinner, expGained, achievementsUnlocked); // Gestisce la fine del gioco
+    generateEndGameMessage(userScore, robotScore, isWinner, expGained, achievementsUnlocked, hintCreditsEarned); // Gestisce la fine del gioco
 
     // Disattivo il timer
     if (GetMode() === "PartitaSingola")
@@ -240,10 +240,11 @@ function handleCompileError(loadingKey, buttonKey) {
 }
 
 // Gestisce la fine del gioco, mostra un messaggio e pulisce i dati
-function generateEndGameMessage(userScore, robotScore, isWinner, expGained, achievementsUnlocked) {
+function generateEndGameMessage(userScore, robotScore, isWinner, expGained, achievementsUnlocked, hintCreditsEarned = 0) {
     let resultMessage = isWinner ? gameEndData.game_win : gameEndData.game_lose;
     let expMessage = "";
     let achievementsMessage = ""
+    let creditsMessage = "";
     let rememberSaveMessage = gameEndData.game_remember_save;
 
     if (isWinner) {
@@ -253,6 +254,10 @@ function generateEndGameMessage(userScore, robotScore, isWinner, expGained, achi
             expMessage = `${gameEndData.game_exp.base} ${gameEndData.game_exp.one}`;
         } else {
             expMessage = `${gameEndData.game_exp.base} ${expGained} ${gameEndData.game_exp.multi}`;
+        }
+
+        if (hintCreditsEarned && hintCreditsEarned > 0) {
+            creditsMessage = `\nHai guadagnato ${hintCreditsEarned} crediti avanzati.`;
         }
 
         if (achievementsUnlocked.length > 0) {
@@ -265,7 +270,7 @@ function generateEndGameMessage(userScore, robotScore, isWinner, expGained, achi
 
     openModalWithText(
         gameEndData.game_end,
-        `${gameEndData.game_score}: ${userScore} pt.\n${resultMessage}\n${expMessage}${achievementsMessage}\n\n${rememberSaveMessage}`,
+        `${gameEndData.game_score}: ${userScore} pt.\n${resultMessage}\n${expMessage}${creditsMessage}${achievementsMessage}\n\n${rememberSaveMessage}`,
         [{ tagName: "button", text: `${modalButtonText.close}`, data_bs_dismiss: "modal", class: 'btn btn-primary' }]
     );
 }
