@@ -152,9 +152,9 @@ public class PlayerStatService {
 
     private int creditsForDifficulty(OpponentDifficulty difficulty) {
         return switch (difficulty) {
-            case EASY -> 1;
-            case MEDIUM -> 2;
-            case HARD -> 3;
+            case EASY -> 2;
+            case MEDIUM -> 4;
+            case HARD -> 6;
         };
     }
 }
