@@ -47,17 +47,12 @@ public class SuggestionService {
         String className = normalizeClassName(classNameRaw);
         List<Suggestion> available = suggestionRepository.findByDifficultyAndClassNameIgnoreCaseAndTier(difficulty, className, tier);
 
-        if (available.isEmpty() && tier == SuggestionTier.ADVANCED) {
+        if (available.isEmpty()) {
             return SuggestionAvailabilityResponseDTO.builder()
                     .availableSuggestions(0)
                     .suggestionsMax(0)
                     .totalAvailableSuggestions(0)
                     .build();
-        }
-
-        if (available.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Nessun suggerimento disponibile per la difficolta " + difficulty + " e classe " + className + " nel tier " + tier);
         }
 
         int effectiveCap = capForTier(difficulty, tier, available.size());

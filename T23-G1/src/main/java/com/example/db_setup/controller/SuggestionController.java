@@ -68,8 +68,7 @@ public class SuggestionController {
             description = "Ritorna quanti suggerimenti distinti sono realmente disponibili per classe e difficolta."
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Disponibilita calcolata"),
-            @ApiResponse(responseCode = "404", description = "Nessun suggerimento disponibile")
+            @ApiResponse(responseCode = "200", description = "Disponibilita calcolata (0 se nessun suggerimento disponibile)")
     })
     @PostMapping("/disponibilita")
     public ResponseEntity<SuggestionAvailabilityResponseDTO> getAvailability(@Valid @RequestBody SuggestionAvailabilityRequestDTO request) {
