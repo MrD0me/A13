@@ -966,6 +966,11 @@ function mostraSuggerimenti(data, options) {
                     console.warn('Impossibile decodificare il suggerimento:', err);
                 }
                 inserisciSuggerimentoNelCodice(testo);
+                var modalEl = document.getElementById('suggerimentiModal');
+                if (modalEl) {
+                    var instance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                    instance.hide();
+                }
             });
         });
     }, 100);
@@ -1044,6 +1049,7 @@ function flush_localStorage(){
     pulisciLocalStorage("advancedSuggestionsAvailable");
     pulisciLocalStorage("advancedSuggestionsMax");
 }
+
 
 
 
