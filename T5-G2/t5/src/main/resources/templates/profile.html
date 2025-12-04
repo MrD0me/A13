@@ -84,7 +84,7 @@
 										<div class="text-center">
 											<i class="bi bi-stars fs-6 d-block mb-2"></i>
 											<h4 class="mb-0 fw-semibold lh-1">
-												<span th:text="${hintCredits}" class="badge bg-info text-dark px-3 py-2 rounded-pill">0</span>
+												<span id="hintCreditsCount" th:text="${hintCredits}" class="badge bg-info text-dark px-3 py-2 rounded-pill">0</span>
 											</h4>
 											<p class="mb-0 fs-6">Crediti suggerimenti</p>
 										</div>
@@ -111,6 +111,13 @@
 											>
 												Teams <i class="bi bi-people-fill"></i>
 											</a>
+											<button
+												id="addTestCreditsBtn"
+												class="btn btn-warning text-dark"
+												type="button"
+											>
+												+2 crediti (test)
+											</button>
 										</div>
 										<!-- Se pagina amico -->
 										<div th:if="${isFriendProfile == true}">
@@ -394,6 +401,40 @@
 
 				// Inizializza la logica per ogni gruppo
 				setupVisibilityAndSearch(configFollowers);
+			});
+		</script>
+
+		<script>
+			document.addEventListener("DOMContentLoaded", function () {
+				const addCreditsBtn = document.getElementById("addTestCreditsBtn");
+				const creditsBadge = document.getElementById("hintCreditsCount");
+
+				if (!addCreditsBtn || !creditsBadge) {
+					return;
+				}
+
+				addCreditsBtn.addEventListener("click", async function () {
+					addCreditsBtn.disabled = true;
+					try {
+						const response = await fetch("/profile/add_hint_credits_test", {
+							method: "POST",
+						});
+
+						if (!response.ok) {
+							throw new Error("Errore di rete");
+						}
+
+						const data = await response.json();
+						if (typeof data.credits === "number") {
+							creditsBadge.textContent = data.credits;
+						}
+					} catch (error) {
+						console.error("Errore durante l'aggiunta dei crediti di test:", error);
+						alert("Impossibile aggiungere i crediti di test.");
+					} finally {
+						addCreditsBtn.disabled = false;
+					}
+				});
 			});
 		</script>
 
