@@ -22,12 +22,19 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.Base64;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 
 /*
@@ -40,6 +47,7 @@ public class UserProfileController {
     private static final Logger logger = LoggerFactory.getLogger(UserProfileController.class);
     private final ServiceManager serviceManager;
     private GameConfigData gameConfigData = null;
+    private final ObjectMapper objectMapper = new ObjectMapper();
     @Value("${config.gamification.file}")
     private String gamificationConFile;
 
@@ -51,7 +59,6 @@ public class UserProfileController {
     @PostConstruct
     public void init() {
         try {
-            ObjectMapper objectMapper = new ObjectMapper();
             File file = new File("%s/%s".formatted(System.getProperty("user.dir"), gamificationConFile.replace("/", File.separator)));
             this.gameConfigData = objectMapper.readValue(file, GameConfigData.class);
         } catch (IOException e) {
@@ -151,6 +158,28 @@ public class UserProfileController {
     }
 
     /*
+     * Endpoint temporaneo per facilitare i test: aggiunge 2 crediti suggerimenti all'utente corrente.
+     */
+    @PostMapping("/profile/add_hint_credits_test")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> addTestHintCredits() {
+        Long userId = extractUserIdFromJwt();
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Utente non autenticato"));
+        }
+
+        try {
+            Integer newBalance = (Integer) serviceManager.handleRequest("T23", "addHintCredits", userId, 2);
+            return ResponseEntity.ok(Map.of("credits", newBalance));
+        } catch (Exception e) {
+            logger.error("[addHintCreditsTest] Errore nell'aggiunta di crediti per l'utente {}", userId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Errore nell'aggiornamento dei crediti"));
+        }
+    }
+
+    /*
      *    TENERE QUESTA CHIAMATA SOLO PER DEBUG DA DISATTIVARE
      *
      */
@@ -199,4 +228,25 @@ public class UserProfileController {
         return editProfilePage.handlePageRequest();
     }
 
+    private Long extractUserIdFromJwt() {
+        String jwtCookie = JwtRequestContext.getJwtToken();
+        if (jwtCookie == null || jwtCookie.isEmpty()) {
+            return null;
+        }
+
+        try {
+            String rawJwt = jwtCookie.contains("=") ? jwtCookie.substring(jwtCookie.indexOf('=') + 1) : jwtCookie;
+            String[] parts = rawJwt.split("\\.");
+            if (parts.length < 2) {
+                return null;
+            }
+            String payloadJson = new String(Base64.getDecoder().decode(parts[1]), StandardCharsets.UTF_8);
+            Map<?, ?> payload = objectMapper.readValue(payloadJson, Map.class);
+            Object userId = payload.get("userId");
+            return userId != null ? Long.parseLong(userId.toString()) : null;
+        } catch (Exception e) {
+            logger.error("[extractUserIdFromJwt] Impossibile estrarre userId dal token", e);
+            return null;
+        }
+    }
 }

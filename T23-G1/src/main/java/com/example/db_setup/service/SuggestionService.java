@@ -2,11 +2,13 @@ package com.example.db_setup.service;
 
 import com.example.db_setup.model.Suggestion;
 import com.example.db_setup.model.SuggestionDifficulty;
+import com.example.db_setup.model.SuggestionTier;
+import com.example.db_setup.model.dto.suggestion.AdvancedSuggestionRequestDTO;
+import com.example.db_setup.model.dto.suggestion.SuggestionAvailabilityResponseDTO;
 import com.example.db_setup.model.dto.suggestion.SuggestionImportItemDTO;
 import com.example.db_setup.model.dto.suggestion.SuggestionImportRequestDTO;
 import com.example.db_setup.model.dto.suggestion.SuggestionRequestDTO;
 import com.example.db_setup.model.dto.suggestion.SuggestionResponseDTO;
-import com.example.db_setup.model.dto.suggestion.SuggestionAvailabilityResponseDTO;
 import com.example.db_setup.model.repository.SuggestionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,8 +20,8 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 /**
@@ -29,21 +31,35 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SuggestionService {
 
+    //variabile di fallback
+    //la vera variabile che controlla il costo dei suggerimenti avanzati si trova
+    //in Button_editor (T5)
+    private static final int DEFAULT_ADVANCED_COST = 2;
+
     private final SuggestionRepository suggestionRepository;
+    private final PlayerProgressService playerProgressService;
     /**
-     * Traccia gli ID dei suggerimenti gi� mostrati per partita/classe/difficolt� cos� da non ripeterli.
+     * Traccia gli ID dei suggerimenti già mostrati per partita/classe/difficoltà così da non ripeterli.
      */
     private final ConcurrentHashMap<String, Set<Long>> deliveredSuggestions = new ConcurrentHashMap<>();
 
     @Transactional(readOnly = true)
-    public SuggestionAvailabilityResponseDTO getAvailability(String difficultyRaw, String classNameRaw) {
+    public SuggestionAvailabilityResponseDTO getAvailability(String difficultyRaw, String classNameRaw, String tierRaw) {
         SuggestionDifficulty difficulty = mapDifficulty(difficultyRaw);
+        SuggestionTier tier = mapTier(tierRaw);
         String className = normalizeClassName(classNameRaw);
-        List<Suggestion> available = fetchSuggestions(difficulty, className);
-        int difficultyCap = maxForDifficulty(difficulty);
-        int effectiveCap = Math.min(difficultyCap, available.size());
-        // Il numero di suggerimenti inizialmente disponibili coincide con il 
-        // numero di suggerimenti realmente utilizzabili, avente come limite superiore il numero dato dalla difficoltà.
+        List<Suggestion> available = suggestionRepository.findByDifficultyAndClassNameIgnoreCaseAndTier(difficulty, className, tier);
+
+        if (available.isEmpty()) {
+            return SuggestionAvailabilityResponseDTO.builder()
+                    .availableSuggestions(0)
+                    .suggestionsMax(0)
+                    .totalAvailableSuggestions(0)
+                    .build();
+        }
+
+        int effectiveCap = capForTier(difficulty, tier, available.size());
+        // Il numero di suggerimenti disponibili coincide con i suggerimenti realmente utilizzabili.
         return SuggestionAvailabilityResponseDTO.builder()
                 .availableSuggestions(effectiveCap)
                 .suggestionsMax(effectiveCap)
@@ -53,17 +69,35 @@ public class SuggestionService {
 
     @Transactional(readOnly = true)
     public SuggestionResponseDTO requestSuggestions(SuggestionRequestDTO request) {
+        return requestSuggestionsInternal(request, SuggestionTier.BASE, null, null);
+    }
+
+    @Transactional
+    public SuggestionResponseDTO requestAdvancedSuggestions(AdvancedSuggestionRequestDTO request) {
+        return requestSuggestionsInternal(request, SuggestionTier.ADVANCED, request.getPlayerId(), request.getCost());
+    }
+
+    private SuggestionResponseDTO requestSuggestionsInternal(SuggestionRequestDTO request,
+                                                             SuggestionTier tier,
+                                                             Long playerId,
+                                                             Integer requestedCost) {
         SuggestionDifficulty difficulty = mapDifficulty(request.getDifficulty());
         String className = normalizeClassName(request.getClassName());
-        List<Suggestion> available = fetchSuggestions(difficulty, className);
+        List<Suggestion> available = suggestionRepository.findByDifficultyAndClassNameIgnoreCaseAndTier(difficulty, className, tier);
 
-        int difficultyCap = maxForDifficulty(difficulty);
-        // Limite massimo di suggerimenti considerando sia la difficoltà sia quante entry esistono davvero.
-        int effectiveCap = Math.min(difficultyCap, available.size());
+        if (available.isEmpty() && tier == SuggestionTier.ADVANCED) {
+            return buildEmptyResponse(0, 0, tier, "Nessun suggerimento avanzato disponibile per questa combinazione.");
+        }
+        if (available.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "Nessun suggerimento disponibile per la difficolta " + difficulty + " e classe " + className + " nel tier " + tier);
+        }
 
-        String sessionKey = buildSessionKey(request.getGameId(), className, difficulty);
+        int effectiveCap = capForTier(difficulty, tier, available.size());
+        String sessionKey = buildSessionKey(request.getGameId(), className, difficulty, tier);
+
         // Se il client segnala un reset (es. nuova partita) azzeriamo la memoria dei suggerimenti già mostrati.
-        maybeResetSession(request.getRemainingSuggestions(), effectiveCap, sessionKey);
+        maybeResetSession(request.getRemainingSuggestions(), effectiveCap, sessionKey, request.getGameId());
         Set<Long> alreadyDelivered = deliveredSuggestions.computeIfAbsent(sessionKey, key -> ConcurrentHashMap.newKeySet());
         // Allineiamo il set alle entry ancora presenti nel database per evitare contatori sballati dopo un import.
         Set<Long> validSuggestionIds = available.stream()
@@ -71,49 +105,39 @@ public class SuggestionService {
                 .collect(Collectors.toSet());
         alreadyDelivered.retainAll(validSuggestionIds);
 
-        // Se abbiamo già erogato tutti i suggerimenti disponibili per questa difficoltà/classe mostriamo che siamo a zero.
-        if (alreadyDelivered.size() >= effectiveCap) {
-            return SuggestionResponseDTO.builder()
-                    .suggestions(Collections.emptyList())
-                    .remainingSuggestions(0)
-                    .suggestionsAvailable(0)
-                    .suggestionsMax(effectiveCap)
-                    .totalAvailableSuggestions(effectiveCap)
-                    .noMoreSuggestions(true)
-                    .message("Non sono piu disponibili suggerimenti per questa partita.")
-                    .build();
+        SuggestionSelection selection = selectSuggestion(available, alreadyDelivered, effectiveCap);
+        if (selection.suggestion == null) {
+            return buildEmptyResponse(effectiveCap, selection.remainingAfterPick, tier,
+                    "Non sono piu disponibili suggerimenti per questa partita.");
         }
 
-        List<Suggestion> notServed = available.stream()
-                .filter(suggestion -> !alreadyDelivered.contains(suggestion.getId()))
-                .collect(Collectors.toList());
-
-        if (notServed.isEmpty()) {
-            return SuggestionResponseDTO.builder()
-                    .suggestions(Collections.emptyList())
-                    .remainingSuggestions(Math.max(effectiveCap - alreadyDelivered.size(), 0))
-                    .suggestionsAvailable(Math.max(effectiveCap - alreadyDelivered.size(), 0))
-                    .suggestionsMax(effectiveCap)
-                    .totalAvailableSuggestions(effectiveCap)
-                    .noMoreSuggestions(true)
-                    .message("Non sono piu disponibili suggerimenti per questa partita.")
-                    .build();
+        int cost = (requestedCost != null && requestedCost > 0) ? requestedCost : DEFAULT_ADVANCED_COST;
+        Integer creditsLeft = null;
+        Integer creditsSpent = null;
+        if (tier == SuggestionTier.ADVANCED) {
+            if (playerId == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "playerId obbligatorio per i suggerimenti avanzati");
+            }
+            creditsLeft = playerProgressService.spendHintCredits(playerId, cost);
+            creditsSpent = cost;
         }
 
-        Suggestion chosen = pickRandomSuggestion(notServed);
-        alreadyDelivered.add(chosen.getId());
-        int deliveredCount = Math.min(alreadyDelivered.size(), effectiveCap);
-        int remaining = Math.max(effectiveCap - deliveredCount, 0);
+        alreadyDelivered.add(selection.suggestion.getId());
+        int remaining = Math.max(effectiveCap - alreadyDelivered.size(), 0);
         boolean noMore = remaining == 0;
 
         return SuggestionResponseDTO.builder()
-                .suggestions(Collections.singletonList(chosen.getText()))
+                .suggestions(Collections.singletonList(selection.suggestion.getText()))
                 .remainingSuggestions(remaining)
                 .suggestionsAvailable(remaining)
                 .suggestionsMax(effectiveCap)
                 .totalAvailableSuggestions(effectiveCap)
                 .noMoreSuggestions(noMore)
                 .message(noMore ? "Non sono piu disponibili suggerimenti per questa partita." : null)
+                .creditsLeft(creditsLeft)
+                .creditsSpent(creditsSpent)
+                .suggestionCost(tier == SuggestionTier.ADVANCED ? cost : null)
+                .tier(tier.name())
                 .build();
     }
 
@@ -143,21 +167,22 @@ public class SuggestionService {
         }
     }
 
-    private List<Suggestion> fetchSuggestions(SuggestionDifficulty difficulty, String className) {
-        List<Suggestion> filtered = suggestionRepository.findByDifficultyAndClassNameIgnoreCase(difficulty, className);
-        if (filtered.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Nessun suggerimento disponibile per la difficolta " + difficulty + " e classe " + className);
+    private SuggestionTier mapTier(String tierRaw) {
+        try {
+            return SuggestionTier.fromString(tierRaw);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
         }
-        return filtered;
     }
 
     private Suggestion buildSuggestion(String className, SuggestionImportItemDTO item) {
         SuggestionDifficulty difficulty = mapDifficulty(item.getDifficulty());
+        SuggestionTier tier = mapTier(item.getTier());
         String text = normalizeText(item.getText());
         return Suggestion.builder()
                 .className(className)
                 .difficulty(difficulty)
+                .tier(tier)
                 .text(text)
                 .language("it")
                 .build();
@@ -186,15 +211,26 @@ public class SuggestionService {
         return suggestions.get(index);
     }
 
-    private String buildSessionKey(Long gameId, String className, SuggestionDifficulty difficulty) {
+    private String buildSessionKey(Long gameId, String className, SuggestionDifficulty difficulty, SuggestionTier tier) {
         String base = (gameId != null && gameId > 0) ? "game-" + gameId : "nogame";
-        return base + "|" + className.toLowerCase() + "|" + difficulty.name();
+        return base + "|" + className.toLowerCase() + "|" + difficulty.name() + "|" + tier.name();
     }
 
-    private void maybeResetSession(Integer remainingClient, int effectiveCap, String sessionKey) {
+    private void maybeResetSession(Integer remainingClient, int effectiveCap, String sessionKey, Long gameId) {
+        // Se la partita ha un identificativo valido, usiamo sempre lo stato server-side senza fidarci del contatore client.
+        if (gameId != null && gameId > 0) {
+            return;
+        }
         if (remainingClient != null && remainingClient >= effectiveCap) {
             deliveredSuggestions.remove(sessionKey);
         }
+    }
+
+    private int capForTier(SuggestionDifficulty difficulty, SuggestionTier tier, int availableCount) {
+        if (tier == SuggestionTier.ADVANCED) {
+            return availableCount;
+        }
+        return Math.min(maxForDifficulty(difficulty), availableCount);
     }
 
     private int maxForDifficulty(SuggestionDifficulty difficulty) {
@@ -213,5 +249,48 @@ public class SuggestionService {
                 SuggestionDifficulty.MEDIUM.name(), maxForDifficulty(SuggestionDifficulty.MEDIUM),
                 SuggestionDifficulty.HARD.name(), maxForDifficulty(SuggestionDifficulty.HARD)
         );
+    }
+
+    private SuggestionSelection selectSuggestion(List<Suggestion> available, Set<Long> alreadyDelivered, int effectiveCap) {
+        if (alreadyDelivered.size() >= effectiveCap) {
+            return new SuggestionSelection(null, 0);
+        }
+
+        List<Suggestion> notServed = available.stream()
+                .filter(suggestion -> !alreadyDelivered.contains(suggestion.getId()))
+                .collect(Collectors.toList());
+
+        if (notServed.isEmpty()) {
+            int remaining = Math.max(effectiveCap - alreadyDelivered.size(), 0);
+            return new SuggestionSelection(null, remaining);
+        }
+
+        Suggestion chosen = pickRandomSuggestion(notServed);
+        int deliveredCount = Math.min(alreadyDelivered.size() + 1, effectiveCap);
+        int remaining = Math.max(effectiveCap - deliveredCount, 0);
+        return new SuggestionSelection(chosen, remaining);
+    }
+
+    private SuggestionResponseDTO buildEmptyResponse(int effectiveCap, int remaining, SuggestionTier tier, String message) {
+        return SuggestionResponseDTO.builder()
+                .suggestions(Collections.emptyList())
+                .remainingSuggestions(remaining)
+                .suggestionsAvailable(remaining)
+                .suggestionsMax(effectiveCap)
+                .totalAvailableSuggestions(effectiveCap)
+                .noMoreSuggestions(true)
+                .message(message)
+                .tier(tier.name())
+                .build();
+    }
+
+    private static final class SuggestionSelection {
+        private final Suggestion suggestion;
+        private final int remainingAfterPick;
+
+        private SuggestionSelection(Suggestion suggestion, int remainingAfterPick) {
+            this.suggestion = suggestion;
+            this.remainingAfterPick = remainingAfterPick;
+        }
     }
 }

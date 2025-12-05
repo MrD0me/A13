@@ -15,4 +15,9 @@ public class SuggestionAvailabilityRequestDTO {
 
     @NotBlank
     private String className;
+
+    /**
+     * Facoltativo: BASE (default) oppure ADVANCED.
+     */
+    private String tier;
 }

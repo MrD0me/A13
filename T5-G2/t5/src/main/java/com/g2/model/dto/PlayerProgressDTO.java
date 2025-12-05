@@ -14,6 +14,7 @@ import java.util.Set;
 @ToString
 public class PlayerProgressDTO {
     private int experiencePoints;
+    private int hintCredits;
     private Set<String> globalAchievements;
     private List<GameProgressDTO> gameProgressesDTO;
 }

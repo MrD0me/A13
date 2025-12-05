@@ -282,6 +282,9 @@ async function startGame() {
                 localStorage.removeItem("suggestionHistory");
                 localStorage.setItem("suggestionsMax", String(maxSuggestions));
                 localStorage.setItem("suggestionsAvailable", String(maxSuggestions));
+                localStorage.removeItem("advancedSuggestionHistory");
+                localStorage.setItem("advancedSuggestionsMax", "0");
+                localStorage.setItem("advancedSuggestionsAvailable", "0");
 
                 // Aggiorna il contatore della UI se presente
                 try { updateSuggestionCounter(); } catch(e) { /* ignore */ }

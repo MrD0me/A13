@@ -27,4 +27,13 @@ public class SuggestionResponseDTO {
     private int suggestionsAvailable;
     private boolean noMoreSuggestions;
     private String message;
+
+    /** Crediti residui dopo l'eventuale acquisto di un suggerimento avanzato. */
+    private Integer creditsLeft;
+    /** Crediti consumati per ottenere il suggerimento. */
+    private Integer creditsSpent;
+    /** Costo per singolo suggerimento. */
+    private Integer suggestionCost;
+    /** Tier del suggerimento servito (BASE o ADVANCED). */
+    private String tier;
 }

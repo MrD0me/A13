@@ -12,4 +12,9 @@ public class SuggestionImportItemDTO {
 
     @NotBlank
     private String text;
+
+    /**
+     * Facoltativo: indica se il suggerimento è BASE o ADVANCED. Default BASE.
+     */
+    private String tier;
 }

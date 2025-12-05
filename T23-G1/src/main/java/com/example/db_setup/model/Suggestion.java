@@ -61,6 +61,14 @@ public class Suggestion {
     @Column(length = 8)
     private String language;
 
+    /**
+     * Indica se il suggerimento è base oppure avanzato (a pagamento).
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 16, nullable = false, columnDefinition = "varchar(16) default 'BASE'")
+    @Builder.Default
+    private SuggestionTier tier = SuggestionTier.BASE;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -72,10 +80,16 @@ public class Suggestion {
         Instant now = Instant.now();
         createdAt = now;
         updatedAt = now;
+        if (tier == null) {
+            tier = SuggestionTier.BASE;
+        }
     }
 
     @PreUpdate
     void onUpdate() {
         updatedAt = Instant.now();
+        if (tier == null) {
+            tier = SuggestionTier.BASE;
+        }
     }
 }
