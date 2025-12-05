@@ -94,7 +94,7 @@ public class SuggestionService {
         String sessionKey = buildSessionKey(request.getGameId(), className, difficulty, tier);
 
         // Se il client segnala un reset (es. nuova partita) azzeriamo la memoria dei suggerimenti già mostrati.
-        maybeResetSession(request.getRemainingSuggestions(), effectiveCap, sessionKey);
+        maybeResetSession(request.getRemainingSuggestions(), effectiveCap, sessionKey, request.getGameId());
         Set<Long> alreadyDelivered = deliveredSuggestions.computeIfAbsent(sessionKey, key -> ConcurrentHashMap.newKeySet());
         // Allineiamo il set alle entry ancora presenti nel database per evitare contatori sballati dopo un import.
         Set<Long> validSuggestionIds = available.stream()
@@ -213,7 +213,11 @@ public class SuggestionService {
         return base + "|" + className.toLowerCase() + "|" + difficulty.name() + "|" + tier.name();
     }
 
-    private void maybeResetSession(Integer remainingClient, int effectiveCap, String sessionKey) {
+    private void maybeResetSession(Integer remainingClient, int effectiveCap, String sessionKey, Long gameId) {
+        // Se la partita ha un identificativo valido, usiamo sempre lo stato server-side senza fidarci del contatore client.
+        if (gameId != null && gameId > 0) {
+            return;
+        }
         if (remainingClient != null && remainingClient >= effectiveCap) {
             deliveredSuggestions.remove(sessionKey);
         }

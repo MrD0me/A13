@@ -305,19 +305,27 @@ function initSuggestionCounters(){
     var difficulty = localStorage.getItem("difficulty") || "EASY";
     var className = localStorage.getItem("underTestClassName") || "";
     var max = parseInt(localStorage.getItem("suggestionsMax"), 10);
+    var history = getSuggestionHistory();
+    var historyEmpty = !history || history.length === 0;
 
     //Fallback front-end (utilizzando suggestionsMaxForDifficulty) nel caso di errore lato backend.
-    // All'avvio usiamo il limite per difficoltà, ma appena possibile lo sostituiamo col cap reale da backend.
+    // All'avvio usiamo il limite per difficolta, ma appena possibile lo sostituiamo col cap reale da backend.
     if(isNaN(max) || max <= 0){
         max = suggestionsMaxForDifficulty(difficulty);
-        localStorage.setItem("suggestionsMax", max);
     }
+    localStorage.setItem("suggestionsMax", max);
 
     var available = parseInt(localStorage.getItem("suggestionsAvailable"), 10);
-    if(isNaN(available) || available < 0 || available > max){
+    if(isNaN(available) || available < 0){
         available = max;
-        localStorage.setItem("suggestionsAvailable", available);
+    } else {
+        available = Math.min(available, max);
     }
+    localStorage.setItem("suggestionsAvailable", available);
+
+    // Nel caso di ripresa di una partita giÃ  in corso, garantiamo che il contatore dei suggerimenti rimanenti
+    // non sia sballato.
+    var existingAvailable = historyEmpty ? null : available;
 
     // Se abbiamo la classe, chiediamo subito al backend il cap reale senza consumare suggerimenti.
     if(className){
@@ -337,10 +345,18 @@ function initSuggestionCounters(){
             var maxFromServer = parseInt(data.suggestionsMax || data.totalAvailableSuggestions, 10);
             var availableFromServer = parseInt(data.availableSuggestions || data.totalAvailableSuggestions, 10);
             if(maxFromServer && maxFromServer > 0){
-                localStorage.setItem("suggestionsMax", maxFromServer);
+                max = maxFromServer;
+                localStorage.setItem("suggestionsMax", max);
+                available = Math.min(available, max);
             }
             if(!isNaN(availableFromServer) && availableFromServer >= 0){
-                localStorage.setItem("suggestionsAvailable", availableFromServer);
+                if(existingAvailable === null){
+                    available = availableFromServer;
+                } else {
+                    available = Math.min(existingAvailable, availableFromServer);
+                }
+                available = Math.min(available, max);
+                localStorage.setItem("suggestionsAvailable", available);
             }
             updateSuggestionCounter();
         })
@@ -355,7 +371,6 @@ function initSuggestionCounters(){
         updateSuggestionCounter();
     }
 }
-
 function updateSuggestionCounter(){
     var counter = document.getElementById("suggestion-counter");
     if(!counter) return;
@@ -776,7 +791,7 @@ function richiediSuggerimento() {
             if(maxFromServer && maxFromServer > 0){
                 localStorage.setItem("suggestionsMax", maxFromServer);
             } else {
-                // Fallback per compatibilità se il backend non fornisse il cap.
+                // Fallback per compatibilitï¿½ se il backend non fornisse il cap.
                 var fallbackMax = suggestionsMaxForDifficulty(difficulty);
                 localStorage.setItem("suggestionsMax", fallbackMax);
             }
@@ -1049,6 +1064,7 @@ function flush_localStorage(){
     pulisciLocalStorage("advancedSuggestionsAvailable");
     pulisciLocalStorage("advancedSuggestionsMax");
 }
+
 
 
 
