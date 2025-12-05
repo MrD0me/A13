@@ -639,7 +639,7 @@ function renderAdvancedSuggestionHistory() {
     if (history.length === 0) {
         var emptyItem = document.createElement("li");
         emptyItem.className = "list-group-item";
-        emptyItem.textContent = "Nessun suggerimento avanzato ricevuto.";
+        emptyItem.textContent = suggerimenti_nessuno_avanzato;
         list.appendChild(emptyItem);
         return;
     }

@@ -227,7 +227,7 @@
                 <!-- MENU SUGGERIMENTI -->
                 <div class="dropdown mx-2">
                     <button type="button" class="btn btn-sm btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
-                        <i class="bi bi-stars"></i> <small>Suggerimenti</small> <!-- <span id="suggestion-counter-badge" class="badge bg-light text-dark ms-1" style="font-size: 0.7rem;">0/0</span> -->
+                        <i class="bi bi-stars"></i> <small th:text="#{suggerimenti}">Suggerimenti</small>
                     </button>
                     <div class="dropdown-menu dropdown-menu-start p-0" style="width: 320px; font-size: 0.85rem;">
                         <div class="container-fluid p-0">
@@ -235,12 +235,12 @@
                             <ul class="nav nav-tabs nav-tabs-sm" id="suggestionTabs" role="tablist" style="font-size: 0.8rem;">
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link active py-1 px-2" id="base-tab" data-bs-toggle="tab" data-bs-target="#base-panel" type="button" role="tab" aria-controls="base-panel" aria-selected="true">
-                                        <small>Base</small>
+                                        <small th:text="#{suggerimenti_base}">Base</small>
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link py-1 px-2" id="advanced-tab" data-bs-toggle="tab" data-bs-target="#advanced-panel" type="button" role="tab" aria-controls="advanced-panel" aria-selected="false">
-                                        <small>Avanzato</small>
+                                        <small th:text="#{suggerimenti_avanzato}">Avanzato</small>
                                     </button>
                                 </li>
                             </ul>
@@ -250,51 +250,54 @@
                                 <div class="tab-pane fade show active" id="base-panel" role="tabpanel" aria-labelledby="base-tab">
                                     <!-- Contatore -->
                                     <div class="mb-2 py-1 px-2 text-center">
-                                        <small><strong>Disponibili:</strong> <span id="suggestion-counter" class="badge bg-light text-dark rounded-pill px-2">0/0</span></small>
+                                        <small><strong th:text="#{suggerimenti_disponibili}">Disponibili:</strong> <span id="suggestion-counter" class="badge bg-light text-dark rounded-pill px-2">0/0</span></small>
                                     </div>
                                     <!-- Pulsante Richiedi Suggerimento -->
                                     <div class="text-center mb-2">
                                         <button type="button" class="btn btn-sm btn-warning mb-2" id="suggerimento">
-                                            <i class="bi bi-stars"></i> <small>Richiedi Suggerimento</small>
+                                            <i class="bi bi-stars"></i> <small th:text="#{suggerimenti_richiedi}">Richiedi Suggerimento</small>
                                         </button>
                                     </div>
                                     <!-- Pulsante Mostra Storico -->
                                     <div class="text-center mb-2">
                                         <button type="button" class="btn btn-sm btn-info mb-2" id="showSuggestionHistory">
-                                            <i class="bi bi-clock-history"></i> <small>Suggerimenti ottenuti</small>
+                                            <i class="bi bi-clock-history"></i> <small th:text="#{suggerimenti_storico}">Suggerimenti ottenuti</small>
                                         </button>
                                     </div>
                                 </div>
                                 <!-- TAB AVANZATO -->
                                 <div class="tab-pane fade" id="advanced-panel" role="tabpanel" aria-labelledby="advanced-tab">
-                                    <div class="mb-2 py-1 px-2 text-center">
-                                        <small><strong>Crediti:</strong> <span id="advanced-credits-badge" class="badge bg-success rounded-pill px-2">0</span></small>
+                                    <!-- Prima riga: Disponibili (sinistra) e Crediti (destra) -->
+                                    <div class="mb-3 py-1 px-3 d-flex justify-content-between align-items-center">
+                                        <small><strong th:text="#{suggerimenti_disponibili}">Disponibili:</strong> <span id="advanced-suggestion-counter" class="badge bg-light text-dark rounded-pill px-2">0/0</span></small>
+                                        <small><strong th:text="#{suggerimenti_crediti}">Crediti:</strong> <span id="advanced-credits-badge" class="badge bg-success rounded-pill px-2">0</span></small>
                                     </div>
-                                    <div class="mb-2 py-1 px-2 text-center">
-                                        <small><strong>Disponibili:</strong> <span id="advanced-suggestion-counter" class="badge bg-light text-dark rounded-pill px-2">0/0</span></small>
-                                        <div class="text-muted"><small>Costo per suggerimento: <span id="advanced-suggestion-cost" class="badge bg-info text-dark">0</span> crediti</small></div>
-                                    </div>
-                                    <div class="text-center mb-2">
-                                        <button type="button" class="btn btn-sm btn-primary mb-2" id="advancedSuggestionBtn">
-                                            <i class="bi bi-lightning-charge-fill"></i> <small>Acquista suggerimento</small>
+                                    <!-- Seconda riga: Pulsante Acquista centrato -->
+                                    <div class="text-center mb-1">
+                                        <button type="button" class="btn btn-sm btn-primary" id="advancedSuggestionBtn">
+                                            <i class="bi bi-lightning-charge-fill"></i> <small th:text="#{suggerimenti_acquista}">Acquista suggerimento</small>
                                         </button>
                                     </div>
-                                      <div class="mb-2">
-          <small class="d-block fw-semibold">Suggerimenti avanzati ricevuti</small>
-          <ol
-                  id="advanced-suggestion-history-list"
-                  class="list-group list-group-flush list-group-numbered overflow-auto border-top"
-                  style="max-height: 150px"
-          >
-              <li class="list-group-item">
-                  Nessun suggerimento avanzato ricevuto.
-              </li>
-          </ol>
-      </div>
-                                  </div>
-                              </div>
-                          </div>
-                      </div>
+                                    <!-- Terza riga: Costo per suggerimento -->
+                                    <div class="mb-2 text-center">
+                                        <small class="text-muted" style="font-size: 0.75rem;"><span th:text="#{suggerimenti_costo}">Costo per suggerimento:</span> <span id="advanced-suggestion-cost">0</span> crediti</small>
+                                    </div>
+                                    <div class="mb-2">
+                                        <small class="d-block fw-semibold" th:text="#{suggerimenti_avanzati_ricevuti}">Suggerimenti avanzati ricevuti</small>
+                                        <ol
+                                            id="advanced-suggestion-history-list"
+                                            class="list-group list-group-flush list-group-numbered overflow-auto border-top"
+                                            style="max-height: 150px"
+                                        >
+                                            <li class="list-group-item" th:text="#{suggerimenti_nessuno_avanzato}">
+                                                Nessun suggerimento avanzato ricevuto.
+                                            </li>
+                                        </ol>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="">
                     <!-- UNDO e REDO -->
@@ -306,20 +309,20 @@
                     </button>
                     <!-- COVERAGE -->
                     <button
-                            class="btn btn-primary"
-                            type="button"
-                            id="coverageButton"
+                        class="btn btn-primary"
+                        type="button"
+                        id="coverageButton"
                     >
                         <div id="loading_cov">
-										<span
-                                                class="spinner-border spinner-border-sm"
-                                                aria-hidden="true"
-                                                style="display: none"
-                                        ></span>
+                            <span
+                                class="spinner-border spinner-border-sm"
+                                aria-hidden="true"
+                                style="display: none"
+                            ></span>
                             <i
-                                    id="loading_icon_1"
-                                    class="bi bi-play-fill"
-                                    aria-hidden="true"
+                                id="loading_icon_1"
+                                class="bi bi-play-fill"
+                                aria-hidden="true"
                             ></i>
                             <span role="status" data-title="Play" th:text="#{tasto_play}"></span>
                             <!-- Icona nascosta -->
@@ -371,13 +374,6 @@
                                                 aria-current="true"
                                         >
                                             <i class="bi bi-clock-history" th:text="#{storico}"></i>
-                                        </button>
-                                        <button
-                                                type="button"
-                                                onclick="showTabPane('paneSuggerimenti')"
-                                                class="list-group-item list-group-item-action"
-                                        >
-                                            <i class="bi bi-card-checklist"></i> Suggerimenti ricevuti
                                         </button>
                                         <button
                                                 type="button"
@@ -440,41 +436,6 @@
                                                 <div class="fw-bold" th:text="#{no_turni}">
                                                 </div>
                                             </div>
-                                        </li>
-                                    </ol>
-                                </div>
-                                <!-- SUGGERIMENTI -->
-                                <div
-                                        class="tab-pane fade overflow-y-auto"
-                                        id="paneSuggerimenti"
-                                        role="tabpanel"
-                                        aria-labelledby="pane-Suggerimenti"
-                                >
-                                    <div class="d-flex">
-                                        <button
-                                                type="button"
-                                                onclick="showTabPane('paneA')"
-                                                class="list-group-item mb-2 mx-2"
-                                        >
-                                            <i class="bi bi-arrow-left"></i>
-                                        </button>
-                                        <ol class="breadcrumb m-0 px-2">
-                                            <li class="breadcrumb-item">Menu</li>
-                                            <li
-                                                    class="breadcrumb-item active"
-                                                    aria-current="page"
-                                            >
-                                                Suggerimenti ricevuti
-                                            </li>
-                                        </ol>
-                                    </div>
-                                    <ol
-                                            id="suggestion-history-list"
-                                            class="list-group list-group-flush list-group-numbered overflow-auto border-top"
-                                            style="max-height: 150px"
-                                    >
-                                        <li class="list-group-item">
-                                            Nessun suggerimento ricevuto.
                                         </li>
                                     </ol>
                                 </div>
@@ -554,7 +515,7 @@
                                                 id="SearchItems"
                                                 style="display: none"
                                         >
-													</span>
+                                        </span>
                                     </div>
                                     <div class="input-group mb-2 px-2">
                                         <button
@@ -580,7 +541,7 @@
             </nav>
         </div>
         <div class="card-body m-0 p-0 overflow-y-auto overflow-x-auto" id="section_editor">
-						<textarea id="Editor_utente">
+            <textarea id="Editor_utente">
 /*Compila i campi "Nome" e "Cognome" con le informazioni richieste
 Nome: "inserire il proprio nome"
 Cognome: "inserire il proprio cognome"
@@ -681,8 +642,8 @@ public class TestClasse {
         <!-- CLASS UNDER TEST-->
         <div class="card-header p-0">
             <nav class="navbar bg-body-tertiary p-2">
-							<span class="navbar-brand lead my-0 py-0" th:text="#{classe_ut}">
-							</span>
+                <span class="navbar-brand lead my-0 py-0" th:text="#{classe_ut}">
+                </span>
                 <div class="">
                     <!-- INFO BUTTON -->
                     <span
@@ -695,20 +656,20 @@ public class TestClasse {
                             data-bs-placement="bottom"
                             data-bs-content="prova"
                     >
-									<i class="bi bi-info-circle"></i>
-								</span>
+                        <i class="bi bi-info-circle"></i>
+                    </span>
                     <!-- SUBMIT /RUN -->
                     <button class="btn btn-success" type="button" id="runButton">
                         <div id="loading_run">
-										<span
-                                                class="spinner-border spinner-border-sm"
-                                                aria-hidden="true"
-                                                style="display: none"
-                                        ></span>
+                            <span
+                                class="spinner-border spinner-border-sm"
+                                aria-hidden="true"
+                                style="display: none"
+                            ></span>
                             <i
-                                    id="loading_icon_1"
-                                    class="bi bi-play-fill"
-                                    aria-hidden="true"
+                                id="loading_icon_1"
+                                class="bi bi-play-fill"
+                                aria-hidden="true"
                             ></i>
                             <span role="status" data-title="Submit" th:text="#{submit}"></span>
                             <!-- Icona nascosta -->
@@ -821,31 +782,32 @@ public class TestClasse {
 <!-- FOOTER -->
 <div th:replace="fragments/footer :: footer"></div>
 <script th:inline="javascript">
-    const mode_sfida        	= /*[[#{modalità_sfida}]]*/ '';
-    const mode_allenamento  	= /*[[#{modalità_allenamento}]]*/ '';
-    const mode_scalata      	= /*[[#{modalità_scalata}]]*/ '';
-    const status_sending    	= /*[[#{stato_invio}]]*/ '';
-    const status_loading    	= /*[[#{stato_caricamento}]]*/ '';
-    const status_compiling 	 	= /*[[#{stato_compilazione}]]*/ '';
-    const status_ready      	= /*[[#{stato_pronto}]]*/ '';
-    const status_error      	= /*[[#{stato_errore}]]*/ '';
-    const status_turn_end   	= /*[[#{stato_turno_finito}]]*/ '';
-    const status_game_end   	= /*[[#{stato_partita_finita}]]*/ '';
-    const status_exit_game 	    = /*[[#{stato_uscita_partita}]]*/ '';
-    const status_inizia_partita = /*[[#{inizia_partita}]]*/ '';
-    const match_in_corso    	= /*[[#{match_in_corso}]]*/ '';
-    const loading           	= /*[[#{caricamento}]]*/ '';
-    const ClasseUT           	= /*[[#{classe_ut}]]*/ '';
-    const Difficolta           	= /*[[#{gamemode_difficulty}]]*/ '';
-    const score_partita_text    = /*[[#{partita_punteggio}]]*/ '';
-    const vai_home    			= /*[[#{home}]]*/ '';
-    const confirmationMessage   = /*[[#{confirmationMessage}]]*/ '';
+    const mode_sfida                = /*[[#{modalità_sfida}]]*/ '';
+    const mode_allenamento          = /*[[#{modalità_allenamento}]]*/ '';
+    const mode_scalata              = /*[[#{modalità_scalata}]]*/ '';
+    const status_sending            = /*[[#{stato_invio}]]*/ '';
+    const status_loading            = /*[[#{stato_caricamento}]]*/ '';
+    const status_compiling          = /*[[#{stato_compilazione}]]*/ '';
+    const status_ready              = /*[[#{stato_pronto}]]*/ '';
+    const status_error              = /*[[#{stato_errore}]]*/ '';
+    const status_turn_end           = /*[[#{stato_turno_finito}]]*/ '';
+    const status_game_end           = /*[[#{stato_partita_finita}]]*/ '';
+    const status_exit_game          = /*[[#{stato_uscita_partita}]]*/ '';
+    const status_inizia_partita     = /*[[#{inizia_partita}]]*/ '';
+    const match_in_corso            = /*[[#{match_in_corso}]]*/ '';
+    const loading                   = /*[[#{caricamento}]]*/ '';
+    const ClasseUT                  = /*[[#{classe_ut}]]*/ '';
+    const Difficolta                = /*[[#{gamemode_difficulty}]]*/ '';
+    const score_partita_text        = /*[[#{partita_punteggio}]]*/ '';
+    const vai_home                  = /*[[#{home}]]*/ '';
+    const confirmationMessage       = /*[[#{confirmationMessage}]]*/ '';
+    const suggerimenti_nessuno_avanzato = /*[[#{suggerimenti_nessuno_avanzato}]]*/ '';
 
     const unlockedNewAchievementMessage = {
         title: /*[[#{achievements_unlocked_title}]]*/ "Complimenti, hai sbloccato dei nuovi achievements",
         descr: /*[[#{achievements_unlocked_text}]]*/ "Hai sbloccato i seguenti nuovi achievements:"
     };
-    const previousGameObject	= /*[[${previousGameObject}]]*/ {};
+    const previousGameObject = /*[[${previousGameObject}]]*/ {};
     const achievementData = {
         "instructions": {
             name: /*[[#{instructions_name}]]*/ "Coverage Master",
