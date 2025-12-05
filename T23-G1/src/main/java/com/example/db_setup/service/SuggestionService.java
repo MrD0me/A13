@@ -31,6 +31,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SuggestionService {
 
+    //variabile di fallback
+    //la vera variabile che controlla il costo dei suggerimenti avanzati si trova
+    //in Button_editor (T5)
     private static final int DEFAULT_ADVANCED_COST = 2;
 
     private final SuggestionRepository suggestionRepository;
