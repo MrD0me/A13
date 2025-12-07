@@ -6,6 +6,7 @@ import com.groom.manvsclass.model.SuggestionDifficulty;
 import com.groom.manvsclass.model.SuggestionTier;
 import com.groom.manvsclass.model.dto.suggestion.AdvancedSuggestionRequestDTO;
 import com.groom.manvsclass.model.dto.suggestion.SuggestionAvailabilityResponseDTO;
+import com.groom.manvsclass.model.dto.suggestion.SuggestionListItemDTO;
 import com.groom.manvsclass.model.dto.suggestion.SuggestionImportItemDTO;
 import com.groom.manvsclass.model.dto.suggestion.SuggestionImportRequestDTO;
 import com.groom.manvsclass.model.dto.suggestion.SuggestionRequestDTO;
@@ -169,6 +170,37 @@ public class SuggestionService {
                 .language(StringUtils.hasText(request.getLanguage()) ? request.getLanguage().trim() : "it")
                 .build();
         return suggestionRepository.save(newSuggestion);
+    }
+
+    @Transactional(readOnly = true)
+    public List<SuggestionListItemDTO> listSuggestions(String classNameRaw, String difficultyRaw, String tierRaw) {
+        SuggestionDifficulty difficulty = mapDifficulty(difficultyRaw);
+        String className = normalizeClassName(classNameRaw);
+        List<Suggestion> results;
+        if (StringUtils.hasText(tierRaw)) {
+            SuggestionTier tier = mapTier(tierRaw);
+            results = suggestionRepository.findByDifficultyAndClassNameIgnoreCaseAndTier(difficulty, className, tier);
+        } else {
+            results = suggestionRepository.findByClassNameIgnoreCaseAndDifficulty(className, difficulty);
+        }
+        return results.stream()
+                .map(s -> new SuggestionListItemDTO(
+                        s.getId(),
+                        s.getText(),
+                        s.getClassName(),
+                        s.getDifficulty().name(),
+                        s.getTier() != null ? s.getTier().name() : SuggestionTier.BASE.name(),
+                        s.getLanguage()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void deleteSuggestion(Long id) {
+        if (!suggestionRepository.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Suggerimento non trovato");
+        }
+        suggestionRepository.deleteById(id);
     }
 
     private SuggestionDifficulty mapDifficulty(String difficulty) {

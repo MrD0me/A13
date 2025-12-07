@@ -15,5 +15,7 @@ public interface SuggestionRepository extends JpaRepository<Suggestion, Long> {
 
     List<Suggestion> findByDifficultyAndClassNameIgnoreCaseAndTier(SuggestionDifficulty difficulty, String className, SuggestionTier tier);
 
+    List<Suggestion> findByClassNameIgnoreCaseAndDifficulty(String className, SuggestionDifficulty difficulty);
+
     void deleteByClassNameIgnoreCase(String className);
 }

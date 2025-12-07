@@ -56,6 +56,8 @@ const APIS = {
     UPLOAD_OPPONENT: `${API_ADMIN_SERVICE_PREFIX}/opponents`,
     SUGGESTIONS: {
         CREATE: "/suggerimenti/admin/create",
+        LIST: "/suggerimenti/admin/list",
+        DELETE: (id) => `/suggerimenti/admin/${id}`,
     },
     OPPONENTS: {
         CLASSES_SUMMARY: "/opponents/classes/summary",

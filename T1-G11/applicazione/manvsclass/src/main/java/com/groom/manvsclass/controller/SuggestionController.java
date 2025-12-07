@@ -5,6 +5,7 @@ import com.groom.manvsclass.model.dto.suggestion.SuggestionAvailabilityRequestDT
 import com.groom.manvsclass.model.dto.suggestion.SuggestionAvailabilityResponseDTO;
 import com.groom.manvsclass.model.dto.suggestion.SuggestionCreateRequestDTO;
 import com.groom.manvsclass.model.dto.suggestion.SuggestionImportRequestDTO;
+import com.groom.manvsclass.model.dto.suggestion.SuggestionListItemDTO;
 import com.groom.manvsclass.model.dto.suggestion.SuggestionRequestDTO;
 import com.groom.manvsclass.model.dto.suggestion.SuggestionResponseDTO;
 import com.groom.manvsclass.service.SuggestionService;
@@ -18,6 +19,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -118,5 +123,22 @@ public class SuggestionController {
     public ResponseEntity<java.util.Map<String, Integer>> getCaps() {
         log.info("[POST /suggerimenti/config] richiesta configurazione caps");
         return ResponseEntity.ok(suggestionService.getCaps());
+    }
+
+    @Operation(summary = "Lista suggerimenti per classe/difficolta (uso admin)")
+    @GetMapping("/admin/list")
+    public ResponseEntity<java.util.List<SuggestionListItemDTO>> listSuggestions(@RequestParam String className,
+                                                                                 @RequestParam String difficulty,
+                                                                                 @RequestParam(required = false) String tier) {
+        log.info("[GET /suggerimenti/admin/list] className={} difficulty={} tier={}", className, difficulty, tier);
+        return ResponseEntity.ok(suggestionService.listSuggestions(className, difficulty, tier));
+    }
+
+    @Operation(summary = "Elimina suggerimento (uso admin)")
+    @DeleteMapping("/admin/{id}")
+    public ResponseEntity<Void> deleteSuggestion(@PathVariable Long id) {
+        log.info("[DELETE /suggerimenti/admin/{}]", id);
+        suggestionService.deleteSuggestion(id);
+        return ResponseEntity.noContent().build();
     }
 }
