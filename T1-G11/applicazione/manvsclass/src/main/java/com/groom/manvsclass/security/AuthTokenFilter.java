@@ -46,6 +46,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
         customLogger.info("[AuthTokenFilter] Authenticating request {} {}", request.getMethod(), request.getRequestURI());
         AntPathMatcher uriMatcher = new AntPathMatcher();
         boolean isSuggestionEndpoint = uriMatcher.match("/suggerimenti/**", request.getRequestURI());
+        boolean isAdminSuggestionEndpoint = uriMatcher.match("/suggerimenti/admin/**", request.getRequestURI());
 
         Cookie jwtCookie = WebUtils.getCookie(request, "jwt");
         Cookie refreshCookie = WebUtils.getCookie(request, "jwt-refresh");
@@ -54,8 +55,8 @@ public class AuthTokenFilter extends OncePerRequestFilter {
         String refreshToken = refreshCookie != null ? refreshCookie.getValue() : null;
 
         try {
-            // Per gli endpoint suggerimenti saltiamo la validazione remota per ridurre la latenza.
-            if (isSuggestionEndpoint) {
+            // Per gli endpoint suggerimenti di gioco saltiamo la validazione remota per ridurre la latenza.
+            if (isSuggestionEndpoint && !isAdminSuggestionEndpoint) {
                 if (jwt != null) {
                     JwtRequestContext.setJwtToken("%s=%s".formatted(jwtCookie.getName(), jwt));
                 }

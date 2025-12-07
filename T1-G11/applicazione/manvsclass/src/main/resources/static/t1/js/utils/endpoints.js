@@ -39,6 +39,7 @@ const VIEWS = {
     TEAMS_DETAILS: "/team/details",
 
     SCALATA_MAIN: "/scalata/main",
+    SUGGESTIONS_ADMIN: "/dashboard/suggestions",
 };
 
 const APIS = {
@@ -53,5 +54,10 @@ const APIS = {
     DOWNLOAD_CLASSUT: `${API_ADMIN_SERVICE_PREFIX}/opponents/download`,
     DELETE_OPPONENT: `${API_ADMIN_SERVICE_PREFIX}/opponents`,
     UPLOAD_OPPONENT: `${API_ADMIN_SERVICE_PREFIX}/opponents`,
+    SUGGESTIONS: {
+        CREATE: "/suggerimenti/admin/create",
+    },
+    OPPONENTS: {
+        CLASSES_SUMMARY: "/opponents/classes/summary",
+    }
 };
-

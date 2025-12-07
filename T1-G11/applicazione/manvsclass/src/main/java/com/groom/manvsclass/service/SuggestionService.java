@@ -10,6 +10,7 @@ import com.groom.manvsclass.model.dto.suggestion.SuggestionImportItemDTO;
 import com.groom.manvsclass.model.dto.suggestion.SuggestionImportRequestDTO;
 import com.groom.manvsclass.model.dto.suggestion.SuggestionRequestDTO;
 import com.groom.manvsclass.model.dto.suggestion.SuggestionResponseDTO;
+import com.groom.manvsclass.model.dto.suggestion.SuggestionCreateRequestDTO;
 import com.groom.manvsclass.model.repository.SuggestionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -155,6 +156,19 @@ public class SuggestionService {
                 .map(item -> buildSuggestion(normalizedClassName, item))
                 .collect(Collectors.toList());
         suggestionRepository.saveAll(toSave);
+    }
+
+    @Transactional
+    public Suggestion createSuggestion(SuggestionCreateRequestDTO request) {
+        String normalizedClassName = normalizeClassName(request.getClassName());
+        Suggestion newSuggestion = Suggestion.builder()
+                .className(normalizedClassName)
+                .difficulty(mapDifficulty(request.getDifficulty()))
+                .tier(mapTier(request.getTier()))
+                .text(normalizeText(request.getText()))
+                .language(StringUtils.hasText(request.getLanguage()) ? request.getLanguage().trim() : "it")
+                .build();
+        return suggestionRepository.save(newSuggestion);
     }
 
     private SuggestionDifficulty mapDifficulty(String difficulty) {

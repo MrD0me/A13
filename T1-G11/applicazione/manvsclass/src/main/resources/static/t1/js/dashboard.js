@@ -45,6 +45,14 @@ document.querySelector(".button-class").addEventListener("click", function () {
   window.location.href = VIEWS.OPPONENTS_MAIN;
 });
 
+// Imposto redirect alla pagina gestione suggerimenti
+const suggestionBtn = document.querySelector(".button-suggestions");
+if (suggestionBtn) {
+  suggestionBtn.addEventListener("click", () => {
+    window.location.href = VIEWS.SUGGESTIONS_ADMIN;
+  });
+}
+
 // Inizializzo al caricamento della pagina la mail dell'amministratore loggato
 document.addEventListener("DOMContentLoaded", () => {
   const jwtData = parseJwt(getCookie("jwt"));

@@ -3,6 +3,7 @@ package com.groom.manvsclass.controller;
 import com.groom.manvsclass.model.dto.suggestion.AdvancedSuggestionRequestDTO;
 import com.groom.manvsclass.model.dto.suggestion.SuggestionAvailabilityRequestDTO;
 import com.groom.manvsclass.model.dto.suggestion.SuggestionAvailabilityResponseDTO;
+import com.groom.manvsclass.model.dto.suggestion.SuggestionCreateRequestDTO;
 import com.groom.manvsclass.model.dto.suggestion.SuggestionImportRequestDTO;
 import com.groom.manvsclass.model.dto.suggestion.SuggestionRequestDTO;
 import com.groom.manvsclass.model.dto.suggestion.SuggestionResponseDTO;
@@ -88,6 +89,21 @@ public class SuggestionController {
         log.info("[POST /suggerimenti/import] className={}", request.getClassName());
         suggestionService.replaceSuggestions(request);
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(
+            summary = "Crea un nuovo suggerimento singolo",
+            description = "Endpoint per uso admin: inserisce un nuovo suggerimento per classe/difficolta/tier."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Suggerimento creato correttamente"),
+            @ApiResponse(responseCode = "400", description = "Payload non valido")
+    })
+    @PostMapping("/admin/create")
+    public ResponseEntity<Void> createSuggestion(@Valid @RequestBody SuggestionCreateRequestDTO request) {
+        log.info("[POST /suggerimenti/admin/create] className={} difficulty={} tier={}", request.getClassName(), request.getDifficulty(), request.getTier());
+        suggestionService.createSuggestion(request);
+        return ResponseEntity.status(201).build();
     }
 
     @Operation(

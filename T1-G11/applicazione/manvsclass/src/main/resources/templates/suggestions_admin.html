@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{suggestion.admin.title}">Inserisci Suggerimento</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/t1/css/dashboard.css}"/>
+    <style>
+        body { padding: 30px; }
+        .card { max-width: 680px; margin: 0 auto; background: #0f172a; color: #e2e8f0; border-radius: 16px; padding: 24px; box-shadow: 0 20px 80px rgba(0,0,0,0.35); }
+        .card h2 { margin-bottom: 12px; font-size: 26px; }
+        .card p { color: #94a3b8; margin-bottom: 20px; }
+        .form-grid { display: grid; gap: 16px; }
+        label { display: block; font-weight: 600; margin-bottom: 6px; }
+        input, select, textarea { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #1f2937; background: #111827; color: #e2e8f0; }
+        textarea { min-height: 120px; resize: vertical; }
+        .actions { display: flex; gap: 10px; margin-top: 10px; }
+        .btn { cursor: pointer; border: none; border-radius: 10px; padding: 12px 16px; font-weight: 600; }
+        .btn-primary { background: linear-gradient(135deg, #2563eb, #3b82f6); color: #fff; }
+        .btn-secondary { background: #1f2937; color: #e2e8f0; }
+        .alert { display: none; margin-top: 12px; padding: 10px 12px; border-radius: 8px; }
+        .alert.success { background: #10b981; color: #06291f; }
+        .alert.error { background: #f87171; color: #3b0b0b; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h2>Inserisci nuovo suggerimento</h2>
+    <p>Seleziona classe, difficoltà e tier e aggiungi il testo del suggerimento che verrà reso disponibile ai giocatori.</p>
+    <form id="suggestion-form">
+        <div class="form-grid">
+            <div>
+                <label for="className" th:text="#{homeAdmin_class}">Classe</label>
+                <select id="className" name="className" required>
+                    <option value="" disabled selected th:text="#{suggestion.admin.class.placeholder}">Seleziona una classe</option>
+                </select>
+            </div>
+            <div>
+                <label for="difficulty" th:text="#{uploadRobots_difficulty}">Difficoltà</label>
+                <select id="difficulty" name="difficulty" required></select>
+            </div>
+            <div>
+                <label for="tier" th:text="#{suggestion.admin.type}">Tipologia</label>
+                <select id="tier" name="tier"></select>
+            </div>
+            <div>
+                <label for="language" th:text="#{uploadRobots_language}">Lingua</label>
+                <input id="language" name="language" type="text" th:placeholder="#{suggestion.language.placeholder}" />
+            </div>
+            <div>
+                <label for="text" th:text="#{suggestion.admin.text}">Testo del suggerimento</label>
+                <textarea id="text" name="text" th:placeholder="#{suggestion.admin.text.placeholder}" required></textarea>
+            </div>
+        </div>
+        <div class="actions">
+            <button type="submit" class="btn btn-primary" th:text="#{suggestion.admin.save}">Salva suggerimento</button>
+            <button type="button" id="reset-form" class="btn btn-secondary" th:text="#{suggestion.admin.reset}">Pulisci</button>
+            <button type="button" id="back-dashboard" class="btn btn-secondary" th:text="#{suggestion.admin.back}">Torna alla dashboard</button>
+        </div>
+    </form>
+    <div id="alert-success" class="alert success" th:text="#{suggestion.admin.success}">Suggerimento inserito correttamente.</div>
+    <div id="alert-error" class="alert error" th:text="#{suggestion.admin.error}">Errore durante il salvataggio. Riprova.</div>
+</div>
+
+<script th:src="@{/t1/js/utils/endpoints.js}"></script>
+<script th:src="@{/t1/js/utils/api.js}"></script>
+<script th:src="@{/t1/js/utils/cookie_util.js}"></script>
+<script th:inline="javascript">
+    window.suggestionI18n = {
+        difficultyPlaceholder: /*[[#{difficulty.placeholder}]]*/ 'Select difficulty',
+        difficulties: {
+            EASY: /*[[#{difficulty.easy}]]*/ 'EASY',
+            MEDIUM: /*[[#{difficulty.medium}]]*/ 'MEDIUM',
+            HARD: /*[[#{difficulty.hard}]]*/ 'HARD'
+        },
+        tierPlaceholder: /*[[#{tier.placeholder}]]*/ 'Select type',
+        tiers: {
+            BASE: /*[[#{tier.base}]]*/ 'BASE',
+            ADVANCED: /*[[#{tier.advanced}]]*/ 'ADVANCED'
+        },
+        classPlaceholder: /*[[#{suggestion.admin.class.placeholder}]]*/ 'Select a class',
+        noClasses: /*[[#{suggestion.admin.noClasses}]]*/ 'No classes available'
+    };
+</script>
+<script th:src="@{/t1/js/suggestions_admin.js}"></script>
+</body>
+</html>
