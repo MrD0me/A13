@@ -7,14 +7,12 @@ import com.groom.manvsclass.model.interaction;
 import com.groom.manvsclass.model.repository.InteractionRepository;
 import com.groom.manvsclass.model.repository.SearchRepositoryImpl;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 
@@ -26,9 +24,6 @@ public class Util {
 
     @Autowired
     private SearchRepositoryImpl srepo;
-
-    @Autowired
-    private MongoTemplate mongoTemplate;
 
     // Metodo per generare un ID univoco (esempio con UUID)
     //Modifica 04/12/2024
@@ -69,7 +64,7 @@ public class Util {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         String data = currentDate.format(formatter);
 
-        newInteraction.setId_i(0);
+        newInteraction.setId_i(null);
         newInteraction.setId(id_u);
         newInteraction.setEmail(email_u);
         newInteraction.setName(name);
@@ -88,7 +83,7 @@ public class Util {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         String data = currentDate.format(formatter);
 
-        newInteraction.setId_i(0);
+        newInteraction.setId_i(null);
         newInteraction.setId(id_u);
         newInteraction.setEmail(email_u);
         newInteraction.setName(name);
@@ -101,8 +96,8 @@ public class Util {
     }
 
     public interaction eliminaInteraction(int id_i) {
-        Query query = new Query();
-        query.addCriteria(Criteria.where("id_i").is(id_i));
-        return mongoTemplate.findAndRemove(query, interaction.class);
+        Optional<interaction> found = repo_int.findById((long) id_i);
+        found.ifPresent(repo_int::delete);
+        return found.orElse(null);
     }
 }

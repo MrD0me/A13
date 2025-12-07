@@ -1,18 +1,31 @@
 package com.groom.manvsclass.model;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.PrePersist;
+import javax.persistence.Table;
+import java.util.UUID;
 
-@Document(collection = "suggestions")
+@Entity
+@Table(name = "suggestions")
 public class Suggestion {
+
     @Id
+    @Column(length = 64)
     private String id;
 
     private String text;
     private String category;
     private String difficulty; // EASY, MEDIUM, HARD
 
-    // Costruttori
+    @PrePersist
+    void ensureId() {
+        if (id == null) {
+            id = UUID.randomUUID().toString();
+        }
+    }
+
     public Suggestion() {
     }
 
@@ -27,7 +40,6 @@ public class Suggestion {
         this.difficulty = difficulty;
     }
 
-    // Getter e Setter
     public String getId() {
         return id;
     }

@@ -1,37 +1,51 @@
 package com.groom.manvsclass.model;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 import java.util.Date;
 
-@Document(collection = "Assignment")
+@Entity
+@Table(name = "assignments")
 public class Assignment {
+
     @Id
+    @Column(length = 64)
     private String idAssignment;
 
-    // Per la visualizzazione
+    @Column(length = 64)
     private String teamId;
+
     private String nomeTeam;
 
+    @Column(nullable = false)
     private String titolo;
+
     private String descrizione;
+
+    @Temporal(TemporalType.TIMESTAMP)
     private Date dataCreazione;
+
+    @Temporal(TemporalType.TIMESTAMP)
     private Date dataScadenza;
 
+    public Assignment() {
+        this.dataCreazione = new Date();
+    }
 
-    // Costruttore
     public Assignment(String titolo, String descrizione, Date dataScadenza) {
         this.idAssignment = null;
         this.teamId = null;
         this.nomeTeam = null;
         this.titolo = titolo;
         this.descrizione = descrizione;
-        this.dataCreazione = new Date(); // Creazione all'istante corrente
+        this.dataCreazione = new Date();
         this.dataScadenza = dataScadenza;
     }
 
-    // Getter e Setter
     public String getIdAssignment() {
         return idAssignment;
     }

@@ -1,27 +1,36 @@
 package com.groom.manvsclass.model;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
-@Document(collection = "Admin")
+@Entity
+@Table(name = "admins")
 public class Admin {
+
+    @Column(nullable = false)
     private String nome;
+
+    @Column(nullable = false)
     private String cognome;
+
+    @Column(nullable = false, unique = true)
     private String username;
 
-    //MODIFICA (15/02/2024) : Aggiunta campo email
     @Id
+    @Column(nullable = false, unique = true)
     private String email;
 
-    //MODIFICA (15/02/2024) : Aggiunta campo resetToken
     private String resetToken;
 
-    //MODIFICA (16/02/2024) : Aggiunta campo invitationToken
     private String invitationToken;
 
-    //FINE MODIFICA (15/02/2024)
+    @Column(nullable = false)
     private String password;
 
+    public Admin() {
+    }
 
     public Admin(String nome, String cognome, String username, String email, String password) {
         this.nome = nome;
@@ -71,7 +80,6 @@ public class Admin {
         this.email = email;
     }
 
-    // Getter e setter per il campo resetToken
     public String getResetToken() {
         return resetToken;
     }
@@ -80,7 +88,6 @@ public class Admin {
         this.resetToken = resetToken;
     }
 
-    //Getter e setter per il campo invitationToken
     public String getInvitationToken() {
         return invitationToken;
     }
@@ -88,7 +95,6 @@ public class Admin {
     public void setInvitationToken(String invitationToken) {
         this.invitationToken = invitationToken;
     }
-
 
     @Override
     public String toString() {

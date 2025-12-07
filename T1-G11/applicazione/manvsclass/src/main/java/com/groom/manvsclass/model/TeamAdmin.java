@@ -1,12 +1,18 @@
 package com.groom.manvsclass.model;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
-@Document(collection = "TeamManagement")
+@Entity
+@Table(name = "team_management")
 public class TeamAdmin {
+
     @Id
-    private String id; // Identificativo univoco della relazione
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id; // Identificativo univoco della relazione
 
     private String adminId; // Riferimento all'Admin (ID)
     private String teamId;  // Riferimento al Team (ID)
@@ -14,7 +20,9 @@ public class TeamAdmin {
     private String role; // Ruolo dell'Admin nel Team
     private boolean isActive; // Stato attuale della relazione
 
-    // Costruttore
+    public TeamAdmin() {
+    }
+
     public TeamAdmin(String adminId, String teamId, String teamName, String role, boolean isActive) {
         this.adminId = adminId;
         this.teamId = teamId;
@@ -23,12 +31,11 @@ public class TeamAdmin {
         this.isActive = isActive;
     }
 
-    // Getter e Setter
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -63,7 +70,6 @@ public class TeamAdmin {
     public void setRole(String role) {
         this.role = role;
     }
-
 
     public boolean isActive() {
         return isActive;

@@ -1,30 +1,42 @@
 package com.groom.manvsclass.model;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
-import org.springframework.data.mongodb.core.mapping.Document;
-
-@Document(collection = "interaction")
+@Entity
+@Table(name = "interaction")
 public class interaction {
-    private int id_i; //Id interazione
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id_i; //Id interazione
+
     private String email; //Email utente
+
+    @Column(name = "class_name")
     private String name; //Id classe
+
+    @Column(name = "user_id")
     private long id; //Id utente
+
     private int type; //Tipo di interazione
     private String commento;
     private String date;
 
-
-    public interaction(int id_i, String email, String name, long id, int type, String date) {
-        this.setId_i(id_i);
-        this.setEmail(email);
-        this.setName(name);
-        this.setId(id);
-        this.setType(type);
-        this.setDate(date);
+    public interaction() {
     }
 
-    public interaction() {
-
+    public interaction(Long id_i, String email, String name, long id, int type, String date) {
+        this.id_i = id_i;
+        this.email = email;
+        this.name = name;
+        this.id = id;
+        this.type = type;
+        this.date = date;
     }
 
     public long getId() {
@@ -72,11 +84,11 @@ public class interaction {
         this.name = name;
     }
 
-    public int getId_i() {
+    public Long getId_i() {
         return id_i;
     }
 
-    public void setId_i(int id_i) {
+    public void setId_i(Long id_i) {
         this.id_i = id_i;
     }
 

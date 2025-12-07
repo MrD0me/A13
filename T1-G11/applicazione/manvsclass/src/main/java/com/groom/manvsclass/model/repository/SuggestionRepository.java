@@ -1,13 +1,13 @@
 package com.groom.manvsclass.model.repository;
 
 import com.groom.manvsclass.model.Suggestion;
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 @Repository
-public interface SuggestionRepository extends MongoRepository<Suggestion, String> {
+public interface SuggestionRepository extends JpaRepository<Suggestion, String> {
 
     List<Suggestion> findByCategory(String category);
 

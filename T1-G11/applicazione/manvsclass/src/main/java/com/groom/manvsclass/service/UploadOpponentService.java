@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -59,6 +60,12 @@ public class UploadOpponentService {
      *
      */
     public void saveOpponentsFromZip(String classUTFileName, String classUTName, MultipartFile classUTFile, MultipartFile robotTestsZip) throws IOException {
+        // Pulisce eventuali residui di upload precedenti per la stessa classe per evitare conflitti sui file già esistenti.
+        Path classBasePath = Paths.get(String.format("%s/%s", VOLUME_T0_BASE_PATH, classUTName));
+        Path classUnmodifiedPath = Paths.get(String.format("%s/%s/%s", VOLUME_T0_BASE_PATH, UNMODIFIED_SRC, classUTName));
+        FileOperationUtil.deleteDirectoryRecursively(classBasePath);
+        FileOperationUtil.deleteDirectoryRecursively(classUnmodifiedPath);
+
         Path operationTmpFolder = Paths.get(String.format("%s/%s/tmp", VOLUME_T0_BASE_PATH, classUTName));
         FileOperationUtil.saveFileInFileSystem("robot.zip", operationTmpFolder, robotTestsZip);
         FileOperationUtil.extractZipIn(operationTmpFolder);
@@ -206,7 +213,7 @@ public class UploadOpponentService {
             }
 
             Files.createDirectories(Paths.get(String.format("%s/%s", toTestPath, testPackagePath)).normalize());
-            Files.copy(src.toPath(), Paths.get(String.format("%s/%s/%s", toTestPath, testPackagePath, src.getName())).normalize());
+            Files.copy(src.toPath(), Paths.get(String.format("%s/%s/%s", toTestPath, testPackagePath, src.getName())).normalize(), StandardCopyOption.REPLACE_EXISTING);
         }
 
         return new String[][]{srcPackageName, testPackageName};
@@ -405,7 +412,7 @@ public class UploadOpponentService {
             opponent.setEvosuiteScore(evosuiteScore);
             opponent.setJacocoScore(jacocoScore);
 
-            opponentRepository.saveOpponent(opponent);
+            opponentRepository.save(opponent);
 
             for (GameMode mode : GameMode.values()) {
                 apiGatewayClient.callAddNewOpponent(classUTName, mode, robotType, difficulty);
