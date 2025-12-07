@@ -10,14 +10,15 @@ services:
     environment:
       MYSQL_HOST: mysql_db
       MYSQL_PORT: 3306
-      MYSQL_DATABASE: manvsclass
-      MYSQL_USERNAME: root
-      MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-manvsclass}
+      MYSQL_USERNAME: ${MYSQL_USER:-manvsclass_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-manvsclass_pass}
       MAIL_PASSWORD: ${MAIL_PASSWORD}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
     depends_on:
-      - mysql_db
+      mysql_db:
+        condition: service_healthy
     volumes:
       - ./FilesUpload:/Files-Upload
       - VolumeT0:/VolumeT0
@@ -31,15 +32,25 @@ services:
 
   mysql_db:
     image: mysql:8.0
+    platform: linux/amd64
     container_name: t1-mysql_db
     restart: always
     ports:
       - "3306:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: manvsclass
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-osimhen}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-manvsclass}
+      MYSQL_USER: ${MYSQL_USER:-manvsclass_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-manvsclass_pass}
     volumes:
+      - ./mysql_init/init.sql:/docker-entrypoint-initdb.d/init.sql
       - mysql_data_volume:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "${MYSQL_USER}", "-p${MYSQL_PASSWORD}" ]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 80s
     networks:
       - global-network
 

@@ -1,18 +1,36 @@
 # RunCommands.ps1
+# Utility script to apply the MySQL initialization script inside the T1 database container.
 
-$commands = @'
-use manvsclass
-db.createCollection("ClassUT");
-db.createCollection("interaction");
-db.createCollection("Admin");
-db.createCollection("Operation");
-db.ClassUT.createIndex({ difficulty: 1 });
-db.interaction.createIndex({ name: "text", type: 1 });
-db.Operation.createIndex({ name: "text" });
-db.Admin.createIndex({ username: 1 });
-'@
+$envFile = "T1-G11/applicazione/manvsclass/.env"
+$initScript = "T1-G11/applicazione/manvsclass/mysql_init/init.sql"
 
-$commands | docker exec -i t1-mongo_db mongosh
+if (Test-Path $envFile) {
+    Get-Content $envFile | ForEach-Object {
+        if ($_ -match "^\s*#") { return }
+        if ($_ -match "^\s*([^=]+)=(.*)$") {
+            $name = $Matches[1].Trim()
+            $value = $Matches[2].Trim().Trim("'\"")
+            [System.Environment]::SetEnvironmentVariable($name, $value)
+        }
+    }
+}
 
-# Aggiungi una pausa alla fine per mantenere aperta la finestra del prompt
+$rootPassword = $Env:MYSQL_ROOT_PASSWORD
+$database = if ($Env:MYSQL_DATABASE) { $Env:MYSQL_DATABASE } else { "manvsclass" }
+
+if (-not $rootPassword) {
+    Write-Error "MYSQL_ROOT_PASSWORD is not set. Please populate $envFile."
+    pause
+    exit 1
+}
+
+if (-not (Test-Path $initScript)) {
+    Write-Error "Initialization script not found at $initScript"
+    pause
+    exit 1
+}
+
+Get-Content $initScript | docker exec -i t1-mysql_db mysql -uroot "-p$rootPassword" $database
+
+Write-Host "Initialization script applied to database '$database' on container t1-mysql_db."
 pause

@@ -31,10 +31,10 @@ The platform consists of the following microservices:
 
 
 ### Data Persistence
-The system uses Docker volumes and containerized databases to persist data. Specifically:
+ The system uses Docker volumes and containerized databases to persist data. Specifically:
 1. **T23** communicates with a **MySQL** database for user authentication and for storing all data associated with them;
 2. **T4** communicates with a **PostgreSQL** database to store match data;
-3. **T1** communicates with a **MongoDB** database to manage the file paths of Java classes uploaded for testing and their associated opponents;
+3. **T1** communicates with a **MySQL** database to manage the file paths of Java classes uploaded for testing and their associated opponents;
 4. The shared Docker volume **VolumeT0** is used to store a copy of each Java class to be tested along with the related robots, as well as a copy of each player's compilation output, including the corresponding metrics.
 
 ### Support Services
