@@ -1,4 +1,4 @@
-package com.example.db_setup.model.dto.suggestion;
+package com.groom.manvsclass.model.dto.suggestion;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -17,7 +17,7 @@ public class AdvancedSuggestionRequestDTO extends SuggestionRequestDTO {
     private Long playerId;
 
     /**
-     * Costo richiesto dal client (facoltativo). Se nullo, verrà usato il default lato server.
+     * Costo richiesto dal client (facoltativo). Se nullo, verra usato il default lato server.
      */
     @Min(1)
     private Integer cost;

@@ -1,4 +1,4 @@
-package com.example.db_setup.model.dto.suggestion;
+package com.groom.manvsclass.model.dto.suggestion;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Risposta che espone il numero di suggerimenti distinti realmente disponibili per classe/difficoltà.
+ * Risposta che espone il numero di suggerimenti distinti realmente disponibili per classe/difficolta.
  */
 @Data
 @Builder

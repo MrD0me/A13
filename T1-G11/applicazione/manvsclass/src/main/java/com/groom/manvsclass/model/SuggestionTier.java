@@ -1,4 +1,4 @@
-package com.example.db_setup.model;
+package com.groom.manvsclass.model;
 
 /**
  * Identifica il tipo di suggerimento.

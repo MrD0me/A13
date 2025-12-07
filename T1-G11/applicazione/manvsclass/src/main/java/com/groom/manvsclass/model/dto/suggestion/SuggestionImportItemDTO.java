@@ -1,4 +1,4 @@
-package com.example.db_setup.model.dto.suggestion;
+package com.groom.manvsclass.model.dto.suggestion;
 
 import lombok.Data;
 
@@ -14,7 +14,7 @@ public class SuggestionImportItemDTO {
     private String text;
 
     /**
-     * Facoltativo: indica se il suggerimento è BASE o ADVANCED. Default BASE.
+     * Facoltativo: indica se il suggerimento e BASE o ADVANCED. Default BASE.
      */
     private String tier;
 }

@@ -1,4 +1,16 @@
--- Inserimento suggerimenti per le classi disponibili
+-- Popola la tabella dei suggerimenti al bootstrap del container MySQL di T1.
+USE manvsclass;
+
+CREATE TABLE IF NOT EXISTS suggestions (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    text VARCHAR(1024) NOT NULL,
+    class_name VARCHAR(255),
+    difficulty VARCHAR(16) NOT NULL,
+    language VARCHAR(8),
+    tier VARCHAR(16) NOT NULL DEFAULT 'BASE',
+    created_at DATETIME(6) NOT NULL,
+    updated_at DATETIME(6) NOT NULL
+) ENGINE=InnoDB;
 
 -- Suggerimenti per Calcolatrice
 INSERT INTO suggestions (text, class_name, difficulty, language, tier, created_at, updated_at) VALUES
@@ -50,5 +62,5 @@ INSERT INTO suggestions (text, class_name, difficulty, language, tier, created_a
 ('Controlla la coerenza tra metodi correlati', NULL, 'MEDIUM', 'it', 'BASE', NOW(), NOW()),
 ('Verifica che le eccezioni siano lanciate nei casi appropriati', NULL, 'HARD', 'it', 'BASE', NOW(), NOW()),
 ('Considera test per la concorrenza se la classe e thread-safe', NULL, 'HARD', 'it', 'BASE', NOW(), NOW()),
-('Disegna test di proprietà (property-based) per validare invarianti di alto livello', NULL, 'MEDIUM', 'it', 'ADVANCED', NOW(), NOW()),
+('Disegna test di proprieta (property-based) per validare invarianti di alto livello', NULL, 'MEDIUM', 'it', 'ADVANCED', NOW(), NOW()),
 ('Valuta performance e memoria con input estremi per individuare colli di bottiglia', NULL, 'HARD', 'it', 'ADVANCED', NOW(), NOW());

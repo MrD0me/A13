@@ -1,84 +1,95 @@
 package com.groom.manvsclass.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.PrePersist;
+import javax.persistence.PreUpdate;
 import javax.persistence.Table;
-import java.util.UUID;
+import java.time.Instant;
 
+/**
+ * Entitاے che rappresenta un suggerimento mostrabile al giocatore durante una partita.
+ * I suggerimenti vengono persistiti nel database cosاھ da poter essere aggiornati
+ * dinamicamente senza dover ricompilare l'applicazione.
+ */
 @Entity
 @Table(name = "suggestions")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Suggestion {
 
     @Id
-    @Column(length = 64)
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
+    /**
+     * Testo del suggerimento da mostrare all'utente.
+     */
+    @Column(nullable = false, length = 1024)
     private String text;
-    private String category;
-    private String difficulty; // EASY, MEDIUM, HARD
+
+    /**
+     * Nome completo della classe a cui il suggerimento si riferisce.
+     */
+    @Column(name = "class_name", length = 255)
+    private String className;
+
+    /**
+     * Difficoltتْ a cui appartiene il suggerimento (EASY, MEDIUM, HARD).
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 16, nullable = false)
+    private SuggestionDifficulty difficulty;
+
+    /**
+     * Lingua del suggerimento, utile per il supporto multi lingua futuro.
+     */
+    @Column(length = 8)
+    private String language;
+
+    /**
+     * Indica se il suggerimento اù base oppure avanzato (a pagamento).
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 16, nullable = false, columnDefinition = "varchar(16) default 'BASE'")
+    @Builder.Default
+    private SuggestionTier tier = SuggestionTier.BASE;
+
+    @Column(nullable = false, updatable = false)
+    private Instant createdAt;
+
+    @Column(nullable = false)
+    private Instant updatedAt;
 
     @PrePersist
-    void ensureId() {
-        if (id == null) {
-            id = UUID.randomUUID().toString();
+    void onCreate() {
+        Instant now = Instant.now();
+        createdAt = now;
+        updatedAt = now;
+        if (tier == null) {
+            tier = SuggestionTier.BASE;
         }
     }
 
-    public Suggestion() {
-    }
-
-    public Suggestion(String text, String category) {
-        this.text = text;
-        this.category = category;
-    }
-
-    public Suggestion(String text, String category, String difficulty) {
-        this.text = text;
-        this.category = category;
-        this.difficulty = difficulty;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getText() {
-        return text;
-    }
-
-    public void setText(String text) {
-        this.text = text;
-    }
-
-    public String getCategory() {
-        return category;
-    }
-
-    public void setCategory(String category) {
-        this.category = category;
-    }
-
-    public String getDifficulty() {
-        return difficulty;
-    }
-
-    public void setDifficulty(String difficulty) {
-        this.difficulty = difficulty;
-    }
-
-    @Override
-    public String toString() {
-        return "Suggestion{" +
-                "id='" + id + '\'' +
-                ", text='" + text + '\'' +
-                ", category='" + category + '\'' +
-                ", difficulty='" + difficulty + '\'' +
-                '}';
+    @PreUpdate
+    void onUpdate() {
+        updatedAt = Instant.now();
+        if (tier == null) {
+            tier = SuggestionTier.BASE;
+        }
     }
 }

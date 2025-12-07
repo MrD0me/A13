@@ -1,12 +1,12 @@
-package com.example.db_setup.controller;
+package com.groom.manvsclass.controller;
 
-import com.example.db_setup.model.dto.suggestion.AdvancedSuggestionRequestDTO;
-import com.example.db_setup.model.dto.suggestion.SuggestionAvailabilityRequestDTO;
-import com.example.db_setup.model.dto.suggestion.SuggestionAvailabilityResponseDTO;
-import com.example.db_setup.model.dto.suggestion.SuggestionImportRequestDTO;
-import com.example.db_setup.model.dto.suggestion.SuggestionRequestDTO;
-import com.example.db_setup.model.dto.suggestion.SuggestionResponseDTO;
-import com.example.db_setup.service.SuggestionService;
+import com.groom.manvsclass.model.dto.suggestion.AdvancedSuggestionRequestDTO;
+import com.groom.manvsclass.model.dto.suggestion.SuggestionAvailabilityRequestDTO;
+import com.groom.manvsclass.model.dto.suggestion.SuggestionAvailabilityResponseDTO;
+import com.groom.manvsclass.model.dto.suggestion.SuggestionImportRequestDTO;
+import com.groom.manvsclass.model.dto.suggestion.SuggestionRequestDTO;
+import com.groom.manvsclass.model.dto.suggestion.SuggestionResponseDTO;
+import com.groom.manvsclass.service.SuggestionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -34,7 +34,7 @@ public class SuggestionController {
 
     @Operation(
             summary = "Recupera un suggerimento dal database",
-            description = "Restituisce un suggerimento coerente con la difficoltà della partita"
+            description = "Restituisce un suggerimento coerente con la difficolta della partita"
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Suggerimento restituito correttamente"),

@@ -1,4 +1,4 @@
-package com.example.db_setup.model.dto.suggestion;
+package com.groom.manvsclass.model.dto.suggestion;
 
 import lombok.Data;
 

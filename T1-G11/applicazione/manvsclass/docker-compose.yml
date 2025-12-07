@@ -43,7 +43,7 @@ services:
       MYSQL_USER: ${MYSQL_USER:-manvsclass_user}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-manvsclass_pass}
     volumes:
-      - ./mysql_init/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./mysql_init:/docker-entrypoint-initdb.d
       - mysql_data_volume:/var/lib/mysql
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "${MYSQL_USER}", "-p${MYSQL_PASSWORD}" ]

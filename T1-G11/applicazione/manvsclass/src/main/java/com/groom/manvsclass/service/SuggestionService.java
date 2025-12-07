@@ -1,15 +1,16 @@
-package com.example.db_setup.service;
+package com.groom.manvsclass.service;
 
-import com.example.db_setup.model.Suggestion;
-import com.example.db_setup.model.SuggestionDifficulty;
-import com.example.db_setup.model.SuggestionTier;
-import com.example.db_setup.model.dto.suggestion.AdvancedSuggestionRequestDTO;
-import com.example.db_setup.model.dto.suggestion.SuggestionAvailabilityResponseDTO;
-import com.example.db_setup.model.dto.suggestion.SuggestionImportItemDTO;
-import com.example.db_setup.model.dto.suggestion.SuggestionImportRequestDTO;
-import com.example.db_setup.model.dto.suggestion.SuggestionRequestDTO;
-import com.example.db_setup.model.dto.suggestion.SuggestionResponseDTO;
-import com.example.db_setup.model.repository.SuggestionRepository;
+import com.groom.manvsclass.api.UserServiceClient;
+import com.groom.manvsclass.model.Suggestion;
+import com.groom.manvsclass.model.SuggestionDifficulty;
+import com.groom.manvsclass.model.SuggestionTier;
+import com.groom.manvsclass.model.dto.suggestion.AdvancedSuggestionRequestDTO;
+import com.groom.manvsclass.model.dto.suggestion.SuggestionAvailabilityResponseDTO;
+import com.groom.manvsclass.model.dto.suggestion.SuggestionImportItemDTO;
+import com.groom.manvsclass.model.dto.suggestion.SuggestionImportRequestDTO;
+import com.groom.manvsclass.model.dto.suggestion.SuggestionRequestDTO;
+import com.groom.manvsclass.model.dto.suggestion.SuggestionResponseDTO;
+import com.groom.manvsclass.model.repository.SuggestionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -37,9 +38,9 @@ public class SuggestionService {
     private static final int DEFAULT_ADVANCED_COST = 2;
 
     private final SuggestionRepository suggestionRepository;
-    private final PlayerProgressService playerProgressService;
+    private final UserServiceClient userServiceClient;
     /**
-     * Traccia gli ID dei suggerimenti già mostrati per partita/classe/difficoltà così da non ripeterli.
+     * Traccia gli ID dei suggerimenti gia mostrati per partita/classe/difficolta cosi da non ripeterli.
      */
     private final ConcurrentHashMap<String, Set<Long>> deliveredSuggestions = new ConcurrentHashMap<>();
 
@@ -96,7 +97,7 @@ public class SuggestionService {
         int effectiveCap = capForTier(difficulty, tier, available.size());
         String sessionKey = buildSessionKey(request.getGameId(), className, difficulty, tier);
 
-        // Se il client segnala un reset (es. nuova partita) azzeriamo la memoria dei suggerimenti già mostrati.
+        // Se il client segnala un reset (es. nuova partita) azzeriamo la memoria dei suggerimenti gia mostrati.
         maybeResetSession(request.getRemainingSuggestions(), effectiveCap, sessionKey, request.getGameId());
         Set<Long> alreadyDelivered = deliveredSuggestions.computeIfAbsent(sessionKey, key -> ConcurrentHashMap.newKeySet());
         // Allineiamo il set alle entry ancora presenti nel database per evitare contatori sballati dopo un import.
@@ -118,7 +119,7 @@ public class SuggestionService {
             if (playerId == null) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "playerId obbligatorio per i suggerimenti avanzati");
             }
-            creditsLeft = playerProgressService.spendHintCredits(playerId, cost);
+            creditsLeft = userServiceClient.spendHintCredits(playerId, cost);
             creditsSpent = cost;
         }
 
@@ -234,7 +235,7 @@ public class SuggestionService {
     }
 
     private int maxForDifficulty(SuggestionDifficulty difficulty) {
-        // Numero massimo teorico per difficoltà; l'effettivo viene poi limitato dal numero reale di suggerimenti presenti.
+        // Numero massimo teorico per difficolta; l'effettivo viene poi limitato dal numero reale di suggerimenti presenti.
         return switch (difficulty) {
             case EASY -> 10;
             case MEDIUM -> 5;

@@ -34,7 +34,8 @@ public class AuthTokenFilter extends OncePerRequestFilter {
     private static final List<String> PLAYER_ALLOWED_URIS = List.of(
             "/opponents/**",
             "/ottieniTeamByStudentId",
-            "/ottieniDettagliTeamCompleto"
+            "/ottieniDettagliTeamCompleto",
+            "/suggerimenti/**"
     );
     private final ApiGatewayClient apiGatewayClient;
 
@@ -43,6 +44,8 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         customLogger.info("[AuthTokenFilter] Authenticating request {} {}", request.getMethod(), request.getRequestURI());
+        AntPathMatcher uriMatcher = new AntPathMatcher();
+        boolean isSuggestionEndpoint = uriMatcher.match("/suggerimenti/**", request.getRequestURI());
 
         Cookie jwtCookie = WebUtils.getCookie(request, "jwt");
         Cookie refreshCookie = WebUtils.getCookie(request, "jwt-refresh");
@@ -51,6 +54,15 @@ public class AuthTokenFilter extends OncePerRequestFilter {
         String refreshToken = refreshCookie != null ? refreshCookie.getValue() : null;
 
         try {
+            // Per gli endpoint suggerimenti saltiamo la validazione remota per ridurre la latenza.
+            if (isSuggestionEndpoint) {
+                if (jwt != null) {
+                    JwtRequestContext.setJwtToken("%s=%s".formatted(jwtCookie.getName(), jwt));
+                }
+                chain.doFilter(request, response);
+                return;
+            }
+
             if (jwt == null) {
                 if (refreshCookie != null) {
                     customLogger.info("JWT missing. Attempting to refresh using refresh token...");
@@ -75,10 +87,8 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             }
 
             customLogger.info("[AuthTokenFilter] Validated token for role {}", role);
-            if (ADMIN.equals(role)) {
-                JwtRequestContext.setJwtToken("%s=%s".formatted(jwtCookie.getName(), jwt));
-                customLogger.debug("[AuthTokenFilter] JWT saved in thread context");
-            }
+            JwtRequestContext.setJwtToken("%s=%s".formatted(jwtCookie.getName(), jwt));
+            customLogger.debug("[AuthTokenFilter] JWT saved in thread context");
 
             chain.doFilter(request, response);
 
@@ -103,7 +113,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                     .build();
 
             response.setHeader(HttpHeaders.SET_COOKIE, newJwtCookie.toString());
-            JwtRequestContext.setJwtToken(newJwtCookie.toString());
+            JwtRequestContext.setJwtToken("jwt=" + newJwt);
 
             customLogger.info("JWT refreshed and saved in context. Proceeding with filter chain.");
             return newJwt;
@@ -131,6 +141,13 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 
     private boolean isPlayerAccessAllowed(HttpServletRequest request) {
         AntPathMatcher uriMatcher = new AntPathMatcher();
+
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod()))
+            return true;
+
+        boolean isSuggestionEndpoint = uriMatcher.match("/suggerimenti/**", request.getRequestURI());
+        if (isSuggestionEndpoint)
+            return true;
 
         if (!request.getMethod().equals("GET"))
             return false;
