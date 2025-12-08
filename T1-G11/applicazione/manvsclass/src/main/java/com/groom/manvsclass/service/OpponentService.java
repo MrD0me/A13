@@ -222,7 +222,7 @@ public class OpponentService {
     }
 
     public Opponent getOpponentData(String classUT, String opponentType, OpponentDifficulty opponentDifficulty) {
-        Optional<Opponent> opponent = opponentRepository.findByClassUTAndOpponentTypeAndOpponentDifficulty(classUT, opponentType, opponentDifficulty);
+        Optional<Opponent> opponent = opponentRepository.findFirstByClassUTAndOpponentTypeAndOpponentDifficultyOrderByCreatedAtDesc(classUT, opponentType, opponentDifficulty);
         if (opponent.isEmpty())
             throw new OpponentNotFoundException();
 
@@ -230,32 +230,26 @@ public class OpponentService {
     }
 
     public EvosuiteScore getOpponentEvosuiteScore(String classUT, String opponentType, OpponentDifficulty opponentDifficulty) {
-        Optional<EvosuiteScore> score = opponentRepository.findEvosuiteScore(classUT,
-                opponentType, opponentDifficulty);
-
-        if (score.isEmpty())
+        Opponent opponent = getOpponentData(classUT, opponentType, opponentDifficulty);
+        if (opponent.getEvosuiteScore() == null) {
             throw new ScoreNotFoundException();
-
-        return score.get();
+        }
+        return opponent.getEvosuiteScore();
     }
 
     public JacocoScore getOpponentJacocoScore(String classUT, String opponentType, OpponentDifficulty opponentDifficulty) {
-        Optional<JacocoScore> score = opponentRepository.findJacocoScore(classUT,
-                opponentType, opponentDifficulty);
-
-        if (score.isEmpty())
+        Opponent opponent = getOpponentData(classUT, opponentType, opponentDifficulty);
+        if (opponent.getJacocoScore() == null) {
             throw new ScoreNotFoundException();
-
-        return score.get();
+        }
+        return opponent.getJacocoScore();
     }
 
     public String getOpponentCoverage(String classUT, String opponentType, OpponentDifficulty opponentDifficulty) {
-        Optional<String> coverage = opponentRepository.findCoverage(classUT,
-                opponentType, opponentDifficulty);
-
-        if (coverage.isEmpty())
+        Opponent opponent = getOpponentData(classUT, opponentType, opponentDifficulty);
+        if (opponent.getCoverage() == null) {
             throw new CoverageNotFoundException();
-
-        return coverage.get();
+        }
+        return opponent.getCoverage();
     }
 }
