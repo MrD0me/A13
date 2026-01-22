@@ -367,14 +367,11 @@ public class GameManager {
         } else {
             // Gestisco il calcolo e l'aggiornamento dei punti esperienza e degli achievement sbloccati
             int expGained = playerStatService.assignExperiencePoints(currentGame);
-            int creditsEarned = playerStatService.assignHintCredits(currentGame);
             achievementsUnlocked.addAll(playerStatService.unlockGlobalAchievements(currentGame.getPlayerID()));
-            EndGameResponseDTO responseDTO = new EndGameResponseDTO(
+            return new EndGameResponseDTO(
                     currentGame.getScore(currentGame.getRobotCompileResult()),
                     currentGame.getScore(currentGame.getUserCompileResult()),
                     currentGame.isWinner(), expGained, achievementsUnlocked, runGameResponse);
-            responseDTO.setHintCreditsEarned(creditsEarned);
-            return responseDTO;
         }
     }
 

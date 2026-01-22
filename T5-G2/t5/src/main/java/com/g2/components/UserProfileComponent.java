@@ -80,23 +80,14 @@ public class UserProfileComponent extends GenericObjectComponent {
         try {
             // Inserisce i dati del profilo utente nel modello con la chiave specificata
             User user = serviceManager.handleRequest("T23", "GetUser", User.class, this.userID);
-            Long targetId = this.userID;
             if (this.isFriendProfile) {
                 User friendUser = (User) serviceManager.handleRequest("T23", "GetUser", this.friendID);
                 this.model.put("user", friendUser);
                 this.model.put("viewID", user.getUserProfile().getId());
-                targetId = this.friendID;
             } else {
                 // profilo privato dell'utente 
                 this.model.put("user", user);
                 this.model.put("viewID", null);
-            }
-            try {
-                Integer credits = (Integer) serviceManager.handleRequest("T23", "getHintCredits", targetId);
-                this.model.put("hintCredits", credits != null ? credits : 0);
-            } catch (Exception e) {
-                logger.warn("[UserProfileComponent] impossibile recuperare crediti suggerimenti per userId={}", targetId, e);
-                this.model.put("hintCredits", 0);
             }
             this.model.put("isFriendProfile", isFriendProfile);
             return this.model;

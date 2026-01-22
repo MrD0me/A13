@@ -2,14 +2,7 @@ package com.example.db_setup.controller;
 
 import com.example.db_setup.model.dto.business.ServiceResponse;
 import com.example.db_setup.model.dto.exception.ApiErrorDTO;
-import com.example.db_setup.model.dto.gamification.AchievementsDTO;
-import com.example.db_setup.model.dto.gamification.CreateGameProgressDTO;
-import com.example.db_setup.model.dto.gamification.ExperienceDTO;
-import com.example.db_setup.model.dto.gamification.GameProgressDTO;
-import com.example.db_setup.model.dto.gamification.HintCreditBalanceDTO;
-import com.example.db_setup.model.dto.gamification.HintCreditUpdateDTO;
-import com.example.db_setup.model.dto.gamification.PlayerProgressDTO;
-import com.example.db_setup.model.dto.gamification.UpdateGameProgressDTO;
+import com.example.db_setup.model.dto.gamification.*;
 import com.example.db_setup.service.PlayerProgressService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -118,34 +111,6 @@ public class PlayerProgressController {
     public ResponseEntity<Integer> getPlayerExperience(
             @Parameter(description = "ID of the player") @PathVariable("playerId") long playerId) {
         return ResponseEntity.ok(playerProgressService.getPlayerExperience(playerId));
-    }
-
-    @Operation(summary = "Get player's hint credits balance",
-            description = "Retrieve the current amount of credits a player can spend on advanced hints")
-    @GetMapping("/players/{playerId}/progression/credits")
-    public ResponseEntity<HintCreditBalanceDTO> getPlayerCredits(
-            @Parameter(description = "ID of the player") @PathVariable("playerId") long playerId) {
-        return ResponseEntity.ok(new HintCreditBalanceDTO(playerProgressService.getHintCredits(playerId)));
-    }
-
-    @Operation(summary = "Add hint credits to a player",
-            description = "Increment the amount of credits a player can spend on advanced hints")
-    @PutMapping("/players/{playerId}/progression/credits/add")
-    public ResponseEntity<HintCreditBalanceDTO> addCredits(
-            @Parameter(description = "ID of the player") @PathVariable("playerId") long playerId,
-            @RequestBody @Validated HintCreditUpdateDTO creditsDTO) {
-        int balance = playerProgressService.addHintCredits(playerId, creditsDTO.getCredits());
-        return ResponseEntity.ok(new HintCreditBalanceDTO(balance));
-    }
-
-    @Operation(summary = "Spend hint credits of a player",
-            description = "Decrement the credits of a player when an advanced hint is purchased")
-    @PutMapping("/players/{playerId}/progression/credits/spend")
-    public ResponseEntity<HintCreditBalanceDTO> spendCredits(
-            @Parameter(description = "ID of the player") @PathVariable("playerId") long playerId,
-            @RequestBody @Validated HintCreditUpdateDTO creditsDTO) {
-        int balance = playerProgressService.spendHintCredits(playerId, creditsDTO.getCredits());
-        return ResponseEntity.ok(new HintCreditBalanceDTO(balance));
     }
 
 

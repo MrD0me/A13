@@ -18,10 +18,8 @@ import com.example.db_setup.service.exception.UserNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.util.Pair;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 import testrobotchallenge.commons.models.opponent.GameMode;
 import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
 
@@ -140,57 +138,6 @@ public class PlayerProgressService {
     public int getPlayerExperience(long playerId) {
         PlayerProgress progress = findPlayerProgress(playerId);
         return progress.getExperiencePoints();
-    }
-
-    /**
-     * Restituisce i crediti disponibili per acquistare suggerimenti avanzati.
-     *
-     * @param playerId id del player
-     * @return numero di crediti disponibili
-     */
-    @Transactional(readOnly = true)
-    public int getHintCredits(long playerId) {
-        PlayerProgress progress = findPlayerProgress(playerId);
-        return progress.getHintCredits();
-    }
-
-    /**
-     * Incrementa i crediti del giocatore.
-     *
-     * @param playerId id del player
-     * @param credits  crediti da aggiungere (deve essere > 0)
-     * @return saldo aggiornato
-     */
-    @Transactional
-    public int addHintCredits(long playerId, int credits) {
-        if (credits <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "I crediti da aggiungere devono essere maggiori di zero");
-        }
-        PlayerProgress progress = findPlayerProgress(playerId);
-        progress.setHintCredits(progress.getHintCredits() + credits);
-        playerProgressRepository.save(progress);
-        return progress.getHintCredits();
-    }
-
-    /**
-     * Consuma crediti quando viene richiesto un suggerimento avanzato.
-     *
-     * @param playerId id del player
-     * @param credits  crediti da scalare
-     * @return saldo aggiornato dopo la spesa
-     */
-    @Transactional
-    public int spendHintCredits(long playerId, int credits) {
-        if (credits <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "I crediti da consumare devono essere maggiori di zero");
-        }
-        PlayerProgress progress = findPlayerProgress(playerId);
-        if (progress.getHintCredits() < credits) {
-            throw new ResponseStatusException(HttpStatus.PAYMENT_REQUIRED, "Crediti insufficienti per ottenere il suggerimento avanzato");
-        }
-        progress.setHintCredits(progress.getHintCredits() - credits);
-        playerProgressRepository.save(progress);
-        return progress.getHintCredits();
     }
 
     /**

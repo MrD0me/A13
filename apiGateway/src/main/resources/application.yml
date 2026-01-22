@@ -108,11 +108,6 @@ spring:
             - Path=/userService/**
           filters:
             - RewritePath=/userService/(?<segment>.*), /${segment}
-        - id: suggestions-route
-          uri: http://t23-controller:8082
-          predicates:
-            - Path=/suggerimenti/**
-            - Path=/suggerimenti/**
         - id: T5-route
           uri: http://t5-controller:8085
           predicates:

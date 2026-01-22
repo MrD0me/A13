@@ -136,25 +136,4 @@ public class PlayerStatService {
 
         return expGained;
     }
-
-    /**
-     * Assegna crediti utilizzabili per i suggerimenti avanzati in base alla difficoltà giocata.
-     *
-     * @param currentGame partita corrente
-     * @return crediti assegnati
-     */
-    public int assignHintCredits(GameLogic currentGame) {
-        int creditsToAdd = creditsForDifficulty(currentGame.getDifficulty());
-        serviceManager.handleRequest("T23", "addHintCredits", currentGame.getPlayerID(), creditsToAdd);
-        logger.info("[handleHintCredits] Assegnamento di {} crediti al player {}", creditsToAdd, currentGame.getPlayerID());
-        return creditsToAdd;
-    }
-
-    private int creditsForDifficulty(OpponentDifficulty difficulty) {
-        return switch (difficulty) {
-            case EASY -> 2;
-            case MEDIUM -> 4;
-            case HARD -> 6;
-        };
-    }
 }

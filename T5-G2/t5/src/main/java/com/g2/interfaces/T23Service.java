@@ -14,11 +14,10 @@
 package com.g2.interfaces;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.g2.model.dto.GameProgressDTO;
 import com.g2.model.NotificationResponse;
 import com.g2.model.User;
-import com.g2.model.dto.HintCreditBalanceDTO;
 import com.g2.model.dto.PlayerDTO;
+import com.g2.model.dto.GameProgressDTO;
 import com.g2.model.dto.PlayerProgressDTO;
 import com.g2.model.dto.UpdateGameProgressDTO;
 import org.json.JSONObject;
@@ -176,16 +175,6 @@ public class T23Service extends BaseService {
         registerAction("updateGlobalAchievements", new ServiceActionDefinition(
                 params -> updateGlobalAchievements((long) params[0], (Set<String>) params[1]), Long.class, Set.class
         ));
-
-        registerAction("addHintCredits", new ServiceActionDefinition(
-                params -> addHintCredits((long) params[0], (int) params[1]),
-                Long.class, Integer.class
-        ));
-
-        registerAction("getHintCredits", new ServiceActionDefinition(
-                params -> getHintCredits((long) params[0]),
-                Long.class
-        ));
     }
 
     private void registerPlayerActions(){
@@ -248,20 +237,6 @@ public class T23Service extends BaseService {
         JSONObject requestBody = new JSONObject();
         requestBody.put("unlockedAchievements", achievements);
         return (Set<String>) callRestPut(endpoint, requestBody, null, null, Set.class);
-    }
-
-    private int addHintCredits(long playerId, int credits) {
-        final String endpoint = "/players/%s/progression/credits/add".formatted(playerId);
-        JSONObject requestBody = new JSONObject();
-        requestBody.put("credits", credits);
-        HintCreditBalanceDTO response = callRestPut(endpoint, requestBody, null, null, HintCreditBalanceDTO.class);
-        return response.getCredits();
-    }
-
-    private int getHintCredits(long playerId) {
-        final String endpoint = "/players/%s/progression/credits".formatted(playerId);
-        HintCreditBalanceDTO response = callRestGET(endpoint, null, HintCreditBalanceDTO.class);
-        return response.getCredits();
     }
 
     // Metodo per l'autenticazione
