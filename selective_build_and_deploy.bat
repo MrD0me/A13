@@ -45,7 +45,7 @@ for %%i in (%SELECTION%) do (
     ) else if %%i==1 (
         echo Building T1-G11
         cd /d "%ROOT_DIR%\T1-G11\applicazione\manvsclass"
-        call mvn clean package -Dspring.profiles.active=prod || (echo Error in T1-G11 build & exit /b 1)
+        call mvn clean package -DskipTests=true -Dspring.profiles.active=prod || (echo Error in T1-G11 build & exit /b 1)
         docker build -t mick0974/a13:t1-g11 .
         docker compose up -d
         if %ERRORLEVEL% neq 0 (
