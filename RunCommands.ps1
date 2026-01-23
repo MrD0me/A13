@@ -9,7 +9,7 @@ if (Test-Path $envFile) {
         if ($_ -match "^\s*#") { return }
         if ($_ -match "^\s*([^=]+)=(.*)$") {
             $name = $Matches[1].Trim()
-            $value = $Matches[2].Trim().Trim("'\"")
+            $value = $Matches[2].Trim().Trim("'\'")
             [System.Environment]::SetEnvironmentVariable($name, $value)
         }
     }
