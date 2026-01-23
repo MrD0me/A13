@@ -1,6 +1,24 @@
 
 // Gestione dei suggerimenti standard e avanzati
 const ADVANCED_SUGGESTION_COST = 2;
+const DIFFICULTY_CAPS = { EASY: 10, MEDIUM: 5, HARD: 2 };
+
+function parseIntOr(value, fallback) {
+	const parsed = parseInt(value, 10);
+	return isNaN(parsed) ? fallback : parsed;
+}
+
+function storedDifficulty() {
+	return localStorage.getItem("difficulty") || "EASY";
+}
+
+function storedClassName() {
+	return localStorage.getItem("underTestClassName") || "";
+}
+
+function storedGameId() {
+	return localStorage.getItem("roundId") || 0;
+}
 
 document.addEventListener("DOMContentLoaded", function () {
 	var newButton = document.getElementById("suggerimento");
@@ -15,9 +33,6 @@ document.addEventListener("DOMContentLoaded", function () {
 			mostraStoricoSuggerimenti();
 		});
 	}
-});
-
-document.addEventListener("DOMContentLoaded", function() {
 	initSuggestionCounters();
 	renderSuggestionHistory();
     
@@ -26,30 +41,25 @@ document.addEventListener("DOMContentLoaded", function() {
 
 function suggestionsMaxForDifficulty(difficulty){
 	if(!difficulty) return 0;
-	switch((difficulty + "").toUpperCase()){
-		case 'EASY': return 10;
-		case 'MEDIUM': return 5;
-		case 'HARD': return 2;
-		default: return 0;
-	}
+	return DIFFICULTY_CAPS[(difficulty + "").toUpperCase()] || 0;
 }
 
 function initSuggestionCounters(){
-	var difficulty = localStorage.getItem("difficulty") || "EASY";
-	var className = localStorage.getItem("underTestClassName") || "";
-	var max = parseInt(localStorage.getItem("suggestionsMax"), 10);
+	var difficulty = storedDifficulty();
+	var className = storedClassName();
+	var max = parseIntOr(localStorage.getItem("suggestionsMax"), null);
 	var history = getSuggestionHistory();
 	var historyEmpty = !history || history.length === 0;
 
 	//Fallback front-end (utilizzando suggestionsMaxForDifficulty) nel caso di errore lato backend.
 	// All'avvio usiamo il limite per difficolta, ma appena possibile lo sostituiamo col cap reale da backend.
-	if(isNaN(max) || max <= 0){
+	if(max === null || max <= 0){
 		max = suggestionsMaxForDifficulty(difficulty);
 	}
 	localStorage.setItem("suggestionsMax", max);
 
-	var available = parseInt(localStorage.getItem("suggestionsAvailable"), 10);
-	if(isNaN(available) || available < 0){
+	var available = parseIntOr(localStorage.getItem("suggestionsAvailable"), null);
+	if(available === null || available < 0){
 		available = max;
 	} else {
 		available = Math.min(available, max);
@@ -62,35 +72,16 @@ function initSuggestionCounters(){
 
 	// Se abbiamo la classe, chiediamo subito al backend il cap reale senza consumare suggerimenti.
 	if(className){
-		fetch("/api/suggerimenti/disponibilita", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({
-				className: className,
-				difficulty: difficulty
-			})
-		})
-		.then(resp => {
-			if(!resp.ok) throw new Error("Errore disponibilita suggerimenti (" + resp.status + ")");
-			return resp.json();
-		})
+		fetchAvailability(className, difficulty)
 		.then(data => {
-			var maxFromServer = parseInt(data.suggestionsMax || data.totalAvailableSuggestions, 10);
-			var availableFromServer = parseInt(data.availableSuggestions || data.totalAvailableSuggestions, 10);
-			if(maxFromServer && maxFromServer > 0){
-				max = maxFromServer;
-				localStorage.setItem("suggestionsMax", max);
-				available = Math.min(available, max);
-			}
-			if(!isNaN(availableFromServer) && availableFromServer >= 0){
-				if(existingAvailable === null){
-					available = availableFromServer;
-				} else {
-					available = Math.min(existingAvailable, availableFromServer);
-				}
-				available = Math.min(available, max);
-				localStorage.setItem("suggestionsAvailable", available);
-			}
+			({ max, available } = applyAvailabilityUpdate({
+				data,
+				existingAvailable,
+				storageMaxKey: "suggestionsMax",
+				storageAvailableKey: "suggestionsAvailable",
+				currentMax: max,
+				currentAvailable: available
+			}));
 			updateSuggestionCounter();
 		})
 		.catch(err => {
@@ -105,19 +96,7 @@ function initSuggestionCounters(){
 	}
 }
 function updateSuggestionCounter(){
-	var counter = document.getElementById("suggestion-counter");
-	if(!counter) return;
-	var available = parseInt(localStorage.getItem("suggestionsAvailable"), 10) || 0;
-	var max = parseInt(localStorage.getItem("suggestionsMax"), 10) || 0;
-	counter.textContent = available + "/" + max;
-	// Cambia colore se esauriti
-	if(available <= 0) {
-		counter.classList.remove('bg-light');
-		counter.classList.add('bg-danger', 'text-white');
-	} else {
-		counter.classList.remove('bg-danger', 'text-white');
-		counter.classList.add('bg-light', 'text-dark');
-	}
+	updateCounterElement("suggestion-counter", "suggestionsAvailable", "suggestionsMax");
 }
 
 function getSuggestionHistory() {
@@ -207,6 +186,20 @@ function setupAdvancedSuggestions() {
 	renderAdvancedSuggestionHistory();
 }
 
+function fetchAvailability(className, difficulty, tier) {
+	var payload = { className: className, difficulty: difficulty };
+	if (tier) payload.tier = tier;
+	return fetch("/api/suggerimenti/disponibilita", {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(payload)
+	})
+		.then(resp => {
+			if(!resp.ok) throw new Error("Errore disponibilita suggerimenti (" + resp.status + ")");
+			return resp.json();
+		});
+}
+
 function refreshCreditsFromServer() {
 	try {
 		var playerId = jwtData?.userId;
@@ -256,10 +249,10 @@ function updateAdvancedCreditsBadge(value) {
 }
 
 function initAdvancedSuggestionCounters() {
-	var difficulty = localStorage.getItem("difficulty") || "EASY";
-	var className = localStorage.getItem("underTestClassName") || "";
-	var max = parseInt(localStorage.getItem("advancedSuggestionsMax"), 10);
-	var available = parseInt(localStorage.getItem("advancedSuggestionsAvailable"), 10);
+	var difficulty = storedDifficulty();
+	var className = storedClassName();
+	var max = parseIntOr(localStorage.getItem("advancedSuggestionsMax"), 0);
+	var available = parseIntOr(localStorage.getItem("advancedSuggestionsAvailable"), 0);
 	var history = [];
 	try { history = (typeof getAdvancedSuggestionHistory === "function") ? getAdvancedSuggestionHistory() : []; } catch (e) { history = []; }
 	var historyEmpty = !history || history.length === 0;
@@ -275,35 +268,16 @@ function initAdvancedSuggestionCounters() {
 	}
 
 	if (className) {
-		fetch("/api/suggerimenti/disponibilita", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({
-				className: className,
-				difficulty: difficulty,
-				tier: "ADVANCED"
-			})
-		})
-			.then(resp => {
-				if (!resp.ok) throw new Error("Errore disponibilita suggerimenti avanzati (" + resp.status + ")");
-				return resp.json();
-			})
+		fetchAvailability(className, difficulty, "ADVANCED")
 			.then(data => {
-				var maxFromServer = parseInt(data.suggestionsMax || data.totalAvailableSuggestions, 10);
-				var availableFromServer = parseInt(data.availableSuggestions || data.totalAvailableSuggestions, 10);
-				if (!isNaN(maxFromServer)) {
-					max = maxFromServer;
-					localStorage.setItem("advancedSuggestionsMax", max);
-				}
-				if (!isNaN(availableFromServer)) {
-					if (existingAvailable === null) {
-						available = availableFromServer;
-					} else {
-						available = Math.min(existingAvailable, availableFromServer);
-					}
-					available = Math.min(available, max);
-					localStorage.setItem("advancedSuggestionsAvailable", available);
-				}
+				({ max, available } = applyAvailabilityUpdate({
+					data,
+					existingAvailable,
+					storageMaxKey: "advancedSuggestionsMax",
+					storageAvailableKey: "advancedSuggestionsAvailable",
+					currentMax: max,
+					currentAvailable: available
+				}));
 				updateAdvancedSuggestionCounter();
 			})
 			.catch(err => {
@@ -316,18 +290,7 @@ function initAdvancedSuggestionCounters() {
 }
 
 function updateAdvancedSuggestionCounter() {
-	var counter = document.getElementById("advanced-suggestion-counter");
-	if (!counter) return;
-	var available = parseInt(localStorage.getItem("advancedSuggestionsAvailable"), 10) || 0;
-	var max = parseInt(localStorage.getItem("advancedSuggestionsMax"), 10) || 0;
-	counter.textContent = available + "/" + max;
-	if (available <= 0) {
-		counter.classList.remove('bg-light');
-		counter.classList.add('bg-danger', 'text-white');
-	} else {
-		counter.classList.remove('bg-danger', 'text-white');
-		counter.classList.add('bg-light', 'text-dark');
-	}
+	updateCounterElement("advanced-suggestion-counter", "advancedSuggestionsAvailable", "advancedSuggestionsMax");
 	updateAdvancedControls();
 }
 
@@ -518,17 +481,10 @@ function richiediSuggerimento() {
 		.then(data => {
 			// Aggiorna il numero di suggerimenti nel localStorage usando i valori reali restituiti dal backend.
 			var availableRaw = (typeof data.suggestionsAvailable === "number") ? data.suggestionsAvailable : data.remainingSuggestions;
-			var available = parseInt(availableRaw, 10);
-			var maxFromServer = parseInt(data.suggestionsMax || data.totalAvailableSuggestions, 10);
-			localStorage.setItem("suggestionsAvailable", isNaN(available) ? 0 : available);
-			if(maxFromServer && maxFromServer > 0){
-				localStorage.setItem("suggestionsMax", maxFromServer);
-			} else {
-				// Fallback per compatibilit� se il backend non fornisse il cap.
-				var fallbackMax = suggestionsMaxForDifficulty(difficulty);
-				localStorage.setItem("suggestionsMax", fallbackMax);
-			}
-
+			var available = parseIntOr(availableRaw, 0);
+			var maxFromServer = parseIntOr((data.suggestionsMax || data.totalAvailableSuggestions), suggestionsMaxForDifficulty(difficulty));
+			localStorage.setItem('suggestionsAvailable', available);
+			localStorage.setItem('suggestionsMax', maxFromServer);
 			updateSuggestionCounter();
 			addSuggestionsToHistory(data.suggestions);
 
@@ -542,10 +498,10 @@ function richiediSuggerimento() {
 }
 
 function richiediSuggerimentoAvanzato() {
-	var difficulty = localStorage.getItem("difficulty") || "EASY";
-	var remainingSuggestions = parseInt(localStorage.getItem("advancedSuggestionsAvailable")) || 0;
-	var gameId = localStorage.getItem("roundId") || 0;
-	var className = localStorage.getItem("underTestClassName") || "";
+	var difficulty = storedDifficulty();
+	var remainingSuggestions = parseIntOr(localStorage.getItem("advancedSuggestionsAvailable"), 0);
+	var gameId = storedGameId();
+	var className = storedClassName();
 	var playerId = jwtData?.userId;
 	var credits = parseInt(localStorage.getItem("hintCredits"), 10) || 0;
 
@@ -598,14 +554,10 @@ function richiediSuggerimentoAvanzato() {
 		})
 		.then(data => {
 			var availableRaw = (typeof data.suggestionsAvailable === "number") ? data.suggestionsAvailable : data.remainingSuggestions;
-			var available = parseInt(availableRaw, 10);
-			var maxFromServer = parseInt(data.suggestionsMax || data.totalAvailableSuggestions, 10);
-			if (!isNaN(available)) {
-				localStorage.setItem("advancedSuggestionsAvailable", available);
-			}
-			if (!isNaN(maxFromServer)) {
-				localStorage.setItem("advancedSuggestionsMax", maxFromServer);
-			}
+			var available = parseIntOr(availableRaw, 0);
+			var maxFromServer = parseIntOr((data.suggestionsMax || data.totalAvailableSuggestions), 0);
+			localStorage.setItem("advancedSuggestionsAvailable", available);
+			localStorage.setItem("advancedSuggestionsMax", maxFromServer);
 			if (typeof data.creditsLeft === "number") {
 				localStorage.setItem("hintCredits", data.creditsLeft);
 				updateAdvancedCreditsBadge(data.creditsLeft);
@@ -777,4 +729,44 @@ function inserisciSuggerimentoNelCodice(suggerimento) {
 
 	// Mostra notifica di successo
 	alert("Suggerimento inserito nel codice!");
+}
+
+function updateCounterElement(counterId, availableKey, maxKey) {
+	var counter = document.getElementById(counterId);
+	if(!counter) return;
+	var available = parseInt(localStorage.getItem(availableKey), 10) || 0;
+	var max = parseInt(localStorage.getItem(maxKey), 10) || 0;
+	counter.textContent = available + "/" + max;
+	// Cambia colore se esauriti
+	if(available <= 0) {
+		counter.classList.remove('bg-light');
+		counter.classList.add('bg-danger', 'text-white');
+	} else {
+		counter.classList.remove('bg-danger', 'text-white');
+		counter.classList.add('bg-light', 'text-dark');
+	}
+}
+
+function applyAvailabilityUpdate(params) {
+	var data = params.data;
+	var maxFromServer = parseIntOr((data.suggestionsMax || data.totalAvailableSuggestions), params.currentMax);
+	var availableFromServer = parseIntOr((data.availableSuggestions || data.totalAvailableSuggestions), null);
+	var max = params.currentMax;
+	var available = params.currentAvailable;
+
+	if(maxFromServer && maxFromServer > 0){
+		max = maxFromServer;
+		localStorage.setItem(params.storageMaxKey, max);
+		available = Math.min(available, max);
+	}
+	if(availableFromServer !== null && availableFromServer >= 0){
+		if(params.existingAvailable === null){
+			available = availableFromServer;
+		} else {
+			available = Math.min(params.existingAvailable, availableFromServer);
+		}
+		available = Math.min(available, max);
+		localStorage.setItem(params.storageAvailableKey, available);
+	}
+	return { max, available };
 }

@@ -1,8 +1,15 @@
 package com.g2.model;
 
 import java.time.LocalDate;
+import java.util.Map;
 
 public class Game {
+    private static final Map<String, Integer> SUGGESTION_CAPS = Map.of(
+            "HARD", 0,
+            "MEDIUM", 3,
+            "EASY", 5
+    );
+
     private int playerId;
     private long id;
     private String description;
@@ -137,18 +144,10 @@ public class Game {
      * @return il numero di suggerimenti
      */
     private int initSuggestionsCount(String difficulty) {
-        if (difficulty == null) return 0;
-
-        switch (difficulty.toUpperCase()) {
-            case "HARD":
-                return 0;
-            case "MEDIUM":
-                return 3;
-            case "EASY":
-                return 5;
-            default:
-                return 0;
+        if (difficulty == null) {
+            return 0;
         }
+        return SUGGESTION_CAPS.getOrDefault(difficulty.toUpperCase(), 0);
     }
 
     @Override
