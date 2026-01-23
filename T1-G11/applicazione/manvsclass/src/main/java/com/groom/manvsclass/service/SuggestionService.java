@@ -38,7 +38,7 @@ public class SuggestionService {
 
     //variabile di fallback
     //la vera variabile che controlla il costo dei suggerimenti avanzati si trova
-    //in Button_editor (T5)
+    //in Suggestion.js (T5)
     private static final int DEFAULT_ADVANCED_COST = 2;
 
     private final SuggestionRepository suggestionRepository;
@@ -47,26 +47,16 @@ public class SuggestionService {
 
     @Transactional(readOnly = true)
     public SuggestionAvailabilityResponseDTO getAvailability(String difficultyRaw, String classNameRaw, String tierRaw) {
-        SuggestionDifficulty difficulty = mapDifficulty(difficultyRaw);
-        SuggestionTier tier = mapTier(tierRaw);
-        String className = normalizeClassName(classNameRaw);
-        List<Suggestion> available = suggestionRepository.findByDifficultyAndClassNameIgnoreCaseAndTier(difficulty, className, tier);
+        SuggestionRequestContext context = buildContext(difficultyRaw, classNameRaw, tierRaw);
+        List<Suggestion> available = findSuggestions(context);
 
         if (available.isEmpty()) {
-            return SuggestionAvailabilityResponseDTO.builder()
-                    .availableSuggestions(0)
-                    .suggestionsMax(0)
-                    .totalAvailableSuggestions(0)
-                    .build();
+            return availabilityResponse(0);
         }
 
-        int effectiveCap = capForTier(difficulty, tier, available.size());
+        int effectiveCap = capForTier(context.difficulty(), context.tier(), available.size());
         // Il numero di suggerimenti disponibili coincide con i suggerimenti realmente utilizzabili.
-        return SuggestionAvailabilityResponseDTO.builder()
-                .availableSuggestions(effectiveCap)
-                .suggestionsMax(effectiveCap)
-                .totalAvailableSuggestions(effectiveCap)
-                .build();
+        return availabilityResponse(effectiveCap);
     }
 
     @Transactional
@@ -83,20 +73,20 @@ public class SuggestionService {
                                                              SuggestionTier tier,
                                                              Long playerId,
                                                              Integer requestedCost) {
-        SuggestionDifficulty difficulty = mapDifficulty(request.getDifficulty());
-        String className = normalizeClassName(request.getClassName());
-        List<Suggestion> available = suggestionRepository.findByDifficultyAndClassNameIgnoreCaseAndTier(difficulty, className, tier);
+        SuggestionRequestContext context = buildContext(request.getDifficulty(), request.getClassName(), tier);
+        List<Suggestion> available = findSuggestions(context);
 
-        if (available.isEmpty() && tier == SuggestionTier.ADVANCED) {
-            return buildEmptyResponse(0, 0, tier, "Nessun suggerimento avanzato disponibile per questa combinazione.");
+        if (available.isEmpty() && context.isAdvanced()) {
+            return buildEmptyResponse(0, 0, context.tier(), "Nessun suggerimento avanzato disponibile per questa combinazione.");
         }
         if (available.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Nessun suggerimento disponibile per la difficolta " + difficulty + " e classe " + className + " nel tier " + tier);
+                    "Nessun suggerimento disponibile per la difficolta " + context.difficulty()
+                            + " e classe " + context.className() + " nel tier " + context.tier());
         }
 
-        int effectiveCap = capForTier(difficulty, tier, available.size());
-        String sessionKey = buildSessionKey(request.getGameId(), className, difficulty, tier);
+        int effectiveCap = capForTier(context.difficulty(), context.tier(), available.size());
+        String sessionKey = buildSessionKey(request.getGameId(), context.className(), context.difficulty(), context.tier());
 
         // Se il client segnala un reset (es. nuova partita) azzeriamo la memoria dei suggerimenti gia mostrati.
         maybeResetSession(request.getRemainingSuggestions(), effectiveCap, sessionKey, request.getGameId());
@@ -109,14 +99,14 @@ public class SuggestionService {
 
         SuggestionSelection selection = selectSuggestion(available, alreadyDelivered, effectiveCap);
         if (selection.suggestion == null) {
-            return buildEmptyResponse(effectiveCap, selection.remainingAfterPick, tier,
+            return buildEmptyResponse(effectiveCap, selection.remainingAfterPick, context.tier(),
                     "Non sono piu disponibili suggerimenti per questa partita.");
         }
 
-        int cost = (requestedCost != null && requestedCost > 0) ? requestedCost : DEFAULT_ADVANCED_COST;
+        int cost = determineAdvancedCost(requestedCost);
         Integer creditsLeft = null;
         Integer creditsSpent = null;
-        if (tier == SuggestionTier.ADVANCED) {
+        if (context.isAdvanced()) {
             if (playerId == null) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "playerId obbligatorio per i suggerimenti avanzati");
             }
@@ -139,8 +129,8 @@ public class SuggestionService {
                 .message(noMore ? "Non sono piu disponibili suggerimenti per questa partita." : null)
                 .creditsLeft(creditsLeft)
                 .creditsSpent(creditsSpent)
-                .suggestionCost(tier == SuggestionTier.ADVANCED ? cost : null)
-                .tier(tier.name())
+                .suggestionCost(context.isAdvanced() ? cost : null)
+                .tier(context.tier().name())
                 .build();
     }
 
@@ -179,7 +169,7 @@ public class SuggestionService {
         List<Suggestion> results;
         if (StringUtils.hasText(tierRaw)) {
             SuggestionTier tier = mapTier(tierRaw);
-            results = suggestionRepository.findByDifficultyAndClassNameIgnoreCaseAndTier(difficulty, className, tier);
+            results = findSuggestions(new SuggestionRequestContext(className, difficulty, tier));
         } else {
             results = suggestionRepository.findByClassNameIgnoreCaseAndDifficulty(className, difficulty);
         }
@@ -220,6 +210,27 @@ public class SuggestionService {
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
         }
+    }
+
+    private SuggestionRequestContext buildContext(String difficultyRaw, String classNameRaw, String tierRaw) {
+        return new SuggestionRequestContext(
+                normalizeClassName(classNameRaw),
+                mapDifficulty(difficultyRaw),
+                mapTier(tierRaw)
+        );
+    }
+
+    private SuggestionRequestContext buildContext(String difficultyRaw, String classNameRaw, SuggestionTier tier) {
+        return new SuggestionRequestContext(
+                normalizeClassName(classNameRaw),
+                mapDifficulty(difficultyRaw),
+                tier
+        );
+    }
+
+    private List<Suggestion> findSuggestions(SuggestionRequestContext context) {
+        return suggestionRepository.findByDifficultyAndClassNameIgnoreCaseAndTier(
+                context.difficulty(), context.className(), context.tier());
     }
 
     private Suggestion buildSuggestion(String className, SuggestionImportItemDTO item) {
@@ -328,6 +339,18 @@ public class SuggestionService {
         );
     }
 
+    private SuggestionAvailabilityResponseDTO availabilityResponse(int availableCount) {
+        return SuggestionAvailabilityResponseDTO.builder()
+                .availableSuggestions(availableCount)
+                .suggestionsMax(availableCount)
+                .totalAvailableSuggestions(availableCount)
+                .build();
+    }
+
+    private int determineAdvancedCost(Integer requestedCost) {
+        return (requestedCost != null && requestedCost > 0) ? requestedCost : DEFAULT_ADVANCED_COST;
+    }
+
     private SuggestionSelection selectSuggestion(List<Suggestion> available, Set<Long> alreadyDelivered, int effectiveCap) {
         if (alreadyDelivered.size() >= effectiveCap) {
             return new SuggestionSelection(null, 0);
@@ -368,6 +391,34 @@ public class SuggestionService {
         private SuggestionSelection(Suggestion suggestion, int remainingAfterPick) {
             this.suggestion = suggestion;
             this.remainingAfterPick = remainingAfterPick;
+        }
+    }
+
+    private static final class SuggestionRequestContext {
+        private final String className;
+        private final SuggestionDifficulty difficulty;
+        private final SuggestionTier tier;
+
+        private SuggestionRequestContext(String className, SuggestionDifficulty difficulty, SuggestionTier tier) {
+            this.className = className;
+            this.difficulty = difficulty;
+            this.tier = tier;
+        }
+
+        private String className() {
+            return className;
+        }
+
+        private SuggestionDifficulty difficulty() {
+            return difficulty;
+        }
+
+        private SuggestionTier tier() {
+            return tier;
+        }
+
+        private boolean isAdvanced() {
+            return SuggestionTier.ADVANCED.equals(tier);
         }
     }
 }
