@@ -1,6 +1,7 @@
 package com.groom.manvsclass.service;
 
 import com.groom.manvsclass.api.UserServiceClient;
+import com.groom.manvsclass.model.DeliveredSuggestion;
 import com.groom.manvsclass.model.Suggestion;
 import com.groom.manvsclass.model.SuggestionDifficulty;
 import com.groom.manvsclass.model.SuggestionTier;
@@ -12,6 +13,7 @@ import com.groom.manvsclass.model.dto.suggestion.SuggestionImportRequestDTO;
 import com.groom.manvsclass.model.dto.suggestion.SuggestionRequestDTO;
 import com.groom.manvsclass.model.dto.suggestion.SuggestionResponseDTO;
 import com.groom.manvsclass.model.dto.suggestion.SuggestionCreateRequestDTO;
+import com.groom.manvsclass.model.repository.DeliveredSuggestionRepository;
 import com.groom.manvsclass.model.repository.SuggestionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,9 +23,9 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
@@ -41,10 +43,7 @@ public class SuggestionService {
 
     private final SuggestionRepository suggestionRepository;
     private final UserServiceClient userServiceClient;
-    /**
-     * Traccia gli ID dei suggerimenti gia mostrati per partita/classe/difficolta cosi da non ripeterli.
-     */
-    private final ConcurrentHashMap<String, Set<Long>> deliveredSuggestions = new ConcurrentHashMap<>();
+    private final DeliveredSuggestionRepository deliveredSuggestionRepository;
 
     @Transactional(readOnly = true)
     public SuggestionAvailabilityResponseDTO getAvailability(String difficultyRaw, String classNameRaw, String tierRaw) {
@@ -70,7 +69,7 @@ public class SuggestionService {
                 .build();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public SuggestionResponseDTO requestSuggestions(SuggestionRequestDTO request) {
         return requestSuggestionsInternal(request, SuggestionTier.BASE, null, null);
     }
@@ -101,12 +100,12 @@ public class SuggestionService {
 
         // Se il client segnala un reset (es. nuova partita) azzeriamo la memoria dei suggerimenti gia mostrati.
         maybeResetSession(request.getRemainingSuggestions(), effectiveCap, sessionKey, request.getGameId());
-        Set<Long> alreadyDelivered = deliveredSuggestions.computeIfAbsent(sessionKey, key -> ConcurrentHashMap.newKeySet());
+        Set<Long> alreadyDelivered = loadDeliveredSuggestions(sessionKey);
         // Allineiamo il set alle entry ancora presenti nel database per evitare contatori sballati dopo un import.
         Set<Long> validSuggestionIds = available.stream()
                 .map(Suggestion::getId)
                 .collect(Collectors.toSet());
-        alreadyDelivered.retainAll(validSuggestionIds);
+        alreadyDelivered = purgeInvalidDelivered(sessionKey, alreadyDelivered, validSuggestionIds);
 
         SuggestionSelection selection = selectSuggestion(available, alreadyDelivered, effectiveCap);
         if (selection.suggestion == null) {
@@ -126,6 +125,7 @@ public class SuggestionService {
         }
 
         alreadyDelivered.add(selection.suggestion.getId());
+        persistDeliveredSuggestion(sessionKey, selection.suggestion.getId());
         int remaining = Math.max(effectiveCap - alreadyDelivered.size(), 0);
         boolean noMore = remaining == 0;
 
@@ -263,13 +263,43 @@ public class SuggestionService {
         return base + "|" + className.toLowerCase() + "|" + difficulty.name() + "|" + tier.name();
     }
 
+    private Set<Long> loadDeliveredSuggestions(String sessionKey) {
+        return deliveredSuggestionRepository.findBySessionKey(sessionKey)
+                .stream()
+                .map(DeliveredSuggestion::getSuggestionId)
+                .collect(Collectors.toCollection(HashSet::new));
+    }
+
+    private Set<Long> purgeInvalidDelivered(String sessionKey, Set<Long> delivered, Set<Long> validIds) {
+        Set<Long> invalid = delivered.stream()
+                .filter(id -> !validIds.contains(id))
+                .collect(Collectors.toSet());
+        if (!invalid.isEmpty()) {
+            deliveredSuggestionRepository.deleteBySessionKeyAndSuggestionIdIn(sessionKey, invalid);
+            delivered.removeAll(invalid);
+        }
+        return delivered;
+    }
+
+    private void persistDeliveredSuggestion(String sessionKey, Long suggestionId) {
+        DeliveredSuggestion entity = DeliveredSuggestion.builder()
+                .sessionKey(sessionKey)
+                .suggestionId(suggestionId)
+                .build();
+        deliveredSuggestionRepository.save(entity);
+    }
+
+    private void clearDeliveredSession(String sessionKey) {
+        deliveredSuggestionRepository.deleteBySessionKey(sessionKey);
+    }
+
     private void maybeResetSession(Integer remainingClient, int effectiveCap, String sessionKey, Long gameId) {
         // Se la partita ha un identificativo valido, usiamo sempre lo stato server-side senza fidarci del contatore client.
         if (gameId != null && gameId > 0) {
             return;
         }
         if (remainingClient != null && remainingClient >= effectiveCap) {
-            deliveredSuggestions.remove(sessionKey);
+            clearDeliveredSession(sessionKey);
         }
     }
 
