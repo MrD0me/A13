@@ -1,72 +1,45 @@
 package com.groom.manvsclass.model;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import com.groom.manvsclass.model.ClassUT;
+import com.groom.manvsclass.model.SuggestionLevel;
 
-@Document(collection = "suggestions")
-public class Suggestion {
-    @Id
-    private String id;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Column;
 
-    private String text;
-    private String category;
-    private String difficulty; // EASY, MEDIUM, HARD
+import jakarta.validation.constraints.NotNull;
 
-    // Costruttori
-    public Suggestion() {
-    }
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 
-    public Suggestion(String text, String category) {
-        this.text = text;
-        this.category = category;
-    }
+import java.time.LocalDate;
 
-    public Suggestion(String text, String category, String difficulty) {
-        this.text = text;
-        this.category = category;
-        this.difficulty = difficulty;
-    }
 
-    // Getter e Setter
-    public String getId() {
-        return id;
-    }
+@Entity
+@DiscriminatorValue("Suggestion")
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
+public class Suggestion extends Guideline {
 
-    public void setId(String id) {
-        this.id = id;
-    }
+    @NotNull
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private SuggestionLevel level;
 
-    public String getText() {
-        return text;
-    }
-
-    public void setText(String text) {
-        this.text = text;
-    }
-
-    public String getCategory() {
-        return category;
-    }
-
-    public void setCategory(String category) {
-        this.category = category;
-    }
-
-    public String getDifficulty() {
-        return difficulty;
-    }
-
-    public void setDifficulty(String difficulty) {
-        this.difficulty = difficulty;
-    }
-
-    @Override
-    public String toString() {
-        return "Suggestion{" +
-                "id='" + id + '\'' +
-                ", text='" + text + '\'' +
-                ", category='" + category + '\'' +
-                ", difficulty='" + difficulty + '\'' +
-                '}';
-    }
+    @NotNull
+	@ManyToOne
+	@JoinColumn(name = "class_name", referencedColumnName = "name")
+    private ClassUT classUT;	
 }
