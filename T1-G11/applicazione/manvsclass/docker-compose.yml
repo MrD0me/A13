@@ -8,13 +8,17 @@ services:
     expose:
       - 8081
     environment:
-      MONGODB_ROOT_PASSWORD: ${MONGODB_ROOT_PASSWORD}
-      MONGODB_ROOT_USERNAME: ${MONGODB_ROOT_USERNAME}
+      MYSQL_HOST: mysql_db
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-manvsclass}
+      MYSQL_USERNAME: ${MYSQL_USER:-manvsclass_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-manvsclass_pass}
       MAIL_PASSWORD: ${MAIL_PASSWORD}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
     depends_on:
-      - mongo_db
+      mysql_db:
+        condition: service_healthy
     volumes:
       - ./FilesUpload:/Files-Upload
       - VolumeT0:/VolumeT0
@@ -26,15 +30,27 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  mongo_db:
-    image: "mongo:6.0.6"
-    container_name: t1-mongo_db
+  mysql_db:
+    image: mysql:8.0
+    platform: linux/amd64
+    container_name: t1-mysql_db
     restart: always
     ports:
-      - "27017:27017"
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-osimhen}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-manvsclass}
+      MYSQL_USER: ${MYSQL_USER:-manvsclass_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-manvsclass_pass}
     volumes:
-      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
-      - mongodb_data_volume:/data/db
+      - ./mysql_init:/docker-entrypoint-initdb.d
+      - mysql_data_volume:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "${MYSQL_USER}", "-p${MYSQL_PASSWORD}" ]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 80s
     networks:
       - global-network
 
@@ -45,4 +61,4 @@ networks:
 volumes:
   VolumeT0:
     external: true
-  mongodb_data_volume:
+  mysql_data_volume:

@@ -1,21 +1,22 @@
 server:
   error:
     include-message: always
+
 spring:
-  data:
-    mongodb:
-	auto-index-creation: true
-	authentication-database: admin
-	username: root
-	password: osimhen
-	database : manvsclass
-	port:27017
-	host:localhost
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:manvsclass}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: ${MYSQL_USERNAME:manvsclass_user}
+    password: ${MYSQL_PASSWORD:manvsclass_pass}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+
 logging:
   level:
     org:
-      springframework:
-        data:
-          mongodb:
-            core:
-              MongoTemplate: DEBUG
+      hibernate:
+        SQL: DEBUG

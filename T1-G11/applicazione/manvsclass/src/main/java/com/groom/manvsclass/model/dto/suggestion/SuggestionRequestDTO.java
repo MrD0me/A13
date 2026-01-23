@@ -1,4 +1,4 @@
-package com.example.db_setup.model.dto.suggestion;
+package com.groom.manvsclass.model.dto.suggestion;
 
 import lombok.Data;
 
@@ -7,7 +7,7 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 /**
- * DTO che incapsula le informazioni necessarie per richiedere uno o pi� suggerimenti
+ * DTO che incapsula le informazioni necessarie per richiedere uno o piu suggerimenti
  * dal servizio backend.
  */
 @Data

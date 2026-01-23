@@ -6,18 +6,13 @@ package com.groom.manvsclass.service;
 import com.groom.manvsclass.model.Admin;
 import com.groom.manvsclass.model.ClassUT;
 import com.groom.manvsclass.model.repository.AdminRepository;
-import com.groom.manvsclass.model.repository.ClassRepository;
-import com.groom.manvsclass.model.repository.OperationRepository;
 import com.groom.manvsclass.model.repository.SearchRepositoryImpl;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import javax.mail.MessagingException;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -25,32 +20,24 @@ import java.util.regex.Pattern;
 @Service
 public class AdminService {
 
-    @Autowired
     private final SearchRepositoryImpl srepo;
+    private final JwtService jwtService;
+    private final AdminRepository arepo;
+    private final EmailService emailService;
+    private final PasswordEncoder myPasswordEncoder;
     private final Admin userAdmin = new Admin("default", "default", "default", "default", "default");
-    private final LocalDate today = LocalDate.now();
-    @Autowired
-    private JwtService jwtService;
-    @Autowired
-    private ClassRepository repo;
-    @Autowired
-    private OperationRepository orepo;
-    @Autowired
-    private MongoTemplate mongoTemplate;
-    @Autowired
-    private AdminRepository arepo;
-    //MODIFICA (15/02/2024) : Servizio di posta elettronica
-    @Autowired
-    private EmailService emailService;
-    //MODIFICA (11/02/2024) : Controlli sul form registrazione
-    @Autowired
-    private PasswordEncoder myPasswordEncoder;
 
-    public AdminService(SearchRepositoryImpl srepo) {
-        this.userAdmin.setUsername("default");
+    public AdminService(SearchRepositoryImpl srepo,
+                        JwtService jwtService,
+                        AdminRepository arepo,
+                        EmailService emailService,
+                        PasswordEncoder myPasswordEncoder) {
         this.srepo = srepo;
+        this.jwtService = jwtService;
+        this.arepo = arepo;
+        this.emailService = emailService;
+        this.myPasswordEncoder = myPasswordEncoder;
     }
-
 
     public ResponseEntity<List<ClassUT>> filtraClassi(String category, String jwt) {
         if (jwtService.isJwtValid(jwt)) {
@@ -75,7 +62,6 @@ public class AdminService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Attenzione, non sei loggato");
         }
 
-        //Controlliamo che non esista nel repository un admin con la mail specificata nell'invito
         Admin admin = arepo.findById(admin1.getEmail()).orElse(null);
         if (admin != null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Email trovata, la persona che stai tentando di invitare è già un amministratore!");
@@ -107,7 +93,7 @@ public class AdminService {
         }
 
         Admin admin_invited = srepo.findAdminByInvitationToken(admin1.getInvitationToken());
-        if (!admin_invited.getInvitationToken().equals(admin1.getInvitationToken())) {
+        if (admin_invited == null || admin_invited.getInvitationToken() == null || !admin_invited.getInvitationToken().equals(admin1.getInvitationToken())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token di invito invalido!");
         }
 

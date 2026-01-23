@@ -1,15 +1,18 @@
 package com.groom.manvsclass.model;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-
+import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
-@Document(collection = "achievements")
+@Entity
+@Table(name = "achievements")
 public class Achievement {
+
     @Id
-    @GeneratedValue // Auto-Increment
-    private String ID;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long ID;
 
     private String name;
     private String description;
@@ -20,7 +23,7 @@ public class Achievement {
 
     }
 
-    public Achievement(String ID, String name, String description, String statistic, float progressRequired) {
+    public Achievement(Long ID, String name, String description, String statistic, float progressRequired) {
         this.ID = ID;
         this.name = name;
         this.description = description;
@@ -28,11 +31,11 @@ public class Achievement {
         this.progressRequired = progressRequired;
     }
 
-    public String getID() {
+    public Long getID() {
         return ID;
     }
 
-    public void setID(String ID) {
+    public void setID(Long ID) {
         this.ID = ID;
     }
 

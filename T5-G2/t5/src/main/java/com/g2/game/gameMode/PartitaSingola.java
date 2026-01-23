@@ -61,7 +61,7 @@ public class PartitaSingola extends GameLogic {
 
     @Override
     public void nextTurn(CompileResult userCompileResult, CompileResult robotScore) {
-        this.robotScore = getScore(userCompileResult);
+        this.robotScore = getScore(robotScore);
         this.userScore = getScore(userCompileResult);
         startTurn();
         logger.info("Created turn {} for game {}", this.getCurrentTurn(), this.getGameID());
@@ -107,10 +107,22 @@ public class PartitaSingola extends GameLogic {
     }
 
     private Boolean beatOnJacocoInstructionCoverage(CompileResult user, CompileResult robot) {
+        if (user == null || user.getInstructionCoverage() == null) {
+            return false;
+        }
+        if (robot == null || robot.getInstructionCoverage() == null) {
+            return true; // se il robot non ha copertura, l'utente vince di default
+        }
         return user.getInstructionCoverage().getCovered() > robot.getInstructionCoverage().getCovered();
     }
 
     private Boolean beatOnEvosuiteWeakMutationCoverage(CompileResult user, CompileResult robot) {
+        if (user == null || user.getEvosuiteWeakMutation() == null) {
+            return false;
+        }
+        if (robot == null || robot.getEvosuiteWeakMutation() == null) {
+            return true;
+        }
         return user.getEvosuiteWeakMutation().getCovered() > robot.getEvosuiteWeakMutation().getCovered();
     }
 }

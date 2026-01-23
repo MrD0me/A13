@@ -1,17 +1,20 @@
-package com.example.db_setup.service;
+package com.groom.manvsclass.service;
 
-import com.example.db_setup.model.DeliveredSuggestion;
-import com.example.db_setup.model.Suggestion;
-import com.example.db_setup.model.SuggestionDifficulty;
-import com.example.db_setup.model.SuggestionTier;
-import com.example.db_setup.model.dto.suggestion.AdvancedSuggestionRequestDTO;
-import com.example.db_setup.model.dto.suggestion.SuggestionAvailabilityResponseDTO;
-import com.example.db_setup.model.dto.suggestion.SuggestionImportItemDTO;
-import com.example.db_setup.model.dto.suggestion.SuggestionImportRequestDTO;
-import com.example.db_setup.model.dto.suggestion.SuggestionRequestDTO;
-import com.example.db_setup.model.dto.suggestion.SuggestionResponseDTO;
-import com.example.db_setup.model.repository.DeliveredSuggestionRepository;
-import com.example.db_setup.model.repository.SuggestionRepository;
+import com.groom.manvsclass.api.UserServiceClient;
+import com.groom.manvsclass.model.DeliveredSuggestion;
+import com.groom.manvsclass.model.Suggestion;
+import com.groom.manvsclass.model.SuggestionDifficulty;
+import com.groom.manvsclass.model.SuggestionTier;
+import com.groom.manvsclass.model.dto.suggestion.AdvancedSuggestionRequestDTO;
+import com.groom.manvsclass.model.dto.suggestion.SuggestionAvailabilityResponseDTO;
+import com.groom.manvsclass.model.dto.suggestion.SuggestionListItemDTO;
+import com.groom.manvsclass.model.dto.suggestion.SuggestionImportItemDTO;
+import com.groom.manvsclass.model.dto.suggestion.SuggestionImportRequestDTO;
+import com.groom.manvsclass.model.dto.suggestion.SuggestionRequestDTO;
+import com.groom.manvsclass.model.dto.suggestion.SuggestionResponseDTO;
+import com.groom.manvsclass.model.dto.suggestion.SuggestionCreateRequestDTO;
+import com.groom.manvsclass.model.repository.DeliveredSuggestionRepository;
+import com.groom.manvsclass.model.repository.SuggestionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -19,8 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.HashSet;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
@@ -39,7 +42,7 @@ public class SuggestionService {
     private static final int DEFAULT_ADVANCED_COST = 2;
 
     private final SuggestionRepository suggestionRepository;
-    private final PlayerProgressService playerProgressService;
+    private final UserServiceClient userServiceClient;
     private final DeliveredSuggestionRepository deliveredSuggestionRepository;
 
     @Transactional(readOnly = true)
@@ -95,7 +98,7 @@ public class SuggestionService {
         int effectiveCap = capForTier(difficulty, tier, available.size());
         String sessionKey = buildSessionKey(request.getGameId(), className, difficulty, tier);
 
-        // Se il client segnala un reset (es. nuova partita) azzeriamo la memoria dei suggerimenti già mostrati.
+        // Se il client segnala un reset (es. nuova partita) azzeriamo la memoria dei suggerimenti gia mostrati.
         maybeResetSession(request.getRemainingSuggestions(), effectiveCap, sessionKey, request.getGameId());
         Set<Long> alreadyDelivered = loadDeliveredSuggestions(sessionKey);
         // Allineiamo il set alle entry ancora presenti nel database per evitare contatori sballati dopo un import.
@@ -117,7 +120,7 @@ public class SuggestionService {
             if (playerId == null) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "playerId obbligatorio per i suggerimenti avanzati");
             }
-            creditsLeft = playerProgressService.spendHintCredits(playerId, cost);
+            creditsLeft = userServiceClient.spendHintCredits(playerId, cost);
             creditsSpent = cost;
         }
 
@@ -154,6 +157,50 @@ public class SuggestionService {
                 .map(item -> buildSuggestion(normalizedClassName, item))
                 .collect(Collectors.toList());
         suggestionRepository.saveAll(toSave);
+    }
+
+    @Transactional
+    public Suggestion createSuggestion(SuggestionCreateRequestDTO request) {
+        String normalizedClassName = normalizeClassName(request.getClassName());
+        Suggestion newSuggestion = Suggestion.builder()
+                .className(normalizedClassName)
+                .difficulty(mapDifficulty(request.getDifficulty()))
+                .tier(mapTier(request.getTier()))
+                .text(normalizeText(request.getText()))
+                .language(StringUtils.hasText(request.getLanguage()) ? request.getLanguage().trim() : "it")
+                .build();
+        return suggestionRepository.save(newSuggestion);
+    }
+
+    @Transactional(readOnly = true)
+    public List<SuggestionListItemDTO> listSuggestions(String classNameRaw, String difficultyRaw, String tierRaw) {
+        SuggestionDifficulty difficulty = mapDifficulty(difficultyRaw);
+        String className = normalizeClassName(classNameRaw);
+        List<Suggestion> results;
+        if (StringUtils.hasText(tierRaw)) {
+            SuggestionTier tier = mapTier(tierRaw);
+            results = suggestionRepository.findByDifficultyAndClassNameIgnoreCaseAndTier(difficulty, className, tier);
+        } else {
+            results = suggestionRepository.findByClassNameIgnoreCaseAndDifficulty(className, difficulty);
+        }
+        return results.stream()
+                .map(s -> new SuggestionListItemDTO(
+                        s.getId(),
+                        s.getText(),
+                        s.getClassName(),
+                        s.getDifficulty().name(),
+                        s.getTier() != null ? s.getTier().name() : SuggestionTier.BASE.name(),
+                        s.getLanguage()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void deleteSuggestion(Long id) {
+        if (!suggestionRepository.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Suggerimento non trovato");
+        }
+        suggestionRepository.deleteById(id);
     }
 
     private SuggestionDifficulty mapDifficulty(String difficulty) {
@@ -264,7 +311,7 @@ public class SuggestionService {
     }
 
     private int maxForDifficulty(SuggestionDifficulty difficulty) {
-        // Numero massimo teorico per difficoltà; l'effettivo viene poi limitato dal numero reale di suggerimenti presenti.
+        // Numero massimo teorico per difficolta; l'effettivo viene poi limitato dal numero reale di suggerimenti presenti.
         return switch (difficulty) {
             case EASY -> 10;
             case MEDIUM -> 5;

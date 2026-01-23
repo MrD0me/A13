@@ -1,31 +1,39 @@
 package com.groom.manvsclass.model;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-
+import javax.persistence.ElementCollection;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-@Document(collection = "Team")
+@Entity
+@Table(name = "teams")
 public class Team {
+
     @Id
     private String idTeam;
     private String name;
     private Date creationDate; //Data di creazione del team
     private int numeroStudenti;
+
+    @ElementCollection
     private List<String> idStudenti; // Lista di ID o nomi degli studenti
 
-    // Costruttore
-    public Team(String idTeam, String name) {
-        this.idTeam = idTeam;
-        this.name = name;
-        this.numeroStudenti = 0; //Default
-        this.creationDate = new Date(); //Data attuale
+    public Team() {
+        this.creationDate = new Date();
         this.idStudenti = new ArrayList<>();
     }
 
-    // Getter e Setter
+    public Team(String idTeam, String name) {
+        this.idTeam = idTeam;
+        this.name = name;
+        this.numeroStudenti = 0;
+        this.creationDate = new Date();
+        this.idStudenti = new ArrayList<>();
+    }
+
     public String getIdTeam() {
         return idTeam;
     }

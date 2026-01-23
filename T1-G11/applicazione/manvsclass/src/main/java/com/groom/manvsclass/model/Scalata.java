@@ -1,17 +1,13 @@
 package com.groom.manvsclass.model;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-
+import javax.persistence.ElementCollection;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
 import java.util.List;
 
-/*
- * the @Document annotation is used to indicate that an instance
- * of the class should be stored as a document in a MongoDB collection
- *
- * the @Id annotation is used to specify the primary key field of the entity
- */
-@Document(collection = "scalate")
+@Entity
+@Table(name = "scalate")
 public class Scalata {
 
     @Id
@@ -20,23 +16,21 @@ public class Scalata {
     private String username;
     private String scalataDescription;
     private int numberOfRounds;
+
+    @ElementCollection
     private List<String> selectedClasses;
 
-    //Void Constructor
     public Scalata() {
 
     }
 
-    //Constructor
     public Scalata(String username, String scalataName, String scalataDescription, int numberOfRounds, List<String> selectedClasses) {
-
         this.username = username;
         this.scalataName = scalataName;
         this.scalataDescription = scalataDescription;
         this.numberOfRounds = numberOfRounds;
         this.selectedClasses = selectedClasses;
     }
-    //Getters
 
     public String getUsername() {
         return username;
@@ -57,7 +51,6 @@ public class Scalata {
     public String getScalataDescription() {
         return scalataDescription;
     }
-    //Setters
 
     public void setScalataDescription(String scalataDescription) {
         this.scalataDescription = scalataDescription;
@@ -79,7 +72,6 @@ public class Scalata {
         this.selectedClasses = selectedClasses;
     }
 
-    //Overriding the toString() method
     @Override
     public String toString() {
         return "Scalata [" +

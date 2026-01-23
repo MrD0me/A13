@@ -238,4 +238,9 @@ div.button-class * {
   cursor: pointer;
 }
 
+div.button-suggestions,
+div.button-suggestions * {
+  cursor: pointer;
+}
+
 

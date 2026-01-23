@@ -1,12 +1,14 @@
-package com.example.db_setup.controller;
+package com.groom.manvsclass.controller;
 
-import com.example.db_setup.model.dto.suggestion.AdvancedSuggestionRequestDTO;
-import com.example.db_setup.model.dto.suggestion.SuggestionAvailabilityRequestDTO;
-import com.example.db_setup.model.dto.suggestion.SuggestionAvailabilityResponseDTO;
-import com.example.db_setup.model.dto.suggestion.SuggestionImportRequestDTO;
-import com.example.db_setup.model.dto.suggestion.SuggestionRequestDTO;
-import com.example.db_setup.model.dto.suggestion.SuggestionResponseDTO;
-import com.example.db_setup.service.SuggestionService;
+import com.groom.manvsclass.model.dto.suggestion.AdvancedSuggestionRequestDTO;
+import com.groom.manvsclass.model.dto.suggestion.SuggestionAvailabilityRequestDTO;
+import com.groom.manvsclass.model.dto.suggestion.SuggestionAvailabilityResponseDTO;
+import com.groom.manvsclass.model.dto.suggestion.SuggestionCreateRequestDTO;
+import com.groom.manvsclass.model.dto.suggestion.SuggestionImportRequestDTO;
+import com.groom.manvsclass.model.dto.suggestion.SuggestionListItemDTO;
+import com.groom.manvsclass.model.dto.suggestion.SuggestionRequestDTO;
+import com.groom.manvsclass.model.dto.suggestion.SuggestionResponseDTO;
+import com.groom.manvsclass.service.SuggestionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -17,6 +19,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -34,7 +40,7 @@ public class SuggestionController {
 
     @Operation(
             summary = "Recupera un suggerimento dal database",
-            description = "Restituisce un suggerimento coerente con la difficoltà della partita"
+            description = "Restituisce un suggerimento coerente con la difficolta della partita"
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Suggerimento restituito correttamente"),
@@ -91,6 +97,21 @@ public class SuggestionController {
     }
 
     @Operation(
+            summary = "Crea un nuovo suggerimento singolo",
+            description = "Endpoint per uso admin: inserisce un nuovo suggerimento per classe/difficolta/tier."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Suggerimento creato correttamente"),
+            @ApiResponse(responseCode = "400", description = "Payload non valido")
+    })
+    @PostMapping("/admin/create")
+    public ResponseEntity<Void> createSuggestion(@Valid @RequestBody SuggestionCreateRequestDTO request) {
+        log.info("[POST /suggerimenti/admin/create] className={} difficulty={} tier={}", request.getClassName(), request.getDifficulty(), request.getTier());
+        suggestionService.createSuggestion(request);
+        return ResponseEntity.status(201).build();
+    }
+
+    @Operation(
             summary = "Espone i limiti massimi di suggerimenti per difficolta",
             description = "Restituisce una mappa difficulty -> max suggerimenti per configurare il client."
     )
@@ -102,5 +123,22 @@ public class SuggestionController {
     public ResponseEntity<java.util.Map<String, Integer>> getCaps() {
         log.info("[POST /suggerimenti/config] richiesta configurazione caps");
         return ResponseEntity.ok(suggestionService.getCaps());
+    }
+
+    @Operation(summary = "Lista suggerimenti per classe/difficolta (uso admin)")
+    @GetMapping("/admin/list")
+    public ResponseEntity<java.util.List<SuggestionListItemDTO>> listSuggestions(@RequestParam String className,
+                                                                                 @RequestParam String difficulty,
+                                                                                 @RequestParam(required = false) String tier) {
+        log.info("[GET /suggerimenti/admin/list] className={} difficulty={} tier={}", className, difficulty, tier);
+        return ResponseEntity.ok(suggestionService.listSuggestions(className, difficulty, tier));
+    }
+
+    @Operation(summary = "Elimina suggerimento (uso admin)")
+    @DeleteMapping("/admin/{id}")
+    public ResponseEntity<Void> deleteSuggestion(@PathVariable Long id) {
+        log.info("[DELETE /suggerimenti/admin/{}]", id);
+        suggestionService.deleteSuggestion(id);
+        return ResponseEntity.noContent().build();
     }
 }

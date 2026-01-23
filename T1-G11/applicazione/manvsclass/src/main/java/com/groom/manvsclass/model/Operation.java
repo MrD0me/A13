@@ -1,16 +1,33 @@
 package com.groom.manvsclass.model;
 
-import org.springframework.data.mongodb.core.mapping.Document;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
-@Document(collection = "Operation")
+@Entity
+@Table(name = "operations")
 public class Operation {
-    private int id_op;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id_op;
+
+    @Column(nullable = false)
     private String username_admin;
+
+    @Column(nullable = false)
     private String nome_classe;
+
     private int type;
     private String date;
 
-    public Operation(int id_op, String username_admin, String nome_classe, int type, String date) {
+    public Operation() {
+    }
+
+    public Operation(Long id_op, String username_admin, String nome_classe, int type, String date) {
         this.id_op = id_op;
         this.username_admin = username_admin;
         this.nome_classe = nome_classe;
@@ -18,13 +35,11 @@ public class Operation {
         this.date = date;
     }
 
-    // Getter e setter per i campi
-
-    public int getId_op() {
+    public Long getId_op() {
         return id_op;
     }
 
-    public void setId_op(int id_op) {
+    public void setId_op(Long id_op) {
         this.id_op = id_op;
     }
 
