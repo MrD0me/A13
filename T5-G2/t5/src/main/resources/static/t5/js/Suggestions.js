@@ -3,22 +3,14 @@
 const ADVANCED_SUGGESTION_COST = 2;
 const DIFFICULTY_CAPS = { EASY: 10, MEDIUM: 5, HARD: 2 };
 
-function parseIntOr(value, fallback) {
-	const parsed = parseInt(value, 10);
-	return isNaN(parsed) ? fallback : parsed;
-}
 
-function storedDifficulty() {
-	return localStorage.getItem("difficulty") || "EASY";
-}
 
-function storedClassName() {
-	return localStorage.getItem("underTestClassName") || "";
-}
+/*******************************************************************************/
 
-function storedGameId() {
-	return localStorage.getItem("roundId") || 0;
-}
+
+/*
+	Funzioni di Initializzazione degli event listener al caricamento della pagina
+*/
 
 document.addEventListener("DOMContentLoaded", function () {
 	var newButton = document.getElementById("suggerimento");
@@ -35,15 +27,9 @@ document.addEventListener("DOMContentLoaded", function () {
 	}
 	initSuggestionCounters();
 	renderSuggestionHistory();
-    
     setupAdvancedSuggestions();
 });
-
-function suggestionsMaxForDifficulty(difficulty){
-	if(!difficulty) return 0;
-	return DIFFICULTY_CAPS[(difficulty + "").toUpperCase()] || 0;
-}
-
+/* Inizializza i contatori dei suggerimenti */
 function initSuggestionCounters(){
 	var difficulty = storedDifficulty();
 	var className = storedClassName();
@@ -95,159 +81,7 @@ function initSuggestionCounters(){
 		updateSuggestionCounter();
 	}
 }
-function updateSuggestionCounter(){
-	updateCounterElement("suggestion-counter", "suggestionsAvailable", "suggestionsMax");
-}
-
-function getSuggestionHistory() {
-	try {
-		var stored = localStorage.getItem("suggestionHistory");
-		return stored ? JSON.parse(stored) : [];
-	} catch (e) {
-		console.warn("Impossibile leggere la cronologia suggerimenti:", e);
-		return [];
-	}
-}
-
-function saveSuggestionHistory(history) {
-	localStorage.setItem("suggestionHistory", JSON.stringify(history));
-}
-
-function addSuggestionsToHistory(suggestions) {
-	if (!suggestions || suggestions.length === 0) return;
-	var history = getSuggestionHistory();
-	suggestions.forEach(function (suggerimento) {
-		history.push(suggerimento);
-	});
-	saveSuggestionHistory(history);
-	renderSuggestionHistory();
-}
-
-function renderSuggestionHistory() {
-	var list = document.getElementById("suggestion-history-list");
-	if (!list) return;
-	var history = getSuggestionHistory();
-	list.innerHTML = "";
-
-	if (history.length === 0) {
-		var emptyItem = document.createElement("li");
-		emptyItem.className = "list-group-item";
-		emptyItem.textContent = "Nessun suggerimento ricevuto.";
-		list.appendChild(emptyItem);
-		return;
-	}
-
-	history.forEach(function (text, index) {
-		var item = document.createElement("li");
-		item.className = "list-group-item d-flex justify-content-between align-items-start";
-
-		var content = document.createElement("div");
-		content.className = "ms-2 me-auto";
-
-		var title = document.createElement("div");
-		title.className = "fw-bold";
-		title.textContent = "Suggerimento " + (index + 1);
-
-		var body = document.createElement("small");
-		body.textContent = text;
-
-		content.appendChild(title);
-		content.appendChild(body);
-		item.appendChild(content);
-		list.appendChild(item);
-	});
-}
-
-function setupAdvancedSuggestions() {
-	var costBadge = document.getElementById("advanced-suggestion-cost");
-	if (costBadge) {
-		costBadge.textContent = ADVANCED_SUGGESTION_COST;
-	}
-	var storedCredits = parseInt(localStorage.getItem("hintCredits"), 10);
-	if (!isNaN(storedCredits)) {
-		updateAdvancedCreditsBadge(storedCredits);
-	}
-	var advButton = document.getElementById("advancedSuggestionBtn");
-	if (advButton) {
-		advButton.addEventListener("click", function () {
-			richiediSuggerimentoAvanzato();
-		});
-	}
-	var advancedTab = document.getElementById("advanced-tab");
-	if (advancedTab) {
-		advancedTab.addEventListener("shown.bs.tab", function () {
-			refreshCreditsFromServer();
-			initAdvancedSuggestionCounters();
-			renderAdvancedSuggestionHistory();
-		});
-	}
-	refreshCreditsFromServer();
-	initAdvancedSuggestionCounters();
-	renderAdvancedSuggestionHistory();
-}
-
-function fetchAvailability(className, difficulty, tier) {
-	var payload = { className: className, difficulty: difficulty };
-	if (tier) payload.tier = tier;
-	return fetch("/api/suggerimenti/disponibilita", {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify(payload)
-	})
-		.then(resp => {
-			if(!resp.ok) throw new Error("Errore disponibilita suggerimenti (" + resp.status + ")");
-			return resp.json();
-		});
-}
-
-function refreshCreditsFromServer() {
-	try {
-		var playerId = jwtData?.userId;
-		if (!playerId) {
-			updateAdvancedCreditsBadge(0);
-			updateAdvancedControls();
-			return Promise.resolve(0);
-		}
-		return fetch(`/api/userService/players/${playerId}/progression/credits`)
-			.then(resp => {
-				if (!resp.ok) throw new Error("Errore recupero crediti (" + resp.status + ")");
-				return resp.json();
-			})
-			.then(data => {
-				var credits = parseInt((data && (data.credits ?? data.Credits)), 10);
-				if (isNaN(credits)) {
-					credits = 0;
-				}
-				localStorage.setItem("hintCredits", credits);
-				updateAdvancedCreditsBadge(credits);
-				updateAdvancedControls();
-				return credits;
-			})
-			.catch(err => {
-				console.warn("Impossibile aggiornare i crediti dal server:", err);
-				updateAdvancedControls();
-				return 0;
-			});
-	} catch (e) {
-		console.warn("refreshCreditsFromServer error", e);
-		updateAdvancedControls();
-		return Promise.resolve(0);
-	}
-}
-
-function updateAdvancedCreditsBadge(value) {
-	var badge = document.getElementById("advanced-credits-badge");
-	if (!badge) return;
-	badge.textContent = value;
-	if (value <= 0) {
-		badge.classList.remove("bg-success");
-		badge.classList.add("bg-danger");
-	} else {
-		badge.classList.remove("bg-danger");
-		badge.classList.add("bg-success");
-	}
-}
-
+/* Inizializza i contatori dei suggerimenti avanzati */
 function initAdvancedSuggestionCounters() {
 	var difficulty = storedDifficulty();
 	var className = storedClassName();
@@ -288,159 +122,44 @@ function initAdvancedSuggestionCounters() {
 		updateAdvancedSuggestionCounter();
 	}
 }
-
-function updateAdvancedSuggestionCounter() {
-	updateCounterElement("advanced-suggestion-counter", "advancedSuggestionsAvailable", "advancedSuggestionsMax");
-	updateAdvancedControls();
-}
-
-function updateAdvancedControls() {
-	var button = document.getElementById("advancedSuggestionBtn");
-	if (!button) return;
-	var credits = parseInt(localStorage.getItem("hintCredits"), 10) || 0;
-	var available = parseInt(localStorage.getItem("advancedSuggestionsAvailable"), 10) || 0;
-	button.disabled = credits < ADVANCED_SUGGESTION_COST || available <= 0;
-}
-
-function getAdvancedSuggestionHistory() {
-	try {
-		var stored = localStorage.getItem("advancedSuggestionHistory");
-		return stored ? JSON.parse(stored) : [];
-	} catch (e) {
-		console.warn("Impossibile leggere la cronologia suggerimenti avanzati:", e);
-		return [];
+/* Inizializza i suggerimenti avanzati */
+function setupAdvancedSuggestions() {
+	var costBadge = document.getElementById("advanced-suggestion-cost");
+	if (costBadge) {
+		costBadge.textContent = ADVANCED_SUGGESTION_COST;
 	}
-}
-
-function saveAdvancedSuggestionHistory(history) {
-	localStorage.setItem("advancedSuggestionHistory", JSON.stringify(history));
-}
-
-function addAdvancedSuggestionsToHistory(suggestions) {
-	if (!suggestions || suggestions.length === 0) return;
-	var history = getAdvancedSuggestionHistory();
-	suggestions.forEach(function (suggerimento) {
-		history.push(suggerimento);
-	});
-	saveAdvancedSuggestionHistory(history);
+	var storedCredits = parseInt(localStorage.getItem("hintCredits"), 10);
+	if (!isNaN(storedCredits)) {
+		updateAdvancedCreditsBadge(storedCredits);
+	}
+	var advButton = document.getElementById("advancedSuggestionBtn");
+	if (advButton) {
+		advButton.addEventListener("click", function () {
+			richiediSuggerimentoAvanzato();
+		});
+	}
+	var advancedTab = document.getElementById("advanced-tab");
+	if (advancedTab) {
+		advancedTab.addEventListener("shown.bs.tab", function () {
+			refreshCreditsFromServer();
+			initAdvancedSuggestionCounters();
+			renderAdvancedSuggestionHistory();
+		});
+	}
+	refreshCreditsFromServer();
+	initAdvancedSuggestionCounters();
 	renderAdvancedSuggestionHistory();
 }
 
-function renderAdvancedSuggestionHistory() {
-	var list = document.getElementById("advanced-suggestion-history-list");
-	if (!list) return;
-	var history = getAdvancedSuggestionHistory();
-	list.innerHTML = "";
 
-	if (history.length === 0) {
-		var emptyItem = document.createElement("li");
-		emptyItem.className = "list-group-item";
-		emptyItem.textContent = suggerimenti_nessuno_avanzato;
-		list.appendChild(emptyItem);
-		return;
-	}
 
-	history.forEach(function (text, index) {
-		var item = document.createElement("li");
-		item.className = "list-group-item d-flex justify-content-between align-items-start";
+/*******************************************************************************/
 
-		var content = document.createElement("div");
-		content.className = "ms-2 me-auto";
+/*
+	Funzioni principali per la richiesta e gestione dei suggerimenti
+*/
 
-		var title = document.createElement("div");
-		title.className = "fw-bold";
-		title.textContent = "Suggerimento avanzato " + (index + 1);
-
-		var body = document.createElement("small");
-		body.textContent = text;
-
-		content.appendChild(title);
-		content.appendChild(body);
-		item.appendChild(content);
-		list.appendChild(item);
-	});
-}
-
-function mostraStoricoSuggerimenti() {
-	var history = getSuggestionHistory();
-	var modal = document.createElement("div");
-	modal.className = "modal fade";
-	modal.id = "storicoSuggerimentiModal";
-	modal.setAttribute("tabindex", "-1");
-	modal.setAttribute("aria-labelledby", "storicoSuggerimentiLabel");
-	modal.setAttribute("aria-hidden", "true");
-
-	var bodyContent = "";
-	if (history.length === 0) {
-		bodyContent = "<p class='mb-0'>Nessun suggerimento ricevuto.</p>";
-	} else {
-		bodyContent = "<ul class='list-group'>";
-		history.forEach(function (suggerimento, index) {
-			bodyContent += "<li class='list-group-item'><strong>#"+ (index+1) +":</strong> " + suggerimento + "</li>";
-		});
-		bodyContent += "</ul>";
-	}
-
-	modal.innerHTML = `
-		<div class="modal-dialog modal-lg">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h1 class="modal-title fs-5" id="storicoSuggerimentiLabel">Cronologia suggerimenti</h1>
-					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-				</div>
-				<div class="modal-body">
-					${bodyContent}
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
-				</div>
-			</div>
-		</div>
-	`;
-
-	document.body.appendChild(modal);
-	var bsModal = new bootstrap.Modal(modal);
-	bsModal.show();
-	modal.addEventListener("hidden.bs.modal", function () {
-		modal.remove();
-	});
-}
-
-function mostraAlertSuggerimenti(message) {
-	var modal = document.createElement("div");
-	modal.className = "modal fade";
-	modal.id = "alertSuggerimentiModal";
-	modal.setAttribute("tabindex", "-1");
-	modal.setAttribute("aria-labelledby", "alertSuggerimentiLabel");
-	modal.setAttribute("aria-hidden", "true");
-
-	modal.innerHTML = `
-		<div class="modal-dialog modal-lg">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h1 class="modal-title fs-5" id="alertSuggerimentiLabel">Suggerimenti</h1>
-					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-				</div>
-				<div class="modal-body">
-					<div class="alert alert-warning" role="alert">
-						<strong>Attenzione!</strong> ${message}
-					</div>
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
-				</div>
-			</div>
-		</div>
-	`;
-
-	document.body.appendChild(modal);
-	var bsModal = new bootstrap.Modal(modal);
-	bsModal.show();
-	modal.addEventListener("hidden.bs.modal", function () {
-		modal.remove();
-	});
-}
-
+// Richiede un suggerimento al backend
 function richiediSuggerimento() {
 	// Recupera i dati dalla sessione/localStorage
 	var difficulty = localStorage.getItem("difficulty") || "EASY";
@@ -496,7 +215,7 @@ function richiediSuggerimento() {
 			mostraAlertSuggerimenti("Non sono disponibili suggerimenti");
 		});
 }
-
+// Richiede un suggerimento avanzato al backend
 function richiediSuggerimentoAvanzato() {
 	var difficulty = storedDifficulty();
 	var remainingSuggestions = parseIntOr(localStorage.getItem("advancedSuggestionsAvailable"), 0);
@@ -583,6 +302,232 @@ function richiediSuggerimentoAvanzato() {
 		});
 }
 
+
+
+
+
+
+/******************************************************************************/
+
+/*
+	Storico BASE
+*/
+
+function getSuggestionHistory() {
+	try {
+		var stored = localStorage.getItem("suggestionHistory");
+		return stored ? JSON.parse(stored) : [];
+	} catch (e) {
+		console.warn("Impossibile leggere la cronologia suggerimenti:", e);
+		return [];
+	}
+}
+
+function saveSuggestionHistory(history) {
+	localStorage.setItem("suggestionHistory", JSON.stringify(history));
+}
+
+function addSuggestionsToHistory(suggestions) {
+	if (!suggestions || suggestions.length === 0) return;
+	var history = getSuggestionHistory();
+	suggestions.forEach(function (suggerimento) {
+		history.push(suggerimento);
+	});
+	saveSuggestionHistory(history);
+	renderSuggestionHistory();
+}
+
+function renderSuggestionHistory() {
+	var list = document.getElementById("suggestion-history-list");
+	if (!list) return;
+	var history = getSuggestionHistory();
+	list.innerHTML = "";
+
+	if (history.length === 0) {
+		var emptyItem = document.createElement("li");
+		emptyItem.className = "list-group-item";
+		emptyItem.textContent = "Nessun suggerimento ricevuto.";
+		list.appendChild(emptyItem);
+		return;
+	}
+
+	history.forEach(function (text, index) {
+		var item = document.createElement("li");
+		item.className = "list-group-item d-flex justify-content-between align-items-start";
+
+		var content = document.createElement("div");
+		content.className = "ms-2 me-auto";
+
+		var title = document.createElement("div");
+		title.className = "fw-bold";
+		title.textContent = "Suggerimento " + (index + 1);
+
+		var body = document.createElement("small");
+		body.textContent = text;
+
+		content.appendChild(title);
+		content.appendChild(body);
+		item.appendChild(content);
+		list.appendChild(item);
+	});
+}
+
+function mostraStoricoSuggerimenti() {
+	var history = getSuggestionHistory();
+	var modal = document.createElement("div");
+	modal.className = "modal fade";
+	modal.id = "storicoSuggerimentiModal";
+	modal.setAttribute("tabindex", "-1");
+	modal.setAttribute("aria-labelledby", "storicoSuggerimentiLabel");
+	modal.setAttribute("aria-hidden", "true");
+
+	var bodyContent = "";
+	if (history.length === 0) {
+		bodyContent = "<p class='mb-0'>Nessun suggerimento ricevuto.</p>";
+	} else {
+		bodyContent = "<ul class='list-group'>";
+		history.forEach(function (suggerimento, index) {
+			bodyContent += "<li class='list-group-item'><strong>#"+ (index+1) +":</strong> " + suggerimento + "</li>";
+		});
+		bodyContent += "</ul>";
+	}
+
+	modal.innerHTML = `
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h1 class="modal-title fs-5" id="storicoSuggerimentiLabel">Cronologia suggerimenti</h1>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					${bodyContent}
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
+				</div>
+			</div>
+		</div>
+	`;
+
+	document.body.appendChild(modal);
+	var bsModal = new bootstrap.Modal(modal);
+	bsModal.show();
+	modal.addEventListener("hidden.bs.modal", function () {
+		modal.remove();
+	});
+}
+
+
+/* 
+	Storico AVANZATO
+*/
+
+function getAdvancedSuggestionHistory() {
+	try {
+		var stored = localStorage.getItem("advancedSuggestionHistory");
+		return stored ? JSON.parse(stored) : [];
+	} catch (e) {
+		console.warn("Impossibile leggere la cronologia suggerimenti avanzati:", e);
+		return [];
+	}
+}
+
+function saveAdvancedSuggestionHistory(history) {
+	localStorage.setItem("advancedSuggestionHistory", JSON.stringify(history));
+}
+
+function addAdvancedSuggestionsToHistory(suggestions) {
+	if (!suggestions || suggestions.length === 0) return;
+	var history = getAdvancedSuggestionHistory();
+	suggestions.forEach(function (suggerimento) {
+		history.push(suggerimento);
+	});
+	saveAdvancedSuggestionHistory(history);
+	renderAdvancedSuggestionHistory();
+}
+
+function renderAdvancedSuggestionHistory() {
+	var list = document.getElementById("advanced-suggestion-history-list");
+	if (!list) return;
+	var history = getAdvancedSuggestionHistory();
+	list.innerHTML = "";
+
+	if (history.length === 0) {
+		var emptyItem = document.createElement("li");
+		emptyItem.className = "list-group-item";
+		emptyItem.textContent = suggerimenti_nessuno_avanzato;
+		list.appendChild(emptyItem);
+		return;
+	}
+
+	history.forEach(function (text, index) {
+		var item = document.createElement("li");
+		item.className = "list-group-item d-flex justify-content-between align-items-start";
+
+		var content = document.createElement("div");
+		content.className = "ms-2 me-auto";
+
+		var title = document.createElement("div");
+		title.className = "fw-bold";
+		title.textContent = "Suggerimento avanzato " + (index + 1);
+
+		var body = document.createElement("small");
+		body.textContent = text;
+
+		content.appendChild(title);
+		content.appendChild(body);
+		item.appendChild(content);
+		list.appendChild(item);
+	});
+}
+
+
+
+
+
+/*******************************************************************************/
+
+/*
+	Funzioni di utilità per mostrare modali per la stampa dei suggerimenti o  di Alert
+*/
+
+// Mostra un alert con il messaggio di avviso
+function mostraAlertSuggerimenti(message) {
+	var modal = document.createElement("div");
+	modal.className = "modal fade";
+	modal.id = "alertSuggerimentiModal";
+	modal.setAttribute("tabindex", "-1");
+	modal.setAttribute("aria-labelledby", "alertSuggerimentiLabel");
+	modal.setAttribute("aria-hidden", "true");
+
+	modal.innerHTML = `
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h1 class="modal-title fs-5" id="alertSuggerimentiLabel">Suggerimenti</h1>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div class="alert alert-warning" role="alert">
+						<strong>Attenzione!</strong> ${message}
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
+				</div>
+			</div>
+		</div>
+	`;
+
+	document.body.appendChild(modal);
+	var bsModal = new bootstrap.Modal(modal);
+	bsModal.show();
+	modal.addEventListener("hidden.bs.modal", function () {
+		modal.remove();
+	});
+}
+
+// Mostra i suggerimenti in una modale
 function mostraSuggerimenti(data, options) {
 	options = options || {};
 	var titleLabel = options.title || "Suggerimenti";
@@ -706,6 +651,174 @@ function mostraSuggerimenti(data, options) {
 		modal.remove();
 	});
 }
+
+/*******************************************************************************/
+
+/* 
+	Funzioni di UPDATE della disponibilità dei suggerimenti 
+*/
+
+function applyAvailabilityUpdate(params) {
+	var data = params.data;
+	var maxFromServer = parseIntOr((data.suggestionsMax || data.totalAvailableSuggestions), params.currentMax);
+	var availableFromServer = parseIntOr((data.availableSuggestions || data.totalAvailableSuggestions), null);
+	var max = params.currentMax;
+	var available = params.currentAvailable;
+
+	if(maxFromServer && maxFromServer > 0){
+		max = maxFromServer;
+		localStorage.setItem(params.storageMaxKey, max);
+		available = Math.min(available, max);
+	}
+	if(availableFromServer !== null && availableFromServer >= 0){
+		if(params.existingAvailable === null){
+			available = availableFromServer;
+		} else {
+			available = Math.min(params.existingAvailable, availableFromServer);
+		}
+		available = Math.min(available, max);
+		localStorage.setItem(params.storageAvailableKey, available);
+	}
+	return { max, available };
+}
+
+function fetchAvailability(className, difficulty, tier) {
+	var payload = { className: className, difficulty: difficulty };
+	if (tier) payload.tier = tier;
+	return fetch("/api/suggerimenti/disponibilita", {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(payload)
+	})
+		.then(resp => {
+			if(!resp.ok) throw new Error("Errore disponibilita suggerimenti (" + resp.status + ")");
+			return resp.json();
+		});
+}
+
+
+/*******************************************************************************/
+
+/* 
+	Funzioni di UPDATE gestione crediti suggerimenti avanzati
+*/
+
+
+function refreshCreditsFromServer() {
+	try {
+		var playerId = jwtData?.userId;
+		if (!playerId) {
+			updateAdvancedCreditsBadge(0);
+			updateAdvancedControls();
+			return Promise.resolve(0);
+		}
+		return fetch(`/api/userService/players/${playerId}/progression/credits`)
+			.then(resp => {
+				if (!resp.ok) throw new Error("Errore recupero crediti (" + resp.status + ")");
+				return resp.json();
+			})
+			.then(data => {
+				var credits = parseInt((data && (data.credits ?? data.Credits)), 10);
+				if (isNaN(credits)) {
+					credits = 0;
+				}
+				localStorage.setItem("hintCredits", credits);
+				updateAdvancedCreditsBadge(credits);
+				updateAdvancedControls();
+				return credits;
+			})
+			.catch(err => {
+				console.warn("Impossibile aggiornare i crediti dal server:", err);
+				updateAdvancedControls();
+				return 0;
+			});
+	} catch (e) {
+		console.warn("refreshCreditsFromServer error", e);
+		updateAdvancedControls();
+		return Promise.resolve(0);
+	}
+}
+
+function updateAdvancedCreditsBadge(value) {
+	var badge = document.getElementById("advanced-credits-badge");
+	if (!badge) return;
+	badge.textContent = value;
+	if (value <= 0) {
+		badge.classList.remove("bg-success");
+		badge.classList.add("bg-danger");
+	} else {
+		badge.classList.remove("bg-danger");
+		badge.classList.add("bg-success");
+	}
+}
+
+function updateAdvancedControls() {
+	var button = document.getElementById("advancedSuggestionBtn");
+	if (!button) return;
+	var credits = parseInt(localStorage.getItem("hintCredits"), 10) || 0;
+	var available = parseInt(localStorage.getItem("advancedSuggestionsAvailable"), 10) || 0;
+	button.disabled = credits < ADVANCED_SUGGESTION_COST || available <= 0;
+}
+
+
+/*******************************************************************************/
+
+
+/* 
+	Aggiorna i contatori dei suggerimenti 
+*/
+
+function updateAdvancedSuggestionCounter() {
+	updateCounterElement("advanced-suggestion-counter", "advancedSuggestionsAvailable", "advancedSuggestionsMax");
+	updateAdvancedControls();
+}
+function updateSuggestionCounter(){
+	updateCounterElement("suggestion-counter", "suggestionsAvailable", "suggestionsMax");
+}
+function updateCounterElement(counterId, availableKey, maxKey) {
+	var counter = document.getElementById(counterId);
+	if(!counter) return;
+	var available = parseInt(localStorage.getItem(availableKey), 10) || 0;
+	var max = parseInt(localStorage.getItem(maxKey), 10) || 0;
+	counter.textContent = available + "/" + max;
+	// Cambia colore se esauriti
+	if(available <= 0) {
+		counter.classList.remove('bg-light');
+		counter.classList.add('bg-danger', 'text-white');
+	} else {
+		counter.classList.remove('bg-danger', 'text-white');
+		counter.classList.add('bg-light', 'text-dark');
+	}
+}
+
+
+/*******************************************************************************/
+
+/* 
+	Funzioni di utilità per recuperare dati dal localStorage 
+*/
+
+function storedDifficulty() {
+	return localStorage.getItem("difficulty") || "EASY";
+}
+
+function storedClassName() {
+	return localStorage.getItem("underTestClassName") || "";
+}
+
+function storedGameId() {
+	return localStorage.getItem("roundId") || 0;
+}
+
+
+
+
+/*******************************************************************************/
+
+/* 
+	Funzione di utilità per l'inserimento del suggerimento nel codice 
+*/
+
 function inserisciSuggerimentoNelCodice(suggerimento) {
 	// Inserisce il suggerimento alla fine del codice, dentro le parentesi graffe
 	var currentCode = editor_utente.getValue();
@@ -731,42 +844,22 @@ function inserisciSuggerimentoNelCodice(suggerimento) {
 	alert("Suggerimento inserito nel codice!");
 }
 
-function updateCounterElement(counterId, availableKey, maxKey) {
-	var counter = document.getElementById(counterId);
-	if(!counter) return;
-	var available = parseInt(localStorage.getItem(availableKey), 10) || 0;
-	var max = parseInt(localStorage.getItem(maxKey), 10) || 0;
-	counter.textContent = available + "/" + max;
-	// Cambia colore se esauriti
-	if(available <= 0) {
-		counter.classList.remove('bg-light');
-		counter.classList.add('bg-danger', 'text-white');
-	} else {
-		counter.classList.remove('bg-danger', 'text-white');
-		counter.classList.add('bg-light', 'text-dark');
-	}
+
+
+/******************************************************************************/
+/* 
+	Funzioni di utilità generali 
+*/
+function parseIntOr(value, fallback) {
+	const parsed = parseInt(value, 10);
+	return isNaN(parsed) ? fallback : parsed;
 }
 
-function applyAvailabilityUpdate(params) {
-	var data = params.data;
-	var maxFromServer = parseIntOr((data.suggestionsMax || data.totalAvailableSuggestions), params.currentMax);
-	var availableFromServer = parseIntOr((data.availableSuggestions || data.totalAvailableSuggestions), null);
-	var max = params.currentMax;
-	var available = params.currentAvailable;
-
-	if(maxFromServer && maxFromServer > 0){
-		max = maxFromServer;
-		localStorage.setItem(params.storageMaxKey, max);
-		available = Math.min(available, max);
-	}
-	if(availableFromServer !== null && availableFromServer >= 0){
-		if(params.existingAvailable === null){
-			available = availableFromServer;
-		} else {
-			available = Math.min(params.existingAvailable, availableFromServer);
-		}
-		available = Math.min(available, max);
-		localStorage.setItem(params.storageAvailableKey, available);
-	}
-	return { max, available };
+function suggestionsMaxForDifficulty(difficulty){
+	if(!difficulty) return 0;
+	return DIFFICULTY_CAPS[(difficulty + "").toUpperCase()] || 0;
 }
+
+/******************************************************************************/
+
+
