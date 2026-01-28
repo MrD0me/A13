@@ -13,7 +13,6 @@
  */
 package com.g2.interfaces;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.g2.model.dto.GameProgressDTO;
 import com.g2.model.NotificationResponse;
@@ -37,7 +36,6 @@ import testrobotchallenge.commons.models.dto.auth.JwtValidationResponseDTO;
 import testrobotchallenge.commons.models.opponent.GameMode;
 import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -224,8 +222,8 @@ public class T23Service extends BaseService {
         JSONObject requestBody;
         try {
             requestBody = new JSONObject(mapper.writeValueAsString(dto));
-        } catch (JsonProcessingException e) {
-            throw new IllegalStateException("Failed to serialize UpdateGameProgressDTO", e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
 
         logger.info("REQUEST BODY MAPPER: {}", requestBody);
@@ -249,7 +247,7 @@ public class T23Service extends BaseService {
 
         JSONObject requestBody = new JSONObject();
         requestBody.put("unlockedAchievements", achievements);
-        return callRestPut(endpoint, requestBody, null, null, new ParameterizedTypeReference<Set<String>>() {});
+        return (Set<String>) callRestPut(endpoint, requestBody, null, null, Set.class);
     }
 
     private int addHintCredits(long playerId, int credits) {
@@ -310,9 +308,9 @@ public class T23Service extends BaseService {
         if (responseEntity.getStatusCode().is2xxSuccessful()) {
             @SuppressWarnings("unchecked")
             List<User> users = (List<User>) responseEntity.getBody();
-            return users != null ? users : Collections.emptyList();
+            return users;
         } else {
-            return Collections.emptyList();
+            return null;
         }
     }
 
@@ -358,8 +356,10 @@ public class T23Service extends BaseService {
                 NotificationResponse.class
         );
 
-        if (response == null || response.getBody() == null) {
+        if (response == null) {
             return new NotificationResponse();
+        } else {
+            return response.getBody();
         }
     }
 
