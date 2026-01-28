@@ -68,6 +68,7 @@ function initSuggestionCounters(){
 				currentMax: max,
 				currentAvailable: available
 			}));
+			rehydrateHistoryFromServer(data.deliveredSuggestions, "suggestionHistory", renderSuggestionHistory);
 			updateSuggestionCounter();
 		})
 		.catch(err => {
@@ -112,6 +113,7 @@ function initAdvancedSuggestionCounters() {
 					currentMax: max,
 					currentAvailable: available
 				}));
+				rehydrateHistoryFromServer(data.deliveredSuggestions, "advancedSuggestionHistory", renderAdvancedSuggestionHistory);
 				updateAdvancedSuggestionCounter();
 			})
 			.catch(err => {
@@ -312,6 +314,22 @@ function richiediSuggerimentoAvanzato() {
 /*
 	Storico BASE
 */
+
+function rehydrateHistoryFromServer(serverHistory, storageKey, renderFn) {
+	if (!Array.isArray(serverHistory) || serverHistory.length === 0) return;
+	let localHistory = [];
+	try {
+		const raw = localStorage.getItem(storageKey);
+		localHistory = raw ? JSON.parse(raw) : [];
+	} catch (e) {
+		localHistory = [];
+	}
+	if (localHistory.length >= serverHistory.length) return;
+	localStorage.setItem(storageKey, JSON.stringify(serverHistory));
+	if (typeof renderFn === "function") {
+		try { renderFn(); } catch (err) { console.warn("Impossibile renderizzare lo storico", err); }
+	}
+}
 
 function getSuggestionHistory() {
 	try {
@@ -685,6 +703,10 @@ function applyAvailabilityUpdate(params) {
 function fetchAvailability(className, difficulty, tier) {
 	var payload = { className: className, difficulty: difficulty };
 	if (tier) payload.tier = tier;
+	var gameId = storedGameId();
+	if (gameId && parseInt(gameId, 10) > 0) {
+		payload.gameId = parseInt(gameId, 10);
+	}
 	return fetch("/api/suggerimenti/disponibilita", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },

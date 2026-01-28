@@ -78,8 +78,13 @@ public class SuggestionController {
     })
     @PostMapping("/disponibilita")
     public ResponseEntity<SuggestionAvailabilityResponseDTO> getAvailability(@Valid @RequestBody SuggestionAvailabilityRequestDTO request) {
-        log.info("[POST /suggerimenti/disponibilita] className={} difficulty={} tier={}", request.getClassName(), request.getDifficulty(), request.getTier());
-        SuggestionAvailabilityResponseDTO response = suggestionService.getAvailability(request.getDifficulty(), request.getClassName(), request.getTier());
+        log.info("[POST /suggerimenti/disponibilita] className={} difficulty={} tier={} gameId={}", request.getClassName(), request.getDifficulty(), request.getTier(), request.getGameId());
+        SuggestionAvailabilityResponseDTO response = suggestionService.getAvailability(
+                request.getDifficulty(),
+                request.getClassName(),
+                request.getTier(),
+                request.getGameId()
+        );
         return ResponseEntity.ok(response);
     }
 

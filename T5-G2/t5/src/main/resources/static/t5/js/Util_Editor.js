@@ -605,6 +605,24 @@ function onTimerEnd() {
 // Inizializzo il contenuto dell'editor con il codice salvato nella sessione
 document.addEventListener('DOMContentLoaded', () => {
 	console.log("sessione: ", previousGameObject);
+	if (previousGameObject) {
+		const gameId = previousGameObject.game_id ?? previousGameObject.gameId;
+		if (gameId !== undefined && gameId !== null) {
+			localStorage.setItem("roundId", String(gameId));
+		}
+		if (previousGameObject.difficulty) {
+			localStorage.setItem("difficulty", previousGameObject.difficulty);
+		}
+		if (previousGameObject.class_ut) {
+			localStorage.setItem("underTestClassName", previousGameObject.class_ut);
+		}
+		if (previousGameObject.type_robot) {
+			localStorage.setItem("robot", previousGameObject.type_robot);
+		}
+		if (previousGameObject.gameMode || previousGameObject.mode) {
+			localStorage.setItem("modalita", previousGameObject.gameMode || previousGameObject.mode);
+		}
+	}
 	if (previousGameObject && previousGameObject.testingClassCode) {
 		editor_utente.setValue(previousGameObject.testingClassCode);
 	}
