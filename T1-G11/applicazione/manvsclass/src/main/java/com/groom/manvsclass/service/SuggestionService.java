@@ -145,7 +145,7 @@ public class SuggestionService {
         suggestionRepository.deleteByClassNameIgnoreCase(normalizedClassName);
         List<Suggestion> toSave = payload.stream()
                 .map(item -> buildSuggestion(normalizedClassName, item))
-                .collect(Collectors.toList());
+                .toList();
         suggestionRepository.saveAll(toSave);
     }
 
@@ -182,7 +182,7 @@ public class SuggestionService {
                         s.getTier() != null ? s.getTier().name() : SuggestionTier.BASE.name(),
                         s.getLanguage()
                 ))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional
@@ -358,7 +358,7 @@ public class SuggestionService {
 
         List<Suggestion> notServed = available.stream()
                 .filter(suggestion -> !alreadyDelivered.contains(suggestion.getId()))
-                .collect(Collectors.toList());
+                .toList();
 
         if (notServed.isEmpty()) {
             int remaining = Math.max(effectiveCap - alreadyDelivered.size(), 0);
@@ -394,29 +394,7 @@ public class SuggestionService {
         }
     }
 
-    private static final class SuggestionRequestContext {
-        private final String className;
-        private final SuggestionDifficulty difficulty;
-        private final SuggestionTier tier;
-
-        private SuggestionRequestContext(String className, SuggestionDifficulty difficulty, SuggestionTier tier) {
-            this.className = className;
-            this.difficulty = difficulty;
-            this.tier = tier;
-        }
-
-        private String className() {
-            return className;
-        }
-
-        private SuggestionDifficulty difficulty() {
-            return difficulty;
-        }
-
-        private SuggestionTier tier() {
-            return tier;
-        }
-
+    private record SuggestionRequestContext(String className, SuggestionDifficulty difficulty, SuggestionTier tier) {
         private boolean isAdvanced() {
             return SuggestionTier.ADVANCED.equals(tier);
         }
