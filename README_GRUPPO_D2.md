@@ -18,5 +18,5 @@ Implementata la funzionalità “suggerimenti” durante le partite: il giocator
 | T23-G1 | Gestione crediti suggerimenti (recupero, spesa, validazioni) nel servizio PlayerProgress | - |
 | T5-G2 | UI editor con sezioni suggerimenti, logica JS per richieste/availability/advanced purchase, assegnazione crediti post-vittoria | - |
 
-## 3) Errori/problematiche non risolte nel progetto consegnato
+## 2) Errori/problematiche non risolte nel progetto consegnato
 DA COMPLETARE
