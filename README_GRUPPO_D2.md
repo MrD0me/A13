@@ -14,7 +14,7 @@ Implementata la funzionalità “suggerimenti” durante le partite: il giocator
 | --- | --- | --- |
 | API Gateway | Aggiunte nuove regole di instradamento `/suggerimenti/**` verso T1 | - |
 | UI Gateway | Proxy Nginx per rotte suggerimenti | - |
-| T1 | Aggiunti Controller e Service per la gestione dei suggerimenti base/avanzati, supportati da classi DTO e repository. Aggiunto inoltre un template per l'amministratore per aggiungere, modificare o rimuovere suggerimenti. | - |
+| T1 | Effettuata migrazione del DB in T1 da MongoDB a MySQL per semplificare l'implementazione del task. Aggiunti Controller e Service per la gestione dei suggerimenti base/avanzati, supportati da classi DTO e repository. Aggiunto inoltre un template per l'amministratore per aggiungere, modificare o rimuovere suggerimenti. | - |
 | T23 | Implementata la gestione dei crediti per i suggerimenti (recupero, spesa, validazioni). | - |
 | T5 | Modificata la UI con sezioni suggerimenti, logica JS + chiamate API per richieste/valutazione disponibilità e assegnazione crediti post-vittoria | - |
 
