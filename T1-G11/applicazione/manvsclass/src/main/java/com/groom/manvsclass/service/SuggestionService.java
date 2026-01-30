@@ -46,17 +46,31 @@ public class SuggestionService {
     private final DeliveredSuggestionRepository deliveredSuggestionRepository;
 
     @Transactional(readOnly = true)
-    public SuggestionAvailabilityResponseDTO getAvailability(String difficultyRaw, String classNameRaw, String tierRaw) {
+    public SuggestionAvailabilityResponseDTO getAvailability(String difficultyRaw, String classNameRaw, String tierRaw, Long gameId) {
         SuggestionRequestContext context = buildContext(difficultyRaw, classNameRaw, tierRaw);
         List<Suggestion> available = findSuggestions(context);
 
         if (available.isEmpty()) {
-            return availabilityResponse(0);
+            return availabilityResponse(0, 0, Collections.emptyList());
         }
 
         int effectiveCap = capForTier(context.difficulty(), context.tier(), available.size());
-        // Il numero di suggerimenti disponibili coincide con i suggerimenti realmente utilizzabili.
-        return availabilityResponse(effectiveCap);
+        String sessionKey = buildSessionKey(gameId, context.className(), context.difficulty(), context.tier());
+        Set<Long> delivered = loadDeliveredSuggestions(sessionKey);
+        java.util.Map<Long, String> textById = available.stream()
+                .collect(Collectors.toMap(Suggestion::getId, Suggestion::getText, (a, b) -> a, java.util.LinkedHashMap::new));
+        Set<Long> validSuggestionIds = new java.util.HashSet<>(textById.keySet());
+        delivered = purgeInvalidDelivered(sessionKey, delivered, validSuggestionIds);
+
+        List<String> deliveredTexts = delivered.isEmpty()
+                ? Collections.emptyList()
+                : delivered.stream()
+                .map(textById::get)
+                .filter(java.util.Objects::nonNull)
+                .collect(Collectors.toList());
+
+        int remaining = Math.max(effectiveCap - delivered.size(), 0);
+        return availabilityResponse(remaining, effectiveCap, deliveredTexts);
     }
 
     @Transactional
@@ -277,8 +291,9 @@ public class SuggestionService {
     private Set<Long> loadDeliveredSuggestions(String sessionKey) {
         return deliveredSuggestionRepository.findBySessionKey(sessionKey)
                 .stream()
+                .sorted(java.util.Comparator.comparing(DeliveredSuggestion::getCreatedAt))
                 .map(DeliveredSuggestion::getSuggestionId)
-                .collect(Collectors.toCollection(HashSet::new));
+                .collect(Collectors.toCollection(java.util.LinkedHashSet::new));
     }
 
     private Set<Long> purgeInvalidDelivered(String sessionKey, Set<Long> delivered, Set<Long> validIds) {
@@ -339,11 +354,12 @@ public class SuggestionService {
         );
     }
 
-    private SuggestionAvailabilityResponseDTO availabilityResponse(int availableCount) {
+    private SuggestionAvailabilityResponseDTO availabilityResponse(int availableCount, int suggestionsMax, List<String> delivered) {
         return SuggestionAvailabilityResponseDTO.builder()
                 .availableSuggestions(availableCount)
-                .suggestionsMax(availableCount)
-                .totalAvailableSuggestions(availableCount)
+                .suggestionsMax(suggestionsMax)
+                .totalAvailableSuggestions(suggestionsMax)
+                .deliveredSuggestions(delivered)
                 .build();
     }
 

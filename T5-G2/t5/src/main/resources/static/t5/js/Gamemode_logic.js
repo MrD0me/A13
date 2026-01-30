@@ -273,6 +273,10 @@ async function startGame() {
 
         startGameRequest(requestData)
             .then((response) => {
+                const gameId = (response && (response.gameId ?? response.game_id)) || null;
+                if (gameId !== null) {
+                    localStorage.setItem("roundId", String(gameId));
+                }
                 if (mode === "PartitaSingola")
                     timer_remainingTime = remainingTime;
 
@@ -311,6 +315,19 @@ let restart_game = false;
 function updateDOMWithPreviousGameData(previousGameObject) {
     if (previousGameObject) {
         console.log("Partita già in corso, riprendo la sessione.");
+        const gameId = previousGameObject.game_id ?? previousGameObject.gameId;
+        if (gameId !== undefined && gameId !== null) {
+            localStorage.setItem("roundId", String(gameId));
+        }
+        if (previousGameObject.difficulty) {
+            localStorage.setItem("difficulty", previousGameObject.difficulty);
+        }
+        if (previousGameObject.class_ut) {
+            localStorage.setItem("underTestClassName", previousGameObject.class_ut);
+        }
+        if (previousGameObject.type_robot) {
+            localStorage.setItem("robot", previousGameObject.type_robot);
+        }
         document.getElementById("scheda_nuovo").classList.add("d-none");
         document.getElementById("scheda_continua").classList.remove("d-none");
         document.getElementById("gamemode_classeUT").innerText =

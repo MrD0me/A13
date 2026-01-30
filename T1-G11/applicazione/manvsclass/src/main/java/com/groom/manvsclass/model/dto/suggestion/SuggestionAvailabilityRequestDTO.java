@@ -20,4 +20,10 @@ public class SuggestionAvailabilityRequestDTO {
      * Facoltativo: BASE (default) oppure ADVANCED.
      */
     private String tier;
+
+    /**
+     * Identificativo partita usato per ricostruire lo stato server-side
+     * (suggerimenti già consegnati) anche cambiando browser/dispositivo.
+     */
+    private Long gameId;
 }
