@@ -10,7 +10,7 @@ Implementata la funzionalità “suggerimenti” durante le partite: il giocator
 
 ### Principali modifiche per microservizio
 
-| Microservizio | Tipo di modifica | Nuove tecnologie |
+| Microservizio modificato | Tipo di modifica | Nuove tecnologie utilizzate |
 | --- | --- | --- |
 | apiGateway | Nuove regole di instradamento `/suggerimenti/**` verso T1 | - |
 | ui_gateway | Proxy Nginx per rotte suggerimenti | - |
