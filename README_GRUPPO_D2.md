@@ -12,11 +12,11 @@ Implementata la funzionalità “suggerimenti” durante le partite: il giocator
 
 | Microservizio modificato | Tipo di modifica | Nuove tecnologie utilizzate |
 | --- | --- | --- |
-| apiGateway | Nuove regole di instradamento `/suggerimenti/**` verso T1 | - |
+| apiGateway | Aggiunte nuove regole di instradamento `/suggerimenti/**` verso T1 | - |
 | ui_gateway | Proxy Nginx per rotte suggerimenti | - |
-| T1-G11 | Controller e service per suggerimenti base/avanzati, DTO, repository, sicurezza (bypass token remoto per ridurre latenza), template admin e static JS per CRUD, script SQL di seed | - |
-| T23-G1 | Gestione crediti suggerimenti (recupero, spesa, validazioni) nel servizio PlayerProgress | - |
-| T5-G2 | UI editor con sezioni suggerimenti, logica JS per richieste/availability/advanced purchase, assegnazione crediti post-vittoria | - |
+| T1-G11 | Aggiunti Controller e Service per la gestione dei suggerimenti base/avanzati, supportati da classi DTO e repository. Aggiunto inoltre un template per l'amministratore per aggiungere, modificare o rimuovere suggerimenti. | - |
+| T23-G1 | Implementata la gestione dei crediti per i suggerimenti (recupero, spesa, validazioni). | - |
+| T5-G2 | Modificata la UI con sezioni suggerimenti, logica JS + chiamate API per richieste/valutazione disponibilità e assegnazione crediti post-vittoria | - |
 
 ## 2) Errori/problematiche non risolte nel progetto consegnato
 DA COMPLETARE
