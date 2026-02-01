@@ -377,4 +377,397 @@ class SuggestionServiceTest {
 
                 assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
         }
+
+        @Test
+        void createSuggestion_success_persistsWithCorrectFields() {
+                SuggestionCreateRequestDTO request = new SuggestionCreateRequestDTO();
+                request.setClassName("MyClass");
+                request.setDifficulty("MEDIUM");
+                request.setText("  Suggerimento con spazi  ");
+                request.setTier("BASE");
+                request.setLanguage("en");
+
+                Suggestion savedSuggestion = Suggestion.builder()
+                                .id(1L)
+                                .className("MyClass")
+                                .difficulty(SuggestionDifficulty.MEDIUM)
+                                .text("Suggerimento con spazi")
+                                .tier(SuggestionTier.BASE)
+                                .language("en")
+                                .build();
+
+                when(suggestionRepository.save(any(Suggestion.class))).thenReturn(savedSuggestion);
+
+                Suggestion result = suggestionService.createSuggestion(request);
+
+                assertNotNull(result);
+                assertEquals("MyClass", result.getClassName());
+                assertEquals(SuggestionDifficulty.MEDIUM, result.getDifficulty());
+                assertEquals("Suggerimento con spazi", result.getText());
+                assertEquals(SuggestionTier.BASE, result.getTier());
+                assertEquals("en", result.getLanguage());
+
+                ArgumentCaptor<Suggestion> captor = ArgumentCaptor.forClass(Suggestion.class);
+                verify(suggestionRepository).save(captor.capture());
+                Suggestion captured = captor.getValue();
+                assertEquals("MyClass", captured.getClassName());
+                assertEquals("Suggerimento con spazi", captured.getText());
+        }
+
+        @Test
+        void createSuggestion_nullLanguage_defaultsToItalian() {
+                SuggestionCreateRequestDTO request = new SuggestionCreateRequestDTO();
+                request.setClassName("MyClass");
+                request.setDifficulty("EASY");
+                request.setText("Suggerimento");
+                request.setTier("BASE");
+
+                Suggestion savedSuggestion = Suggestion.builder()
+                                .id(2L)
+                                .className("MyClass")
+                                .difficulty(SuggestionDifficulty.EASY)
+                                .text("Suggerimento")
+                                .tier(SuggestionTier.BASE)
+                                .language("it")
+                                .build();
+
+                when(suggestionRepository.save(any(Suggestion.class))).thenReturn(savedSuggestion);
+
+                Suggestion result = suggestionService.createSuggestion(request);
+
+                assertEquals("it", result.getLanguage());
+        }
+
+        @Test
+        void replaceSuggestions_success_deletesOldAndSavesNew() {
+                com.groom.manvsclass.model.dto.suggestion.SuggestionImportRequestDTO request = 
+                        new com.groom.manvsclass.model.dto.suggestion.SuggestionImportRequestDTO();
+                request.setClassName("TestClass");
+
+                com.groom.manvsclass.model.dto.suggestion.SuggestionImportItemDTO item1 = 
+                        new com.groom.manvsclass.model.dto.suggestion.SuggestionImportItemDTO();
+                item1.setDifficulty("EASY");
+                item1.setText("Primo suggerimento");
+                item1.setTier("BASE");
+
+                com.groom.manvsclass.model.dto.suggestion.SuggestionImportItemDTO item2 = 
+                        new com.groom.manvsclass.model.dto.suggestion.SuggestionImportItemDTO();
+                item2.setDifficulty("HARD");
+                item2.setText("Secondo suggerimento");
+                item2.setTier("ADVANCED");
+
+                request.setSuggestions(List.of(item1, item2));
+
+                suggestionService.replaceSuggestions(request);
+
+                verify(suggestionRepository).deleteByClassNameIgnoreCase("TestClass");
+                ArgumentCaptor<List<Suggestion>> captor = ArgumentCaptor.forClass(List.class);
+                verify(suggestionRepository).saveAll(captor.capture());
+                
+                List<Suggestion> saved = captor.getValue();
+                assertEquals(2, saved.size());
+                assertEquals("TestClass", saved.get(0).getClassName());
+                assertEquals("Primo suggerimento", saved.get(0).getText());
+                assertEquals(SuggestionDifficulty.EASY, saved.get(0).getDifficulty());
+                assertEquals("Secondo suggerimento", saved.get(1).getText());
+                assertEquals(SuggestionDifficulty.HARD, saved.get(1).getDifficulty());
+        }
+
+        @Test
+        void requestSuggestions_withValidGameId_doesNotResetSession() {
+                SuggestionRequestDTO request = new SuggestionRequestDTO();
+                request.setClassName("MyClass");
+                request.setDifficulty("EASY");
+                request.setRemainingSuggestions(10);
+                request.setGameId(42L);
+
+                Suggestion suggestion = Suggestion.builder()
+                                .id(1L)
+                                .text("Suggerimento")
+                                .className("MyClass")
+                                .difficulty(SuggestionDifficulty.EASY)
+                                .tier(SuggestionTier.BASE)
+                                .build();
+
+                when(suggestionRepository.findByDifficultyAndClassNameIgnoreCaseAndTier(
+                                SuggestionDifficulty.EASY,
+                                "MyClass",
+                                SuggestionTier.BASE
+                )).thenReturn(List.of(suggestion));
+
+                when(deliveredSuggestionRepository.findBySessionKey("game-42|myclass|EASY|BASE"))
+                                .thenReturn(Collections.emptyList());
+
+                SuggestionResponseDTO response = suggestionService.requestSuggestions(request);
+
+                assertEquals(List.of("Suggerimento"), response.getSuggestions());
+                verify(deliveredSuggestionRepository, never()).deleteBySessionKey(any());
+                
+                ArgumentCaptor<DeliveredSuggestion> captor = ArgumentCaptor.forClass(DeliveredSuggestion.class);
+                verify(deliveredSuggestionRepository).save(captor.capture());
+                assertEquals("game-42|myclass|EASY|BASE", captor.getValue().getSessionKey());
+        }
+
+        @Test
+        void requestSuggestions_easyCappedAt10_evenWithMoreAvailable() {
+                SuggestionRequestDTO request = new SuggestionRequestDTO();
+                request.setClassName("MyClass");
+                request.setDifficulty("EASY");
+                request.setRemainingSuggestions(0);
+
+                List<Suggestion> manySuggestions = new java.util.ArrayList<>();
+                for (int i = 1; i <= 15; i++) {
+                        manySuggestions.add(Suggestion.builder()
+                                        .id((long) i)
+                                        .text("Suggerimento " + i)
+                                        .className("MyClass")
+                                        .difficulty(SuggestionDifficulty.EASY)
+                                        .tier(SuggestionTier.BASE)
+                                        .build());
+                }
+
+                when(suggestionRepository.findByDifficultyAndClassNameIgnoreCaseAndTier(
+                                SuggestionDifficulty.EASY,
+                                "MyClass",
+                                SuggestionTier.BASE
+                )).thenReturn(manySuggestions);
+
+                when(deliveredSuggestionRepository.findBySessionKey("nogame|myclass|EASY|BASE"))
+                                .thenReturn(Collections.emptyList());
+
+                SuggestionResponseDTO response = suggestionService.requestSuggestions(request);
+
+                assertEquals(10, response.getSuggestionsMax());
+                assertEquals(10, response.getTotalAvailableSuggestions());
+                assertEquals(9, response.getRemainingSuggestions());
+        }
+
+        @Test
+        void requestSuggestions_mediumCappedAt5() {
+                SuggestionRequestDTO request = new SuggestionRequestDTO();
+                request.setClassName("MyClass");
+                request.setDifficulty("MEDIUM");
+                request.setRemainingSuggestions(0);
+
+                List<Suggestion> manySuggestions = new java.util.ArrayList<>();
+                for (int i = 1; i <= 10; i++) {
+                        manySuggestions.add(Suggestion.builder()
+                                        .id((long) i)
+                                        .text("Suggerimento " + i)
+                                        .className("MyClass")
+                                        .difficulty(SuggestionDifficulty.MEDIUM)
+                                        .tier(SuggestionTier.BASE)
+                                        .build());
+                }
+
+                when(suggestionRepository.findByDifficultyAndClassNameIgnoreCaseAndTier(
+                                SuggestionDifficulty.MEDIUM,
+                                "MyClass",
+                                SuggestionTier.BASE
+                )).thenReturn(manySuggestions);
+
+                when(deliveredSuggestionRepository.findBySessionKey("nogame|myclass|MEDIUM|BASE"))
+                                .thenReturn(Collections.emptyList());
+
+                SuggestionResponseDTO response = suggestionService.requestSuggestions(request);
+
+                assertEquals(5, response.getSuggestionsMax());
+                assertEquals(5, response.getTotalAvailableSuggestions());
+                assertEquals(4, response.getRemainingSuggestions());
+        }
+
+        @Test
+        void requestSuggestions_hardCappedAt2() {
+                SuggestionRequestDTO request = new SuggestionRequestDTO();
+                request.setClassName("MyClass");
+                request.setDifficulty("HARD");
+                request.setRemainingSuggestions(0);
+
+                List<Suggestion> manySuggestions = new java.util.ArrayList<>();
+                for (int i = 1; i <= 5; i++) {
+                        manySuggestions.add(Suggestion.builder()
+                                        .id((long) i)
+                                        .text("Suggerimento " + i)
+                                        .className("MyClass")
+                                        .difficulty(SuggestionDifficulty.HARD)
+                                        .tier(SuggestionTier.BASE)
+                                        .build());
+                }
+
+                when(suggestionRepository.findByDifficultyAndClassNameIgnoreCaseAndTier(
+                                SuggestionDifficulty.HARD,
+                                "MyClass",
+                                SuggestionTier.BASE
+                )).thenReturn(manySuggestions);
+
+                when(deliveredSuggestionRepository.findBySessionKey("nogame|myclass|HARD|BASE"))
+                                .thenReturn(Collections.emptyList());
+
+                SuggestionResponseDTO response = suggestionService.requestSuggestions(request);
+
+                assertEquals(2, response.getSuggestionsMax());
+                assertEquals(2, response.getTotalAvailableSuggestions());
+                assertEquals(1, response.getRemainingSuggestions());
+        }
+
+        @Test
+        void requestAdvancedSuggestions_noCap_returnsAllAvailable() {
+                AdvancedSuggestionRequestDTO request = new AdvancedSuggestionRequestDTO();
+                request.setClassName("MyClass");
+                request.setDifficulty("EASY");
+                request.setRemainingSuggestions(0);
+                request.setPlayerId(7L);
+                request.setCost(2);
+
+                List<Suggestion> manySuggestions = new java.util.ArrayList<>();
+                for (int i = 1; i <= 20; i++) {
+                        manySuggestions.add(Suggestion.builder()
+                                        .id((long) i)
+                                        .text("Suggerimento avanzato " + i)
+                                        .className("MyClass")
+                                        .difficulty(SuggestionDifficulty.EASY)
+                                        .tier(SuggestionTier.ADVANCED)
+                                        .build());
+                }
+
+                when(suggestionRepository.findByDifficultyAndClassNameIgnoreCaseAndTier(
+                                SuggestionDifficulty.EASY,
+                                "MyClass",
+                                SuggestionTier.ADVANCED
+                )).thenReturn(manySuggestions);
+
+                when(deliveredSuggestionRepository.findBySessionKey("nogame|myclass|EASY|ADVANCED"))
+                                .thenReturn(Collections.emptyList());
+
+                when(userServiceClient.spendHintCredits(7L, 2)).thenReturn(10);
+
+                SuggestionResponseDTO response = suggestionService.requestAdvancedSuggestions(request);
+
+                assertEquals(20, response.getSuggestionsMax());
+                assertEquals(20, response.getTotalAvailableSuggestions());
+                assertEquals(19, response.getRemainingSuggestions());
+        }
+
+        @Test
+        void requestSuggestions_reachingCap_setsNoMoreSuggestionsTrue() {
+                SuggestionRequestDTO request = new SuggestionRequestDTO();
+                request.setClassName("MyClass");
+                request.setDifficulty("HARD");
+                request.setRemainingSuggestions(0);
+
+                Suggestion suggestion1 = Suggestion.builder()
+                                .id(1L)
+                                .text("Primo")
+                                .className("MyClass")
+                                .difficulty(SuggestionDifficulty.HARD)
+                                .tier(SuggestionTier.BASE)
+                                .build();
+                Suggestion suggestion2 = Suggestion.builder()
+                                .id(2L)
+                                .text("Secondo")
+                                .className("MyClass")
+                                .difficulty(SuggestionDifficulty.HARD)
+                                .tier(SuggestionTier.BASE)
+                                .build();
+
+                when(suggestionRepository.findByDifficultyAndClassNameIgnoreCaseAndTier(
+                                SuggestionDifficulty.HARD,
+                                "MyClass",
+                                SuggestionTier.BASE
+                )).thenReturn(List.of(suggestion1, suggestion2));
+
+                when(deliveredSuggestionRepository.findBySessionKey("nogame|myclass|HARD|BASE"))
+                                .thenReturn(List.of(
+                                        DeliveredSuggestion.builder()
+                                                        .sessionKey("nogame|myclass|HARD|BASE")
+                                                        .suggestionId(1L)
+                                                        .createdAt(Instant.now())
+                                                        .build()
+                                ));
+
+                SuggestionResponseDTO response = suggestionService.requestSuggestions(request);
+
+                assertEquals(1, response.getSuggestions().size());
+                assertEquals(0, response.getRemainingSuggestions());
+                assertTrue(response.isNoMoreSuggestions());
+        }
+
+        @Test
+        void getAvailability_allSuggestionsDelivered_returnsZeroAvailable() {
+                Suggestion suggestion1 = Suggestion.builder()
+                                .id(1L)
+                                .text("Primo")
+                                .className("MyClass")
+                                .difficulty(SuggestionDifficulty.HARD)
+                                .tier(SuggestionTier.BASE)
+                                .build();
+                Suggestion suggestion2 = Suggestion.builder()
+                                .id(2L)
+                                .text("Secondo")
+                                .className("MyClass")
+                                .difficulty(SuggestionDifficulty.HARD)
+                                .tier(SuggestionTier.BASE)
+                                .build();
+
+                when(suggestionRepository.findByDifficultyAndClassNameIgnoreCaseAndTier(
+                                SuggestionDifficulty.HARD,
+                                "MyClass",
+                                SuggestionTier.BASE
+                )).thenReturn(List.of(suggestion1, suggestion2));
+
+                when(deliveredSuggestionRepository.findBySessionKey("nogame|myclass|HARD|BASE"))
+                                .thenReturn(List.of(
+                                        DeliveredSuggestion.builder()
+                                                        .sessionKey("nogame|myclass|HARD|BASE")
+                                                        .suggestionId(1L)
+                                                        .createdAt(Instant.now().minusSeconds(120))
+                                                        .build(),
+                                        DeliveredSuggestion.builder()
+                                                        .sessionKey("nogame|myclass|HARD|BASE")
+                                                        .suggestionId(2L)
+                                                        .createdAt(Instant.now().minusSeconds(60))
+                                                        .build()
+                                ));
+
+                SuggestionAvailabilityResponseDTO response = suggestionService.getAvailability(
+                                "HARD",
+                                "MyClass",
+                                null,
+                                null
+                );
+
+                assertEquals(0, response.getAvailableSuggestions());
+                assertEquals(2, response.getSuggestionsMax());
+                assertEquals(2, response.getDeliveredSuggestions().size());
+        }
+
+        @Test
+        void getAvailability_withGameId_usesCorrectSessionKey() {
+                Suggestion suggestion = Suggestion.builder()
+                                .id(1L)
+                                .text("Suggerimento")
+                                .className("MyClass")
+                                .difficulty(SuggestionDifficulty.EASY)
+                                .tier(SuggestionTier.BASE)
+                                .build();
+
+                when(suggestionRepository.findByDifficultyAndClassNameIgnoreCaseAndTier(
+                                SuggestionDifficulty.EASY,
+                                "MyClass",
+                                SuggestionTier.BASE
+                )).thenReturn(List.of(suggestion));
+
+                when(deliveredSuggestionRepository.findBySessionKey("game-99|myclass|EASY|BASE"))
+                                .thenReturn(Collections.emptyList());
+
+                SuggestionAvailabilityResponseDTO response = suggestionService.getAvailability(
+                                "EASY",
+                                "MyClass",
+                                null,
+                                99L
+                );
+
+                assertEquals(1, response.getAvailableSuggestions());
+                verify(deliveredSuggestionRepository).findBySessionKey("game-99|myclass|EASY|BASE");
+        }
 }
