@@ -19,4 +19,4 @@ Implementata la funzionalità “suggerimenti” durante le partite: il giocator
 | T5 | Modificata la UI con sezioni suggerimenti, logica JS + chiamate API per richieste/valutazione disponibilità e assegnazione crediti post-vittoria | - |
 
 ## 2) Errori/problematiche non risolte nel progetto consegnato
-A seguito di un'approfondita analisi delle nuove funzionalità implementate, non sono stati riscontrati particolari problematiche non risolvibili.
+La funzionalità per permettere all'amministratore di eliminare un suggerimento dal database non funziona ancora correttamente.
